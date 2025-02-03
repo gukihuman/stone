@@ -1,6 +1,8 @@
 <template>
-  <div class="flex justify-between h-screen">
-    <div class="bg-stone-500 w-[180px] flex flex-col gap-1 justify-between">
+  <div class="flex justify-between bg-stone-600 h-screen gap-1">
+    <div
+      class="bg-stone-500 bg-circles w-[180px] flex flex-col gap-1 justify-between"
+    >
       <button
         @click="createText"
         class="bg-stone-700 w-full text-stone-300 pb-1 hover:bg-stone-800"
@@ -38,10 +40,12 @@
       :disabled="selectedTextI === -1"
       v-model="selectedText"
       @input="onInput"
-      class="flex-grow h-full bg-stone-400 py-6 px-8 resize-none focus:outline-none text-stone-800 text-xl"
+      @scroll="handleScroll"
+      class="flex-grow h-full bg-lines bg-stone-400 py-7 px-8 resize-none focus:outline-none text-stone-800 text-xl"
+      :style="{ backgroundPositionY }"
     ></textarea>
-    <div class="w-[180px] h-full bg-stone-500"></div>
-    <div class="w-[180px] h-full bg-stone-600"></div>
+    <div class="w-[180px] h-full bg-circles bg-stone-500"></div>
+    <div class="w-[180px] h-full bg-circles bg-stone-500"></div>
   </div>
 </template>
 <script setup>
@@ -51,6 +55,10 @@ const textRef = ref(null)
 const textArray = ref([])
 const selectedTextI = ref(-1)
 const selectedText = ref("")
+const backgroundPositionY = ref("0px")
+function handleScroll(event) {
+  backgroundPositionY.value = `-${event.target.scrollTop}px`
+}
 function getStorage() {
   return {
     textArray: textArray.value,

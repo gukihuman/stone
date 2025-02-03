@@ -14,3 +14,19 @@
 *::selection {
   @apply bg-stone-600 text-stone-300;
 }
+.bg-circles {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 0, 0, 0.05) 2px,
+    transparent 1px
+  );
+  background-size: 16px 16px;
+}
+.bg-lines {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.04) 3px,
+    transparent 4px
+  );
+  background-size: 100% 28px;
+}
