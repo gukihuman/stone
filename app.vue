@@ -61,13 +61,7 @@ const onInput = debounce(() => {
   textArray.value[selectedTextI.value][1] = selectedText.value
   saveLocalStorageItem()
 }, 200)
-onMounted(() => {
-  const rawStorage = localStorage.getItem(LOCAL_STORAGE_KEY)
-  if (rawStorage) {
-    const storage = JSON.parse(rawStorage)
-    loadLocalStorageItem(storage)
-  }
-})
+onMounted(loadLocalStorageItem)
 function selectText(index) {
   selectedTextI.value = index
   selectedText.value = textArray.value[index][1]
@@ -84,12 +78,9 @@ function createText() {
 function saveLocalStorageItem() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
 }
-// 📜 rename storage variable everywhere, think of a better solution
-function loadLocalStorageItem(storage) {
-  textArray.value = storage.textArray
-  selectedTextI.value = storage.selectedTextI
-  selectedText.value = textArray.value[selectedTextI.value][1]
-  nextTick(() => textRef.value.focus())
+function loadLocalStorageItem() {
+  const rawStorage = localStorage.getItem(LOCAL_STORAGE_KEY)
+  if (rawStorage) injectStorage(JSON.parse(rawStorage))
 }
 function saveFile() {
   const storage = JSON.stringify(getStorage())
@@ -116,7 +107,7 @@ function loadFile() {
       let reader = new FileReader()
       reader.onload = (e) => {
         try {
-          loadLocalStorageItem(JSON.parse(e.target.result))
+          injectStorage(JSON.parse(e.target.result))
         } catch (error) {
           console.error("Error parsing JSON:", error)
         }
@@ -128,5 +119,12 @@ function loadFile() {
   fileInput.click()
   fileInput.remove()
   saveLocalStorageItem()
+}
+// 📜 rename storage variable everywhere, think of a better solution
+function injectStorage(storage) {
+  textArray.value = storage.textArray
+  selectedTextI.value = storage.selectedTextI
+  selectedText.value = textArray.value[selectedTextI.value][1]
+  nextTick(() => textRef.value.focus())
 }
 </script>
