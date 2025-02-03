@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*::-webkit-scrollbar {
+  @apply w-2;
+}
+*::-webkit-scrollbar-thumb {
+  @apply bg-stone-600;
+}
+*::-webkit-scrollbar-thumb:hover {
+  @apply bg-stone-700 cursor-grab;
+}
+*::selection {
+  @apply bg-stone-600 text-stone-300;
+}
