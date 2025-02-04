@@ -6,10 +6,16 @@
   @apply w-[10px];
 }
 *::-webkit-scrollbar-thumb {
-  @apply bg-stone-600/50;
+  @apply bg-stone-600;
 }
 *::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-600/70 cursor-grab;
+  @apply bg-stone-700 cursor-grab;
+}
+.scroll-light::-webkit-scrollbar-thumb {
+  @apply bg-stone-500;
+}
+.scroll-light::-webkit-scrollbar-thumb:hover {
+  @apply bg-stone-600 cursor-grab;
 }
 *::selection {
   @apply bg-stone-600 text-stone-300;
