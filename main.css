@@ -9,7 +9,7 @@
   @apply bg-stone-600/50;
 }
 *::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-600 cursor-grab;
+  @apply bg-stone-600/70 cursor-grab;
 }
 *::selection {
   @apply bg-stone-600 text-stone-300;

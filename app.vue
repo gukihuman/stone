@@ -44,7 +44,7 @@
         :class="
           lastRemovedText
             ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            : 'cursor-default text-stone-500'
+            : 'cursor-default text-stone-500/80'
         "
       >
         restore
@@ -84,7 +84,7 @@
           />
           <button
             @click="remove"
-            class="max-h-7 w-20 bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 hover:text-stone-300"
+            class="max-h-7 w-[72px] bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 hover:text-stone-300"
           >
             remove
           </button>
