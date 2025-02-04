@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 *::-webkit-scrollbar {
-  @apply w-2;
+  @apply w-[10px];
 }
 *::-webkit-scrollbar-thumb {
-  @apply bg-stone-600;
+  @apply bg-stone-600/50;
 }
 *::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+  @apply bg-stone-600 cursor-grab;
 }
 *::selection {
   @apply bg-stone-600 text-stone-300;
