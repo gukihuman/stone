@@ -6,7 +6,7 @@
     >
       <button
         @click="createText"
-        class="bg-stone-700 w-full text-stone-300 pb-1 hover:bg-stone-800"
+        class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         new
       </button>
@@ -28,13 +28,13 @@
       </div>
       <button
         @click="saveFile"
-        class="bg-stone-700 w-full justify-self-end text-stone-300 pb-1 hover:bg-stone-800"
+        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         save
       </button>
       <button
         @click="loadFile"
-        class="bg-stone-700 w-full justify-self-end text-stone-300 pb-1 hover:bg-stone-800"
+        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         load
       </button>
@@ -43,7 +43,7 @@
         class="w-full bg-stone-700 justify-self-end pb-1"
         :class="
           lastRemovedText
-            ? 'hover:bg-stone-800 text-stone-300'
+            ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             : 'cursor-default text-stone-500'
         "
       >
@@ -53,17 +53,17 @@
     <!------------------------------- Paper ----------------------------------->
     <div class="flex flex-col flex-grow">
       <div class="flex flex-col flex-grow" v-show="selectedTextI > -1">
-        <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
+        <div class="flex min-h-9 rounded-t-lg overflow-hidden justify-between">
           <button
             @click="moveDown"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
             :class="
               selectedTextI === 0
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
           >
-            <Arrow class="w-4 h-4 rotate-90" />
+            <Arrow class="w-3 rotate-90" />
           </button>
           <button
             @click="moveUp"
@@ -71,10 +71,10 @@
             :class="
               selectedTextI === textArray.length - 1
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
           >
-            <Arrow class="w-4 h-4 -rotate-90" />
+            <Arrow class="w-3 -rotate-90" />
           </button>
           <input
             type="text"
@@ -84,7 +84,7 @@
           />
           <button
             @click="remove"
-            class="max-h-7 w-20 bg-stone-700 justify-self-end text-stone-300 pb-1 hover:bg-stone-800"
+            class="max-h-7 w-20 bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 hover:text-stone-300"
           >
             remove
           </button>
@@ -94,7 +94,7 @@
           v-model="selectedText"
           @input="onInput"
           @scroll="handleScroll"
-          class="flex-grow -mt-4 h-full bg-lines bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
+          class="flex-grow -mt-2 h-full bg-lines bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
           :style="{ backgroundPositionY }"
         ></textarea>
       </div>
