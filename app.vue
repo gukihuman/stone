@@ -13,7 +13,7 @@
         <div class="flex flex-col-reverse">
           <button
             v-for="([key, _], index) in textArray"
-            class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate"
+            class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
             :class="
               selectedTextI === index
                 ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent  text-stone-300'
@@ -81,7 +81,7 @@
   </div>
 </template>
 <script setup>
-import { debounce } from "lodash"
+import _ from "lodash"
 const LOCAL_STORAGE_KEY = "stone"
 const textRef = ref(null)
 const textArrayRef = ref(null)
@@ -116,7 +116,6 @@ function selectText(index) {
   selectedTextName.value = textArray.value[index][0]
   selectedText.value = textArray.value[index][1]
   saveLocalStorageItem()
-  nextTick(() => textRef.value.focus())
 }
 function deselectText() {
   selectedTextI.value = -1
@@ -138,7 +137,7 @@ function createText() {
 function saveLocalStorageItem() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
 }
-const debouncedSaveLocalStorageItem = debounce(saveLocalStorageItem, 200)
+const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 200)
 function loadLocalStorageItem() {
   const rawStorage = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (rawStorage) injectStorage(JSON.parse(rawStorage))
