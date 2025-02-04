@@ -1,5 +1,6 @@
 <template>
   <div class="flex justify-between bg-stone-600 h-screen gap-1 p-1">
+    <!---------------------------- Left Column -------------------------------->
     <div
       class="bg-stone-500 bg-circles w-[180px] flex flex-col justify-between rounded-lg overflow-hidden"
     >
@@ -49,19 +50,41 @@
         restore
       </button>
     </div>
+    <!------------------------------- Paper ----------------------------------->
     <div class="flex flex-col flex-grow">
       <div class="flex flex-col flex-grow" v-show="selectedTextI > -1">
-        <div class="flex min-h-9 rounded-t-lg overflow-hidden justify-between">
+        <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
+          <button
+            @click="moveDown"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+            :class="
+              selectedTextI === 0
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400'
+            "
+          >
+            <Arrow class="w-4 h-4 rotate-90" />
+          </button>
+          <button
+            @click="moveUp"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            :class="
+              selectedTextI === textArray.length - 1
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400'
+            "
+          >
+            <Arrow class="w-4 h-4 -rotate-90" />
+          </button>
           <input
             type="text"
             v-model="selectedTextName"
             @input="onInput"
-            class="flex-grow bg-circles bg-stone-500 text-center focus:outline-none text-xl text-stone-300"
+            class="z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-circles bg-stone-500 text-center focus:outline-none text-xl text-stone-300 truncate"
           />
           <button
-            v-if="selectedTextI !== -1"
             @click="remove"
-            class="bg-stone-700 px-5 justify-self-end text-stone-300 pb-1 hover:bg-stone-800"
+            class="max-h-7 w-20 bg-stone-700 justify-self-end text-stone-300 pb-1 hover:bg-stone-800"
           >
             remove
           </button>
@@ -71,11 +94,12 @@
           v-model="selectedText"
           @input="onInput"
           @scroll="handleScroll"
-          class="flex-grow h-full bg-lines bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
+          class="flex-grow -mt-4 h-full bg-lines bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
           :style="{ backgroundPositionY }"
         ></textarea>
       </div>
     </div>
+    <!---------------------------- Right Column ------------------------------->
     <div class="w-[180px] rounded-lg h-full bg-circles bg-stone-500"></div>
     <div class="w-[180px] rounded-lg h-full bg-circles bg-stone-500"></div>
   </div>
@@ -197,5 +221,19 @@ function injectStorage(storage) {
   selectedTextName.value = textArray.value[selectedTextI.value][0]
   selectedText.value = textArray.value[selectedTextI.value][1]
   nextTick(() => textRef.value.focus())
+}
+function moveUp() {
+  if (selectedTextI.value === textArray.value.length - 1) return
+  const movedText = textArray.value.splice(selectedTextI.value, 1)[0]
+  textArray.value.splice(selectedTextI.value + 1, 0, movedText)
+  selectedTextI.value++
+  saveLocalStorageItem()
+}
+function moveDown() {
+  if (selectedTextI.value === 0) return
+  const movedText = textArray.value.splice(selectedTextI.value, 1)[0]
+  textArray.value.splice(selectedTextI.value - 1, 0, movedText)
+  selectedTextI.value--
+  saveLocalStorageItem()
 }
 </script>
