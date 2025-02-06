@@ -247,6 +247,7 @@ import _ from "lodash"
 import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
+import newName from "./utils/newName"
 const LOCAL_STORAGE_KEY = "stone"
 const freeTextsRef = ref(null)
 const textContentRef = ref(null)
@@ -292,7 +293,7 @@ onMounted(loadLocalStorageItem)
 function createFreeText() {
   const id = newId()
   freeTexts.value[id] = {
-    name: id,
+    name: newName(),
     content: "",
     sort: Object.keys(freeTexts.value).length,
   }
@@ -306,7 +307,7 @@ function createFreeText() {
 function createText() {
   const id = newId()
   collection.value.texts[id] = {
-    name: id,
+    name: newName(),
     content: "",
     sort: Object.keys(collection.value.texts).length,
   }
@@ -320,7 +321,7 @@ function createText() {
 function createCollection() {
   const id = newId()
   collections.value[id] = {
-    name: id,
+    name: newName(),
     texts: {},
     sort: Object.keys(collections.value).length,
   }
