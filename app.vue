@@ -120,8 +120,8 @@
           @input="onInput"
           @focus="linkState = false"
           @scroll="onTextScroll"
-          class="-mt-4 -mb-7 h-full bg-lines scroll-light bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
-          :style="{ bgTextPositionY }"
+          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none focus:outline-none text-stone-800 text-xl"
+          :style="{ backgroundPositionY }"
         ></textarea>
         <button
           @click="removeText"
@@ -260,7 +260,7 @@
             @click="linkCollection(id)"
           >
             <div
-              class="flex gap-2 max-w-[92%]"
+              class="flex gap-2"
               :class="{
                 'text-stone-200': collectionId === id,
                 'animated-text': collectionId !== id && !alreadyLinked(id),
@@ -268,10 +268,6 @@
               }"
             >
               <span class="truncate"> {{ name }} </span>
-              <!-- <IconLink
-                v-if="collectionId !== id && !alreadyLinked(id)"
-                class="flex-shrink-0 w-4 pl-1 pt-[2px]"
-              /> -->
             </div>
           </button>
           <button
@@ -319,7 +315,7 @@ const linkState = ref(false)
 
 let removed = null
 
-const bgTextPositionY = ref("0px")
+const backgroundPositionY = ref("0px")
 const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 
 const freeText = computed(() => freeTexts.value[freeTextId.value])
@@ -387,13 +383,12 @@ function createCollection() {
 }
 function linkCollection(id) {
   if (alreadyLinked(id)) return
-  linkState.value = false
   if (collectionId.value === id) {
     toggleCollection(id)
+    linkState.value = false
     return
   }
   collection.value.links.push(id)
-  console.log(collection.value.links)
   debouncedSaveLocalStorageItem()
 }
 function alreadyLinked(id) {
@@ -592,13 +587,10 @@ function injectStorage(storage) {
   collections.value = storage.collections
   collectionId.value = storage.collectionId
   textId.value = storage.textId
-  if (freeTextId.value || textId.value) {
-    nextTick(() => textContentRef.value.focus())
-  }
   updateInputFields()
 }
 function onTextScroll(event) {
-  bgTextPositionY.value = `-${event.target.scrollTop}px`
+  backgroundPositionY.value = `-${event.target.scrollTop}px`
 }
 function onFileLoad() {
   fileLoad(injectStorage)
