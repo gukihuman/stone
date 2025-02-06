@@ -3,16 +3,40 @@
     <div
       class="bg-stone-500 bg-circles w-[180px] flex flex-col justify-between rounded-lg overflow-hidden"
     >
-      <button
-        @click="createFreeText()"
-        class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        new
-      </button>
+      <div class="flex">
+        <button
+          @click="createFreeText()"
+          class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        >
+          new
+        </button>
+        <button
+          @click="moveFreeTextDown"
+          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+          :class="
+            freeTextId === null || freeText.sort === 0
+              ? 'cursor-default bg-slate-50 text-stone-500/60'
+              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+          "
+        >
+          <Arrow class="w-3 rotate-90" />
+        </button>
+        <button
+          @click="moveFreeTextUp"
+          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+          :class="
+            freeTextId === null || freeText.sort === freeTextsSorted.length - 1
+              ? 'cursor-default bg-slate-50 text-stone-500/60'
+              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+          "
+        >
+          <Arrow class="w-3 -rotate-90" />
+        </button>
+      </div>
       <div ref="freeTextsRef" class="flex-grow overflow-auto">
         <div class="flex flex-col-reverse">
           <button
-            v-for="({ name }, id) in freeTexts"
+            v-for="[id, { name }] in freeTextsSorted"
             class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
             :class="
               freeTextId === id
@@ -56,26 +80,15 @@
       >
         <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
           <button
-            @click="moveTextDown"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+            @click="pullFromCollection"
+            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
             :class="
-              collections === 0
+              freeTextId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
           >
-            <Arrow class="w-3 rotate-90" />
-          </button>
-          <button
-            @click="moveTextUp"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              collections === 0
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <Arrow class="w-3 -rotate-90" />
+            <Arrow class="w-3 rotate-180" />
           </button>
           <input
             type="text"
@@ -84,21 +97,10 @@
             class="z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
           />
           <button
-            @click="pullFromCollection"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
-            :class="
-              collectionId
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <Arrow class="w-3 rotate-180" />
-          </button>
-          <button
             @click="pushIntoCollection"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              collectionId
+              !collectionId || textId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -127,42 +129,46 @@
         class="bg-stone-500 bg-circles w-full h-full flex flex-col justify-between rounded-lg overflow-hidden"
         v-if="collectionId"
       >
-        <div class="flex">
-          <input
-            type="text"
-            v-model="collectionName"
-            @input="onInput"
-            class="z-10 rounded-br-xl px-4 h-11 w-[108px] pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
-          />
-          <div class="h-7 flex justify-end bg-stone-700">
-            <button
-              @click="moveCollectionDown"
-              class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
-              :class="
-                collections === 0
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <Arrow class="w-3 rotate-90" />
-            </button>
-            <button
-              @click="moveCollectionUp"
-              class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-              :class="
-                collections === 0
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <Arrow class="w-3 -rotate-90" />
-            </button>
-          </div>
+        <input
+          type="text"
+          v-model="collectionName"
+          @input="onInput"
+          class="z-10 px-4 h-11 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
+        />
+        <div class="h-7 flex justify-end bg-stone-700">
+          <button
+            @click="createText"
+            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+          >
+            new
+          </button>
+          <button
+            @click="moveTextDown"
+            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+            :class="
+              textId === null || text.sort === 0
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            "
+          >
+            <Arrow class="w-3 rotate-90" />
+          </button>
+          <button
+            @click="moveTextUp"
+            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            :class="
+              textId === null || text.sort === textsSorted.length - 1
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            "
+          >
+            <Arrow class="w-3 -rotate-90" />
+          </button>
         </div>
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              v-for="({ name }, id) in collection.texts"
+              v-for="[id, { name }] in textsSorted"
               class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
               :class="
                 textId === id
@@ -186,16 +192,41 @@
     <div
       class="bg-stone-500 bg-circles w-[180px] flex flex-col justify-between rounded-lg overflow-hidden"
     >
-      <button
-        @click="createCollection"
-        class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        new
-      </button>
+      <div class="h-7 flex justify-end bg-stone-700">
+        <button
+          @click="createCollection"
+          class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        >
+          new
+        </button>
+        <button
+          @click="moveCollectionDown"
+          class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+          :class="
+            collectionId === null || collection.sort === 0
+              ? 'cursor-default bg-slate-50 text-stone-500/60'
+              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+          "
+        >
+          <Arrow class="w-3 rotate-90" />
+        </button>
+        <button
+          @click="moveCollectionUp"
+          class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+          :class="
+            collectionId === null ||
+            collection.sort === collectionsSorted.length - 1
+              ? 'cursor-default bg-slate-50 text-stone-500/60'
+              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+          "
+        >
+          <Arrow class="w-3 -rotate-90" />
+        </button>
+      </div>
       <div ref="collectionsRef" class="flex-grow overflow-auto">
         <div class="flex flex-col-reverse">
           <button
-            v-for="({ name }, id) in collections"
+            v-for="[id, { name }] in collectionsSorted"
             class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
             :class="
               collectionId === id
@@ -236,11 +267,25 @@ const collectionName = ref("")
 let removed = null
 
 const bgTextPositionY = ref("0px")
-const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 200)
+const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 
 const freeText = computed(() => freeTexts.value[freeTextId.value])
 const collection = computed(() => collections.value[collectionId.value])
 const text = computed(() => collection.value?.texts[textId.value])
+
+const freeTextsSorted = computed(() => {
+  return Object.entries(freeTexts.value).sort(([, a], [, b]) => a.sort - b.sort)
+})
+const collectionsSorted = computed(() => {
+  return Object.entries(collections.value).sort(
+    ([, a], [, b]) => a.sort - b.sort
+  )
+})
+const textsSorted = computed(() => {
+  return Object.entries(collection.value.texts).sort(
+    ([, a], [, b]) => a.sort - b.sort
+  )
+})
 
 onMounted(loadLocalStorageItem)
 
@@ -258,7 +303,7 @@ function createFreeText() {
       freeTextsRef.value.clientHeight - freeTextsRef.value.scrollHeight
   })
 }
-function createText(collectionId) {
+function createText() {
   const id = newId()
   collection.value.texts[id] = {
     name: id,
@@ -290,21 +335,21 @@ function toggleFreeText(id) {
   else freeTextId.value = id
   textId.value = null
   updateInputFields()
-  saveLocalStorageItem()
+  debouncedSaveLocalStorageItem()
 }
 function toggleText(id) {
   if (textId.value === id) textId.value = null
   else textId.value = id
   freeTextId.value = null
   updateInputFields()
-  saveLocalStorageItem()
+  debouncedSaveLocalStorageItem()
 }
 function toggleCollection(id) {
   if (collectionId.value === id) collectionId.value = null
   else collectionId.value = id
   textId.value = null
   updateInputFields()
-  saveLocalStorageItem()
+  debouncedSaveLocalStorageItem()
 }
 function updateInputFields() {
   if (collectionId.value) collectionName.value = collection.value.name
@@ -362,45 +407,75 @@ function restore() {
     toggleCollection(removed.collectionId)
   }
   removed = null
-  saveLocalStorageItem()
+  debouncedSaveLocalStorageItem()
+}
+function move(obj, id, item, step) {
+  if (!id) return
+  const target = Object.entries(obj).find(
+    ([, target]) => target.sort === item.sort + step
+  )?.[1]
+  if (!target) return
+  target.sort = target.sort - step
+  item.sort = item.sort + step
+  debouncedSaveLocalStorageItem()
+}
+
+function moveFreeTextUp() {
+  move(freeTexts.value, freeTextId.value, freeText.value, 1)
+}
+function moveFreeTextDown() {
+  move(freeTexts.value, freeTextId.value, freeText.value, -1)
 }
 function moveTextUp() {
-  const indexCache = textId.value
-  if (indexCache === collections.value.length - 1) return
-  const movedText = collections.value.splice(indexCache, 1)[0]
-  collections.value.splice(indexCache + 1, 0, movedText)
-  saveLocalStorageItem()
+  move(collection.value.texts, textId.value, text.value, 1)
 }
 function moveTextDown() {
-  const indexCache = textId.value
-  if (indexCache === 0) return
-  const movedText = collections.value.splice(indexCache, 1)[0]
-  collections.value.splice(indexCache - 1, 0, movedText)
-  saveLocalStorageItem()
+  move(collection.value.texts, textId.value, text.value, -1)
 }
-function moveUp() {
-  const indexCache = collectionId.value
-  if (indexCache === collectionArray.value.length - 1) return
-  const movedCollection = collectionArray.value.splice(indexCache, 1)[0]
-  collectionArray.value.splice(indexCache + 1, 0, movedCollection)
-  saveLocalStorageItem()
+function moveCollectionUp() {
+  move(collections.value, collectionId.value, collection.value, 1)
 }
-function moveDown() {
-  const indexCache = collectionId.value
-  if (indexCache === 0) return
-  const movedCollection = collectionArray.value.splice(indexCache, 1)[0]
-  collectionArray.value.splice(indexCache - 1, 0, movedCollection)
-  saveLocalStorageItem()
+function moveCollectionDown() {
+  move(collections.value, collectionId.value, collection.value, -1)
 }
 function pushIntoCollection() {
-  if (collecte === -1) return
-  collectionArray.value[collectionId.value].textIds.add(textId.value)
-  saveLocalStorageItem()
+  if (!collectionId.value || textId.value) return
+  const cache = {
+    freeTextId: freeTextId.value,
+    freeText: freeText.value,
+  }
+  delete freeTexts.value[cache.freeTextId]
+  Object.values(freeTexts.value).forEach((freeText) => {
+    if (freeText.sort > cache.freeText.sort) freeText.sort--
+  })
+  collection.value.texts[cache.freeTextId] = {
+    ...cache.freeText,
+    sort: Object.keys(collection.value.texts).length,
+  }
+  freeTextId.value = null
+  textId.value = cache.freeTextId
+  updateInputFields()
+  debouncedSaveLocalStorageItem()
 }
+
 function pullFromCollection() {
-  if (collecte === -1) return
-  collectionArray.value[collectionId.value].textIds.delete(textId.value)
-  saveLocalStorageItem()
+  if (freeTextId.value) return
+  const cache = {
+    textId: textId.value,
+    text: text.value,
+  }
+  delete collection.value.texts[cache.textId]
+  Object.values(collection.value.texts).forEach((text) => {
+    if (text.sort > cache.text.sort) text.sort--
+  })
+  freeTexts.value[cache.textId] = {
+    ...cache.text,
+    sort: Object.keys(freeTexts.value).length,
+  }
+  freeTextId.value = cache.textId
+  textId.value = null
+  updateInputFields()
+  debouncedSaveLocalStorageItem()
 }
 function getStorage() {
   return {
@@ -434,6 +509,6 @@ function onTextScroll(event) {
 }
 function onFileLoad() {
   fileLoad(injectStorage)
-  saveLocalStorageItem()
+  debouncedSaveLocalStorageItem()
 }
 </script>

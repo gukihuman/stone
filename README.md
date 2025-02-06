@@ -33,6 +33,7 @@ npm run build
 {
   "7185083355746713": {
     "name": "Jane Stone",
+    "sort": 0
     "texts": {
       "8901890189018901": {
         "name": "Short-Term Memory",
@@ -44,7 +45,7 @@ npm run build
         "content": "We are building a simple memory structure",
         "sort": 1
       }
-    }
+    },
   }
 }
 ```
