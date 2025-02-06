@@ -26,13 +26,13 @@
         </div>
       </div>
       <button
-        @click="saveFile"
+        @click="fileSave('stone.json', getStorage())"
         class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         save
       </button>
       <button
-        @click="loadFile"
+        @click="onFileLoad"
         class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         load
@@ -213,6 +213,9 @@
 </template>
 <script setup>
 import _ from "lodash"
+import fileSave from "./utils/fileSave"
+import fileLoad from "./utils/fileLoad"
+import newId from "./utils/newId"
 const LOCAL_STORAGE_KEY = "stone"
 const freeTextsRef = ref(null)
 const textContentRef = ref(null)
@@ -242,7 +245,7 @@ const text = computed(() => collection.value?.texts[textId.value])
 onMounted(loadLocalStorageItem)
 
 function createFreeText() {
-  const id = generateRandomId()
+  const id = newId()
   freeTexts.value[id] = {
     name: id,
     content: "",
@@ -256,7 +259,7 @@ function createFreeText() {
   })
 }
 function createText(collectionId) {
-  const id = generateRandomId()
+  const id = newId()
   collection.value.texts[id] = {
     name: id,
     content: "",
@@ -270,7 +273,7 @@ function createText(collectionId) {
   })
 }
 function createCollection() {
-  const id = generateRandomId()
+  const id = newId()
   collections.value[id] = {
     name: id,
     texts: {},
@@ -426,46 +429,11 @@ function injectStorage(storage) {
   }
   updateInputFields()
 }
-function saveFile() {
-  const storage = JSON.stringify(getStorage())
-  const blob = new Blob([storage], { type: "application/json" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  document.body.appendChild(a)
-  a.style = "display: none"
-  a.href = url
-  a.download = "stone.json"
-  a.click()
-  window.URL.revokeObjectURL(url)
-  document.body.removeChild(a)
-}
-function loadFile() {
-  const fileInput = document.createElement("input")
-  fileInput.type = "file"
-  fileInput.style.display = "none"
-  fileInput.onchange = (event) => {
-    const file = event.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          injectStorage(JSON.parse(e.target.result))
-        } catch (error) {
-          console.error("Error parsing JSON:", error)
-        }
-      }
-      reader.readAsText(file)
-    }
-  }
-  document.body.appendChild(fileInput)
-  fileInput.click()
-  fileInput.remove()
-  saveLocalStorageItem()
-}
-function generateRandomId() {
-  return Math.random().toString().slice(2, 18)
-}
 function onTextScroll(event) {
   bgTextPositionY.value = `-${event.target.scrollTop}px`
+}
+function onFileLoad() {
+  fileLoad(injectStorage)
+  saveLocalStorageItem()
 }
 </script>
