@@ -377,6 +377,9 @@ function removeText() {
     removed.freeTextId = id
     toggleFreeText(id)
     delete freeTexts.value[id]
+    Object.values(freeTexts.value).forEach((freeText) => {
+      if (freeText.sort > removed.freeText.sort) freeText.sort--
+    })
   }
   if (textId.value) {
     const id = textId.value
@@ -385,6 +388,9 @@ function removeText() {
     removed.textId = id
     toggleText(id)
     delete collections.value[removed.collectionId].texts[id]
+    Object.values(collection.value.texts).forEach((text) => {
+      if (text.sort > removed.text.sort) text.sort--
+    })
   }
 }
 function removeCollection() {
@@ -394,17 +400,29 @@ function removeCollection() {
   removed.collectionId = id
   toggleCollection(id)
   delete collections.value[id]
+  Object.values(collections.value).forEach((collection) => {
+    if (collection.sort > removed.collection.sort) collection.sort--
+  })
 }
 function restore() {
   if (!removed) return
   if (removed.freeText) {
-    freeTexts.value[removed.freeTextId] = removed.freeText
+    freeTexts.value[removed.freeTextId] = {
+      ...removed.freeText,
+      sort: Object.keys(freeTexts.value).length,
+    }
     toggleFreeText(removed.freeTextId)
   } else if (removed.text) {
-    collections.value[removed.collectionId].texts[removed.textId] = removed.text
+    collections.value[removed.collectionId].texts[removed.textId] = {
+      ...removed.text,
+      sort: Object.keys(collection.value.texts).length,
+    }
     toggleText(removed.textId)
   } else if (removed.collection) {
-    collections.value[removed.collectionId] = removed.collection
+    collections.value[removed.collectionId] = {
+      ...removed.collection,
+      sort: Object.keys(collections.value).length,
+    }
     toggleCollection(removed.collectionId)
   }
   removed = null
