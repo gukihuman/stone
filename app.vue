@@ -94,7 +94,7 @@
             type="text"
             v-model="textName"
             @input="onInput"
-            class="z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
+            class="z-10 rounded-b-2xl hover:bg-stone-800 focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
           />
           <button
             @click="pushIntoCollection"
@@ -133,7 +133,7 @@
           type="text"
           v-model="collectionName"
           @input="onInput"
-          class="z-10 px-4 h-11 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
+          class="z-10 px-4 h-11 pb-1 hover:bg-stone-800 focus:bg-stone-800 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
         />
         <div class="h-7 flex justify-end bg-stone-700">
           <button
