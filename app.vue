@@ -1,77 +1,82 @@
 <template>
   <div class="flex justify-between bg-stone-600 h-screen gap-1 p-1">
-    <div
-      class="bg-stone-500 bg-circles w-[180px] flex flex-col justify-between rounded-lg overflow-hidden"
-    >
-      <div class="flex">
-        <button
-          @click="createFreeText()"
-          class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-        >
-          new
-        </button>
-        <button
-          @click="moveFreeTextDown"
-          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
-          :class="
-            freeTextId === null || freeText.sort === 0
-              ? 'cursor-default bg-slate-50 text-stone-500/60'
-              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-          "
-        >
-          <Arrow class="w-3 rotate-90" />
-        </button>
-        <button
-          @click="moveFreeTextUp"
-          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-          :class="
-            freeTextId === null || freeText.sort === freeTextsSorted.length - 1
-              ? 'cursor-default bg-slate-50 text-stone-500/60'
-              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-          "
-        >
-          <Arrow class="w-3 -rotate-90" />
-        </button>
-      </div>
-      <div ref="freeTextsRef" class="flex-grow overflow-auto">
-        <div class="flex flex-col-reverse">
+    <div class="w-[180px] flex flex-col gap-1">
+      <div
+        class="flex flex-col flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden"
+      >
+        <div class="flex">
           <button
-            v-for="[id, { name }] in freeTextsSorted"
-            class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
+            @click="moveFreeTextDown"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              freeTextId === id
-                ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent  text-stone-300'
-                : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent  text-stone-300'
+              freeTextId === null || freeText.sort === 0
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
-            @click="toggleFreeText(id)"
           >
-            {{ name }}
+            <IconArrow class="w-3 rotate-90" />
+          </button>
+          <button
+            @click="moveFreeTextUp"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            :class="
+              freeTextId === null ||
+              freeText.sort === freeTextsSorted.length - 1
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            "
+          >
+            <IconArrow class="w-3 -rotate-90" />
+          </button>
+          <button
+            @click="createFreeText()"
+            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+          >
+            new
           </button>
         </div>
+        <div ref="freeTextsRef" class="flex-grow overflow-auto">
+          <div class="flex flex-col-reverse">
+            <button
+              v-for="[id, { name }] in freeTextsSorted"
+              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200"
+              :class="
+                freeTextId === id
+                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+              "
+              @click="toggleFreeText(id)"
+            >
+              {{ name }}
+            </button>
+          </div>
+        </div>
       </div>
-      <button
-        @click="fileSave('stone.json', getStorage())"
-        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        save
-      </button>
-      <button
-        @click="onFileLoad"
-        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        load
-      </button>
-      <button
-        @click="restore"
-        class="w-full bg-stone-700 justify-self-end pb-1"
-        :class="
-          removed
-            ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            : 'cursor-default text-stone-500/80'
-        "
-      >
-        restore
-      </button>
+      <div class="rounded-lg overflow-hidden flex-shrink-0">
+        <button
+          @click="fileSave('stone.json', getStorage())"
+          class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        >
+          save
+        </button>
+        <button
+          @click="onFileLoad"
+          class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        >
+          load
+        </button>
+        <button
+          @click="restore"
+          class="w-full bg-stone-700 justify-self-end pb-1"
+          :class="
+            removed
+              ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              : 'cursor-default text-stone-500/80'
+          "
+        >
+          restore
+        </button>
+      </div>
     </div>
     <div class="flex flex-col flex-grow">
       <div
@@ -88,12 +93,13 @@
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
           >
-            <Arrow class="w-3 rotate-180" />
+            <IconArrow class="w-3 rotate-180" />
           </button>
           <input
             type="text"
             v-model="textName"
             @input="onInput"
+            @focus="linkState = false"
             class="z-10 rounded-b-2xl hover:bg-stone-800 focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
           />
           <button
@@ -105,13 +111,14 @@
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
           >
-            <Arrow class="w-3" />
+            <IconArrow class="w-3" />
           </button>
         </div>
         <textarea
           ref="textContentRef"
           v-model="textContent"
           @input="onInput"
+          @focus="linkState = false"
           @scroll="onTextScroll"
           class="-mt-4 -mb-7 h-full bg-lines scroll-light bg-stone-400 pt-7 p-8 resize-none focus:outline-none text-stone-800 text-xl rounded-b-lg"
           :style="{ bgTextPositionY }"
@@ -129,51 +136,65 @@
         class="bg-stone-500 bg-circles w-full h-full flex flex-col justify-between rounded-lg overflow-hidden"
         v-if="collectionId"
       >
-        <input
-          type="text"
-          v-model="collectionName"
-          @input="onInput"
-          class="z-10 px-4 h-11 pb-1 hover:bg-stone-800 focus:bg-stone-800 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
-        />
-        <div class="h-7 flex justify-end bg-stone-700">
-          <button
-            @click="createText"
-            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-          >
-            new
-          </button>
-          <button
-            @click="moveTextDown"
-            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
-            :class="
-              textId === null || text.sort === 0
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <Arrow class="w-3 rotate-90" />
-          </button>
-          <button
-            @click="moveTextUp"
-            class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              textId === null || text.sort === textsSorted.length - 1
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <Arrow class="w-3 -rotate-90" />
-          </button>
+        <div class="flex flex-col flex-shrink-0">
+          <input
+            type="text"
+            v-model="collectionName"
+            @input="onInput"
+            @focus="linkState = false"
+            class="z-10 px-4 h-11 pb-1 hover:bg-stone-800 focus:bg-stone-800 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
+          />
+          <div class="h-7 flex justify-end bg-stone-700">
+            <button
+              @click="moveTextDown"
+              class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
+              :class="
+                textId === null || text.sort === 0
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 rotate-90" />
+            </button>
+            <button
+              @click="moveTextUp"
+              class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                textId === null || text.sort === textsSorted.length - 1
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 -rotate-90" />
+            </button>
+            <button
+              @click="createText"
+              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+            >
+              new
+            </button>
+            <button
+              @click="linkState ? (linkState = false) : (linkState = true)"
+              class="w-full"
+              :class="
+                linkState
+                  ? 'bg-stone-400 text-stone-800'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              link
+            </button>
+          </div>
         </div>
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
               v-for="[id, { name }] in textsSorted"
-              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
+              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200"
               :class="
                 textId === id
-                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent  text-stone-300'
-                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent  text-stone-300'
+                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
               "
               @click="toggleText(id)"
             >
@@ -208,7 +229,7 @@
               : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
           "
         >
-          <Arrow class="w-3 rotate-90" />
+          <IconArrow class="w-3 rotate-90" />
         </button>
         <button
           @click="moveCollectionUp"
@@ -220,18 +241,47 @@
               : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
           "
         >
-          <Arrow class="w-3 -rotate-90" />
+          <IconArrow class="w-3 -rotate-90" />
         </button>
       </div>
       <div ref="collectionsRef" class="flex-grow overflow-auto">
         <div class="flex flex-col-reverse">
           <button
+            v-if="linkState"
             v-for="[id, { name }] in collectionsSorted"
             class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none"
+            :class="{
+              'pl-5 bg-gradient-to-r from-stone-600 to-transparent text-stone-200':
+                collectionId === id,
+              'pl-3 bg-gradient-to-r from-stone-400/50 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent text-stone-200':
+                collectionId !== id && !alreadyLinked(id),
+              'pl-3 cursor-default text-stone-400': alreadyLinked(id),
+            }"
+            @click="linkCollection(id)"
+          >
+            <div
+              class="flex gap-2 max-w-[92%]"
+              :class="{
+                'text-stone-200': collectionId === id,
+                'animated-text': collectionId !== id && !alreadyLinked(id),
+                'text-stone-400': alreadyLinked(id),
+              }"
+            >
+              <span class="truncate"> {{ name }} </span>
+              <!-- <IconLink
+                v-if="collectionId !== id && !alreadyLinked(id)"
+                class="flex-shrink-0 w-4 pl-1 pt-[2px]"
+              /> -->
+            </div>
+          </button>
+          <button
+            v-else
+            v-for="[id, { name }] in collectionsSorted"
+            class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200"
             :class="
               collectionId === id
-                ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent  text-stone-300'
-                : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent  text-stone-300'
+                ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
             "
             @click="toggleCollection(id)"
           >
@@ -264,6 +314,8 @@ const textId = ref(null)
 const textName = ref("")
 const textContent = ref("")
 const collectionName = ref("")
+
+const linkState = ref(false)
 
 let removed = null
 
@@ -323,6 +375,8 @@ function createCollection() {
   collections.value[id] = {
     name: newName(),
     texts: {},
+    links: [],
+    result: "",
     sort: Object.keys(collections.value).length,
   }
   toggleCollection(id)
@@ -331,7 +385,22 @@ function createCollection() {
       collectionsRef.value.clientHeight - collectionsRef.value.scrollHeight
   })
 }
+function linkCollection(id) {
+  if (alreadyLinked(id)) return
+  linkState.value = false
+  if (collectionId.value === id) {
+    toggleCollection(id)
+    return
+  }
+  collection.value.links.push(id)
+  console.log(collection.value.links)
+  debouncedSaveLocalStorageItem()
+}
+function alreadyLinked(id) {
+  return collection.value.links.find((linkId) => linkId === id)
+}
 function toggleFreeText(id) {
+  linkState.value = false
   if (freeTextId.value === id) freeTextId.value = null
   else freeTextId.value = id
   textId.value = null
@@ -339,6 +408,7 @@ function toggleFreeText(id) {
   debouncedSaveLocalStorageItem()
 }
 function toggleText(id) {
+  linkState.value = false
   if (textId.value === id) textId.value = null
   else textId.value = id
   freeTextId.value = null
@@ -346,6 +416,7 @@ function toggleText(id) {
   debouncedSaveLocalStorageItem()
 }
 function toggleCollection(id) {
+  linkState.value = false
   if (collectionId.value === id) collectionId.value = null
   else collectionId.value = id
   textId.value = null
@@ -430,6 +501,7 @@ function restore() {
 }
 function move(obj, id, item, step) {
   if (!id) return
+  linkState.value = false
   const target = Object.entries(obj).find(
     ([, target]) => target.sort === item.sort + step
   )?.[1]
@@ -459,6 +531,7 @@ function moveCollectionDown() {
 }
 function pushIntoCollection() {
   if (!collectionId.value || textId.value) return
+  linkState.value = false
   const cache = {
     freeTextId: freeTextId.value,
     freeText: freeText.value,
@@ -479,6 +552,7 @@ function pushIntoCollection() {
 
 function pullFromCollection() {
   if (freeTextId.value) return
+  linkState.value = false
   const cache = {
     textId: textId.value,
     text: text.value,
