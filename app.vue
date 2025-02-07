@@ -442,6 +442,7 @@ function toggleFreeText(id) {
   if (freeTextId.value === id) freeTextId.value = null
   else freeTextId.value = id
   textId.value = null
+  linkId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -622,7 +623,7 @@ function pushIntoCollection() {
   })
   collection.value.texts[cache.freeTextId] = {
     ...cache.freeText,
-    sort: Object.keys(collection.value.texts).length,
+    sort: textsLinksLength.value,
   }
   freeTextId.value = null
   textId.value = cache.freeTextId
@@ -640,6 +641,9 @@ function pullFromCollection() {
   delete collection.value.texts[cache.textId]
   Object.values(collection.value.texts).forEach((text) => {
     if (text.sort > cache.text.sort) text.sort--
+  })
+  Object.values(collection.value.links).forEach((links) => {
+    if (links.sort > cache.text.sort) links.sort--
   })
   freeTexts.value[cache.textId] = {
     ...cache.text,
