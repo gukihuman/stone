@@ -31,7 +31,7 @@ npm run build
 
 ```json
 {
-  "0625208361339324": {
+  "0600208361339000": {
     "name": "Short-Term Memory",
     "result": "That was nice",
     "texts": {},
@@ -54,7 +54,7 @@ npm run build
       }
     },
     "links": {
-      "96882463314149": {
+      "0600208361339000": {
         "name": "Short-Term Memory",
         "sort": 2
       }
