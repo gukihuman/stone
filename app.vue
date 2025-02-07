@@ -81,14 +81,14 @@
     <div class="flex flex-col flex-grow">
       <div
         class="flex flex-col flex-grow overflow-hidden rounded-lg"
-        v-if="freeTextId || textId"
+        v-if="freeTextId || textId || linkId"
       >
         <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
           <button
             @click="pullFromCollection"
             class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
             :class="
-              freeTextId
+              freeTextId || linkId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -96,17 +96,24 @@
             <IconArrow class="w-3 rotate-180" />
           </button>
           <input
+            v-if="linkId"
+            :placeholder="collections[linkId].name"
+            disabled
+            class="flex z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-stone-700 text-xl text-center cursor-default truncate placeholder:text-stone-300"
+          />
+          <input
+            v-else
             type="text"
             v-model="textName"
             @input="onInput"
             @focus="linkState = false"
-            class="z-10 rounded-b-2xl hover:bg-stone-800 focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center focus:outline-none text-xl text-stone-300 truncate"
+            class="z-10 rounded-b-2xl focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
           />
           <button
             @click="pushIntoCollection"
             class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              !collectionId || textId
+              !collectionId || textId || linkId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -114,16 +121,33 @@
             <IconArrow class="w-3" />
           </button>
         </div>
+        <div
+          v-if="linkId"
+          @scroll="onTextScroll"
+          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none text-stone-800 text-xl"
+          :style="{ backgroundPositionY }"
+        >
+          {{ collections[linkId].result }}
+        </div>
         <textarea
+          v-else
           ref="textContentRef"
           v-model="textContent"
           @input="onInput"
           @focus="linkState = false"
           @scroll="onTextScroll"
-          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none focus:outline-none text-stone-800 text-xl"
+          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none text-stone-800 text-xl"
           :style="{ backgroundPositionY }"
         ></textarea>
         <button
+          v-if="linkId"
+          @click="unlink"
+          class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
+        >
+          unlink
+        </button>
+        <button
+          v-else
           @click="removeText"
           class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
         >
@@ -149,7 +173,9 @@
               @click="moveTextDown"
               class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
               :class="
-                textId === null || text.sort === 0
+                (textId === null && linkId === null) ||
+                (linkId === null && text.sort === 0) ||
+                (textId === null && link.sort === 0)
                   ? 'cursor-default bg-slate-50 text-stone-500/60'
                   : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
               "
@@ -160,7 +186,10 @@
               @click="moveTextUp"
               class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
               :class="
-                textId === null || text.sort === textsSorted.length - 1
+                (textId === null && linkId === null) ||
+                (linkId === null &&
+                  text.sort === textsLinksSorted.length - 1) ||
+                (textId === null && link.sort === textsLinksSorted.length - 1)
                   ? 'cursor-default bg-slate-50 text-stone-500/60'
                   : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
               "
@@ -175,7 +204,7 @@
             </button>
             <button
               @click="linkState ? (linkState = false) : (linkState = true)"
-              class="w-full"
+              class="w-full pb-1"
               :class="
                 linkState
                   ? 'bg-stone-400 text-stone-800'
@@ -189,16 +218,23 @@
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              v-for="[id, { name }] in textsSorted"
-              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200"
+              v-for="[id, { name }] in textsLinksSorted"
+              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
               :class="
-                textId === id
-                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                collection.texts[id]
+                  ? textId === id
+                    ? 'pl-5 from-stone-600'
+                    : 'pl-3 hover:from-stone-600/50'
+                  : linkId === id
+                  ? 'pl-5 from-stone-200/50 text-stone-200'
+                  : 'pl-3 from-stone-400/50 hover:from-stone-400/50 text-stone-200'
               "
-              @click="toggleText(id)"
+              @click="collection.texts[id] ? toggleText(id) : toggleLink(id)"
             >
-              {{ name }}
+              <IconCloud v-if="collection.links[id]" class="inline-block w-3" />
+              <span :class="{ 'pl-2': collection.links[id] }">
+                {{ name }}
+              </span>
             </button>
           </div>
         </div>
@@ -257,18 +293,12 @@
                 collectionId !== id && !alreadyLinked(id),
               'pl-3 cursor-default text-stone-400': alreadyLinked(id),
             }"
-            @click="linkCollection(id)"
+            @click="createLink(id)"
           >
-            <div
-              class="flex gap-2"
-              :class="{
-                'text-stone-200': collectionId === id,
-                'animated-text': collectionId !== id && !alreadyLinked(id),
-                'text-stone-400': alreadyLinked(id),
-              }"
-            >
-              <span class="truncate"> {{ name }} </span>
-            </div>
+            <IconCloud v-if="collectionId !== id" class="inline-block w-3" />
+            <span :class="{ 'pl-2': collectionId !== id }">
+              {{ name }}
+            </span>
           </button>
           <button
             v-else
@@ -305,6 +335,7 @@ const freeTextId = ref(null)
 const collections = ref({})
 const collectionId = ref(null)
 const textId = ref(null)
+const linkId = ref(null)
 
 // handle v-model fields to edit
 const textName = ref("")
@@ -321,6 +352,7 @@ const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 const freeText = computed(() => freeTexts.value[freeTextId.value])
 const collection = computed(() => collections.value[collectionId.value])
 const text = computed(() => collection.value?.texts[textId.value])
+const link = computed(() => collection.value?.links[linkId.value])
 
 const freeTextsSorted = computed(() => {
   return Object.entries(freeTexts.value).sort(([, a], [, b]) => a.sort - b.sort)
@@ -330,9 +362,17 @@ const collectionsSorted = computed(() => {
     ([, a], [, b]) => a.sort - b.sort
   )
 })
-const textsSorted = computed(() => {
-  return Object.entries(collection.value.texts).sort(
+const textsLinksSorted = computed(() => {
+  const textEntries = Object.entries(collection.value.texts)
+  const linkEntries = Object.entries(collection.value.links)
+  return [...textEntries, ...linkEntries].sort(
     ([, a], [, b]) => a.sort - b.sort
+  )
+})
+const textsLinksLength = computed(() => {
+  return (
+    Object.keys(collection.value.texts).length +
+    Object.keys(collection.value.links).length
   )
 })
 
@@ -357,7 +397,7 @@ function createText() {
   collection.value.texts[id] = {
     name: newName(),
     content: "",
-    sort: Object.keys(collection.value.texts).length,
+    sort: textsLinksLength.value,
   }
   toggleText(id)
   nextTick(() => {
@@ -371,7 +411,7 @@ function createCollection() {
   collections.value[id] = {
     name: newName(),
     texts: {},
-    links: [],
+    links: {},
     result: "",
     sort: Object.keys(collections.value).length,
   }
@@ -381,18 +421,21 @@ function createCollection() {
       collectionsRef.value.clientHeight - collectionsRef.value.scrollHeight
   })
 }
-function linkCollection(id) {
+function createLink(id) {
   if (alreadyLinked(id)) return
   if (collectionId.value === id) {
     toggleCollection(id)
     linkState.value = false
     return
   }
-  collection.value.links.push(id)
+  collection.value.links[id] = {
+    name: collections.value[id].name,
+    sort: textsLinksLength.value,
+  }
   debouncedSaveLocalStorageItem()
 }
 function alreadyLinked(id) {
-  return collection.value.links.find((linkId) => linkId === id)
+  return collection.value.links[id]
 }
 function toggleFreeText(id) {
   linkState.value = false
@@ -407,6 +450,7 @@ function toggleText(id) {
   if (textId.value === id) textId.value = null
   else textId.value = id
   freeTextId.value = null
+  linkId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -414,6 +458,16 @@ function toggleCollection(id) {
   linkState.value = false
   if (collectionId.value === id) collectionId.value = null
   else collectionId.value = id
+  textId.value = null
+  linkId.value = null
+  updateInputFields()
+  debouncedSaveLocalStorageItem()
+}
+function toggleLink(id) {
+  linkState.value = false
+  if (linkId.value === id) linkId.value = null
+  else linkId.value = id
+  freeTextId.value = null
   textId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
@@ -427,12 +481,30 @@ function updateInputFields() {
   }
 }
 function onInput() {
-  if (collectionId.value) collection.value.name = collectionName.value
+  if (collectionId.value) {
+    collection.value.name = collectionName.value
+    Object.values(collections.value).forEach((collection) => {
+      if (collection.links[collectionId.value]) {
+        collection.links[collectionId.value].name = collectionName.value
+      }
+    })
+  }
   const currentText = freeText.value || text.value
   if (currentText) {
     currentText.name = textName.value
     currentText.content = textContent.value
   }
+  debouncedSaveLocalStorageItem()
+}
+function unlink() {
+  Object.values(collection.value.links).forEach((link) => {
+    if (link.sort > collection.value.links[linkId.value].sort) link.sort--
+  })
+  Object.values(collection.value.texts).forEach((text) => {
+    if (text.sort > collection.value.links[linkId.value].sort) text.sort--
+  })
+  delete collection.value.links[linkId.value]
+  linkId.value = null
   debouncedSaveLocalStorageItem()
 }
 function removeText() {
@@ -456,6 +528,9 @@ function removeText() {
     delete collections.value[removed.collectionId].texts[id]
     Object.values(collection.value.texts).forEach((text) => {
       if (text.sort > removed.text.sort) text.sort--
+    })
+    Object.values(collection.value.links).forEach((link) => {
+      if (link.sort > removed.text.sort) link.sort--
     })
   }
 }
@@ -505,7 +580,6 @@ function move(obj, id, item, step) {
   item.sort = item.sort + step
   debouncedSaveLocalStorageItem()
 }
-
 function moveFreeTextUp() {
   move(freeTexts.value, freeTextId.value, freeText.value, 1)
 }
@@ -513,10 +587,21 @@ function moveFreeTextDown() {
   move(freeTexts.value, freeTextId.value, freeText.value, -1)
 }
 function moveTextUp() {
-  move(collection.value.texts, textId.value, text.value, 1)
+  move(
+    { ...collection.value.texts, ...collection.value.links },
+    textId.value || linkId.value,
+    textId.value ? text.value : collection.value.links[linkId.value],
+    1
+  )
 }
+
 function moveTextDown() {
-  move(collection.value.texts, textId.value, text.value, -1)
+  move(
+    { ...collection.value.texts, ...collection.value.links },
+    textId.value || linkId.value,
+    textId.value ? text.value : collection.value.links[linkId.value],
+    -1
+  )
 }
 function moveCollectionUp() {
   move(collections.value, collectionId.value, collection.value, 1)
@@ -525,7 +610,7 @@ function moveCollectionDown() {
   move(collections.value, collectionId.value, collection.value, -1)
 }
 function pushIntoCollection() {
-  if (!collectionId.value || textId.value) return
+  if (!collectionId.value || textId.value || linkId.value) return
   linkState.value = false
   const cache = {
     freeTextId: freeTextId.value,
@@ -546,7 +631,7 @@ function pushIntoCollection() {
 }
 
 function pullFromCollection() {
-  if (freeTextId.value) return
+  if (freeTextId.value || linkId.value) return
   linkState.value = false
   const cache = {
     textId: textId.value,
@@ -572,6 +657,7 @@ function getStorage() {
     collections: collections.value,
     collectionId: collectionId.value,
     textId: textId.value,
+    linkId: linkId.value,
   }
 }
 function saveLocalStorageItem() {
@@ -587,13 +673,14 @@ function injectStorage(storage) {
   collections.value = storage.collections
   collectionId.value = storage.collectionId
   textId.value = storage.textId
+  linkId.value = storage.linkId
   updateInputFields()
 }
 function onTextScroll(event) {
   backgroundPositionY.value = `-${event.target.scrollTop}px`
 }
-function onFileLoad() {
-  fileLoad(injectStorage)
+async function onFileLoad() {
+  await fileLoad(injectStorage)
   debouncedSaveLocalStorageItem()
 }
 </script>
