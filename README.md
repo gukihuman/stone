@@ -31,13 +31,20 @@ npm run build
 
 ```json
 {
+  "0625208361339324": {
+    "name": "Short-Term Memory",
+    "result": "That was nice",
+    "texts": {},
+    "links": {},
+    "sort": 0
+  },
   "7185083355746713": {
-    "name": "Jane Stone",
-    "result": "",
+    "name": "Long-Term Memory",
+    "result": "I am Jane Stone",
     "texts": {
       "8901890189018901": {
-        "name": "Short-Term Memory",
-        "content": "I am Jane Stone",
+        "name": "Instruction",
+        "content": "Analyze this context",
         "sort": 0
       },
       "3267674364751998": {
@@ -46,8 +53,13 @@ npm run build
         "sort": 1
       }
     },
-    "links": ["96882463314149", "0625208361339324"],
-    "sort": 0
+    "links": {
+      "96882463314149": {
+        "name": "Short-Term Memory",
+        "sort": 2
+      }
+    },
+    "sort": 1
   }
 }
 ```
