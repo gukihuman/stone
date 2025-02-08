@@ -81,14 +81,14 @@
     <div class="flex flex-col flex-grow">
       <div
         class="flex flex-col flex-grow overflow-hidden rounded-lg"
-        v-if="freeTextId || textId || linkId"
+        v-if="freeTextId || textId || linkId || resultId"
       >
         <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
           <button
             @click="pullFromCollection"
             class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end text-stone-300 pb-1"
             :class="
-              freeTextId || linkId
+              !textId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -96,8 +96,8 @@
             <IconArrow class="w-3 rotate-180" />
           </button>
           <input
-            v-if="linkId"
-            :placeholder="collections[linkId].name"
+            v-if="linkId || resultId"
+            :placeholder="linkId ? collections[linkId].name : 'result'"
             disabled
             class="flex z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-stone-700 text-xl text-center cursor-default truncate placeholder:text-stone-300"
           />
@@ -113,7 +113,7 @@
             @click="pushIntoCollection"
             class="h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              !collectionId || textId || linkId
+              !collectionId || !freeTextId
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -121,14 +121,14 @@
             <IconArrow class="w-3" />
           </button>
         </div>
-        <div
+        <textarea
           v-if="linkId"
           @scroll="onTextScroll"
-          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none text-stone-800 text-xl"
+          disabled
+          class="-mt-4 h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none text-stone-800 text-xl cursor-default"
           :style="{ backgroundPositionY }"
+          >{{ collections[linkId].result }}</textarea
         >
-          {{ collections[linkId].result }}
-        </div>
         <textarea
           v-else
           ref="textContentRef"
@@ -147,7 +147,7 @@
           unlink
         </button>
         <button
-          v-else
+          v-else-if="textId"
           @click="removeText"
           class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
         >
@@ -217,6 +217,17 @@
         </div>
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
+            <button
+              class="border-t-4 border-stone-400/50 py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
+              :class="
+                resultId
+                  ? 'pl-5 from-stone-600'
+                  : 'pl-3 hover:from-stone-600/50'
+              "
+              @click="toggleResult"
+            >
+              result
+            </button>
             <button
               v-for="[id, { name }] in textsLinksSorted"
               class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
@@ -336,6 +347,7 @@ const collections = ref({})
 const collectionId = ref(null)
 const textId = ref(null)
 const linkId = ref(null)
+const resultId = ref(null)
 
 // handle v-model fields to edit
 const textName = ref("")
@@ -353,6 +365,7 @@ const freeText = computed(() => freeTexts.value[freeTextId.value])
 const collection = computed(() => collections.value[collectionId.value])
 const text = computed(() => collection.value?.texts[textId.value])
 const link = computed(() => collection.value?.links[linkId.value])
+const result = computed(() => collection.value?.result)
 
 const freeTextsSorted = computed(() => {
   return Object.entries(freeTexts.value).sort(([, a], [, b]) => a.sort - b.sort)
@@ -443,6 +456,7 @@ function toggleFreeText(id) {
   else freeTextId.value = id
   textId.value = null
   linkId.value = null
+  resultId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -452,6 +466,7 @@ function toggleText(id) {
   else textId.value = id
   freeTextId.value = null
   linkId.value = null
+  resultId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -461,6 +476,7 @@ function toggleCollection(id) {
   else collectionId.value = id
   textId.value = null
   linkId.value = null
+  resultId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -470,6 +486,17 @@ function toggleLink(id) {
   else linkId.value = id
   freeTextId.value = null
   textId.value = null
+  resultId.value = null
+  updateInputFields()
+  debouncedSaveLocalStorageItem()
+}
+function toggleResult() {
+  linkState.value = false
+  if (resultId.value) resultId.value = null
+  else resultId.value = 1
+  freeTextId.value = null
+  textId.value = null
+  linkId.value = null
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -480,6 +507,8 @@ function updateInputFields() {
     textName.value = currentText.name
     textContent.value = currentText.content
   }
+  if (linkId.value) textContent.value = result.value
+  if (resultId.value) textContent.value = result.value
 }
 function onInput() {
   if (collectionId.value) {
@@ -495,6 +524,7 @@ function onInput() {
     currentText.name = textName.value
     currentText.content = textContent.value
   }
+  if (resultId.value) collection.value.result = textContent.value
   debouncedSaveLocalStorageItem()
 }
 function unlink() {
@@ -611,7 +641,7 @@ function moveCollectionDown() {
   move(collections.value, collectionId.value, collection.value, -1)
 }
 function pushIntoCollection() {
-  if (!collectionId.value || textId.value || linkId.value) return
+  if (!collectionId.value || !freeTextId.value) return
   linkState.value = false
   const cache = {
     freeTextId: freeTextId.value,
@@ -632,7 +662,7 @@ function pushIntoCollection() {
 }
 
 function pullFromCollection() {
-  if (freeTextId.value || linkId.value) return
+  if (!textId.value) return
   linkState.value = false
   const cache = {
     textId: textId.value,
