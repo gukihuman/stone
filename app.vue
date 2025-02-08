@@ -224,12 +224,13 @@
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              class="border-t-4 border-dotted border-stone-400/50 py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
-              :class="
-                resultId
-                  ? 'pl-5 from-stone-600'
-                  : 'pl-3 hover:from-stone-600/50'
-              "
+              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
+              :class="{
+                'border-t-4 border-dotted border-stone-400/50':
+                  textsLinksSorted.length !== 0,
+                'pl-5 from-stone-600': resultId,
+                'pl-3 hover:from-stone-600/50': !resultId,
+              }"
               @click="toggleResult"
             >
               result
