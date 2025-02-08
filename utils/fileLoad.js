@@ -1,4 +1,4 @@
-export default (handle) => {
+export default function (handle) {
   return new Promise((resolve, reject) => {
     const fileInput = document.createElement("input")
     fileInput.type = "file"

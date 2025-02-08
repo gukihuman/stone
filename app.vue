@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-between bg-stone-600 h-screen gap-1 p-1">
-    <div class="w-[180px] flex flex-col gap-1">
+    <div class="w-[205px] flex flex-col gap-1">
       <div
         class="flex flex-col flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden"
       >
@@ -147,7 +147,7 @@
           unlink
         </button>
         <button
-          v-else-if="textId"
+          v-else-if="freeTextId || textId"
           @click="removeText"
           class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
         >
@@ -155,7 +155,7 @@
         </button>
       </div>
     </div>
-    <div class="w-[180px] h-full">
+    <div class="w-[205px] h-full">
       <div
         class="bg-stone-500 bg-circles w-full h-full flex flex-col justify-between rounded-lg overflow-hidden"
         v-if="collectionId"
@@ -197,6 +197,12 @@
               <IconArrow class="w-3 -rotate-90" />
             </button>
             <button
+              @click="copyToClipboard"
+              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+            >
+              copy
+            </button>
+            <button
               @click="createText"
               class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
             >
@@ -218,7 +224,7 @@
         <div ref="textsRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              class="border-t-4 border-stone-400/50 py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
+              class="border-t-4 border-dotted border-stone-400/50 py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200 bg-gradient-to-r to-transparent"
               :class="
                 resultId
                   ? 'pl-5 from-stone-600'
@@ -258,7 +264,7 @@
       </div>
     </div>
     <div
-      class="bg-stone-500 bg-circles w-[180px] flex flex-col justify-between rounded-lg overflow-hidden"
+      class="bg-stone-500 bg-circles w-[170px] flex flex-col justify-between rounded-lg overflow-hidden"
     >
       <div class="h-7 flex justify-end bg-stone-700">
         <button
@@ -335,6 +341,7 @@ import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
 import newName from "./utils/newName"
+import timestamp from "./utils/timestamp"
 const LOCAL_STORAGE_KEY = "stone"
 const freeTextsRef = ref(null)
 const textContentRef = ref(null)
@@ -712,6 +719,20 @@ function injectStorage(storage) {
 }
 function onTextScroll(event) {
   backgroundPositionY.value = `-${event.target.scrollTop}px`
+}
+async function copyToClipboard() {
+  let output = ""
+  _.forEachRight(textsLinksSorted.value, ([id, { name, content }]) => {
+    output += name + "\n"
+    if (content || content === "") output += content + "\n---\n"
+    else output += collections.value[id].result + "\n---\n"
+  })
+  try {
+    await navigator.clipboard.writeText(output)
+    console.log(`⏬ ${collection.value.name} copied! [${timestamp()}]`)
+  } catch (err) {
+    console.error("Failed to copy:", err)
+  }
 }
 async function onFileLoad() {
   await fileLoad(injectStorage)
