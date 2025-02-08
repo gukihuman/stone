@@ -593,6 +593,9 @@ function restore() {
     }
     toggleFreeText(removed.freeTextId)
   } else if (removed.text) {
+    if (collectionId.value !== removed.collectionId) {
+      toggleCollection(removed.collectionId)
+    }
     collections.value[removed.collectionId].texts[removed.textId] = {
       ...removed.text,
       sort: Object.keys(collection.value.texts).length,
