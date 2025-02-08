@@ -699,6 +699,7 @@ function getStorage() {
     collectionId: collectionId.value,
     textId: textId.value,
     linkId: linkId.value,
+    resultId: resultId.value,
   }
 }
 function saveLocalStorageItem() {
@@ -715,6 +716,7 @@ function injectStorage(storage) {
   collectionId.value = storage.collectionId
   textId.value = storage.textId
   linkId.value = storage.linkId
+  resultId.value = storage.resultId
   updateInputFields()
 }
 function onTextScroll(event) {
