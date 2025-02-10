@@ -269,6 +269,12 @@
     >
       <div class="h-7 flex justify-end bg-stone-700">
         <button
+          @click="cloneCollection"
+          class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        >
+          clone
+        </button>
+        <button
           @click="createCollection"
           class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
         >
@@ -436,6 +442,15 @@ function createCollection() {
     result: "",
     sort: Object.keys(collections.value).length,
   }
+  toggleCollection(id)
+  nextTick(() => {
+    collectionsRef.value.scrollTop =
+      collectionsRef.value.clientHeight - collectionsRef.value.scrollHeight
+  })
+}
+function cloneCollection() {
+  const id = newId()
+  collections.value[id] = _.cloneDeep(collection.value)
   toggleCollection(id)
   nextTick(() => {
     collectionsRef.value.scrollTop =
