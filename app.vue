@@ -97,7 +97,7 @@
           </button>
           <input
             v-if="linkId || resultId"
-            :placeholder="linkId ? collections[linkId].name : 'result'"
+            :placeholder="linkId ? collections[linkId].name : 'Result'"
             disabled
             class="flex z-10 rounded-b-2xl flex-grow px-7 pb-1 bg-stone-700 text-xl text-center cursor-default truncate placeholder:text-stone-300"
           />
@@ -233,7 +233,7 @@
               }"
               @click="toggleResult"
             >
-              result
+              Result
             </button>
             <button
               v-for="[id, { name }] in textsLinksSorted"
@@ -465,6 +465,7 @@ function toggleFreeText(id) {
   textId.value = null
   linkId.value = null
   resultId.value = null
+  onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -475,6 +476,7 @@ function toggleText(id) {
   freeTextId.value = null
   linkId.value = null
   resultId.value = null
+  onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -495,6 +497,7 @@ function toggleLink(id) {
   freeTextId.value = null
   textId.value = null
   resultId.value = null
+  onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -505,6 +508,7 @@ function toggleResult() {
   freeTextId.value = null
   textId.value = null
   linkId.value = null
+  onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
@@ -724,14 +728,18 @@ function injectStorage(storage) {
   updateInputFields()
 }
 function onTextScroll(event) {
+  if (!event) {
+    backgroundPositionY.value = 0
+    return
+  }
   backgroundPositionY.value = `-${event.target.scrollTop}px`
 }
 async function copyToClipboard() {
   let output = ""
   _.forEachRight(textsLinksSorted.value, ([id, { name, content }]) => {
     output += name + "\n"
-    if (content || content === "") output += content + "\n---\n"
-    else output += collections.value[id].result + "\n---\n"
+    if (content || content === "") output += content + "\n\n---\n"
+    else output += collections.value[id].result + "\n\n---\n"
   })
   try {
     await navigator.clipboard.writeText(output)
