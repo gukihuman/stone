@@ -451,6 +451,7 @@ function createCollection() {
 function cloneCollection() {
   const id = newId()
   collections.value[id] = _.cloneDeep(collection.value)
+  collections.value[id].sort = Object.keys(collections.value).length - 1
   toggleCollection(id)
   nextTick(() => {
     collectionsRef.value.scrollTop =
