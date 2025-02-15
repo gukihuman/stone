@@ -299,6 +299,7 @@ function removeText() {
   Object.values(eventList.value).forEach((event) => {
     if (event.sort > removed.event.sort) event.sort--
   })
+  removed.event.memoryIds.forEach((id) => delete memoryList.value[id])
 }
 function restore() {
   if (!removed) return
@@ -307,6 +308,7 @@ function restore() {
     sort: Object.keys(eventList.value).length,
   }
   toggleText(removed.eventId)
+  updateMemoryList(eventList.value[removed.eventId])
   removed = null
   debouncedSaveLocalStorageItem()
 }
