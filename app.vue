@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-between bg-stone-600 h-screen gap-1 p-1">
-    <div class="w-[230px] flex flex-col gap-1">
+    <div class="w-[250px] flex flex-col gap-1">
       <div
         class="flex flex-col flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden"
       >
@@ -33,12 +33,22 @@
           >
             new
           </button>
+          <div
+            class="bg-stone-700 text-stone-400 w-32 text-end pr-2 pt-[1px] cursor-default"
+          >
+            {{ Object.keys(memoryList).length * AVERAGE_TOKENS || "" }}
+          </div>
+          <div
+            class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
+          >
+            {{ Object.keys(memoryList).length || "" }}
+          </div>
         </div>
         <div ref="eventListRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              v-for="[id, { name }] in eventListSorted"
-              class="py-[2px] pr-1 text-left min-h-7 text-shadow truncate outline-none text-stone-200"
+              v-for="[id, { name, memoryLength }] in eventListSorted"
+              class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
               :class="
                 eventId === id
                   ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
@@ -46,7 +56,10 @@
               "
               @click="toggleText(id)"
             >
-              {{ name }}
+              <span class="truncate">{{ name }}</span>
+              <div>
+                {{ memoryLength }}
+              </div>
             </button>
           </div>
         </div>
@@ -147,7 +160,7 @@
         </button>
       </div>
     </div>
-    <div class="w-[400px]"></div>
+    <div class="w-[250px]"></div>
   </div>
 </template>
 <script setup>
@@ -157,6 +170,7 @@ import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
 import timestamp from "./utils/timestamp"
 const LOCAL_STORAGE_KEY = "stone"
+const AVERAGE_TOKENS = 42
 const COPY_DELAY = 200
 const eventListRef = ref(null)
 const paperRef = ref(null)
@@ -172,11 +186,14 @@ const paper = ref("")
 const PAPER_TYPES = { TEXT: false, MEMORY: true }
 const activePaperType = ref(PAPER_TYPES.TEXT)
 
+const memoryList = ref({})
+
 let removed = null
 
 const recentlyCopied = ref(false)
 const backgroundPositionY = ref("0px")
 const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
+const debouncedUpdateMemoryList = _.debounce(updateMemoryList, 300)
 
 const event = computed(() => eventList.value[eventId.value])
 const eventListSorted = computed(() => {
@@ -191,7 +208,9 @@ function createText() {
     name: "current",
     time: new Date().toLocaleDateString(),
     text: "",
-    memory: [],
+    memory: "", // valid JSON array
+    memoryLength: null,
+    memoryIds: [],
     sort: Object.keys(eventList.value).length,
   }
   toggleText(id)
@@ -221,25 +240,54 @@ function setPaperToText() {
   debouncedSaveLocalStorageItem()
 }
 function updateInputFields() {
-  const currentText = event.value
-  if (currentText) {
-    name.value = currentText.name
-    time.value = currentText.time
+  const eventCache = event.value
+  if (eventCache) {
+    name.value = eventCache.name
+    time.value = eventCache.time
     activePaperType.value === PAPER_TYPES.MEMORY
-      ? (paper.value = currentText.memory)
-      : (paper.value = currentText.text)
+      ? (paper.value = eventCache.memory)
+      : (paper.value = eventCache.text)
   }
 }
 function onInput() {
-  const currentText = event.value
-  if (currentText) {
-    currentText.name = name.value
-    currentText.time = time.value
-    activePaperType.value === PAPER_TYPES.MEMORY
-      ? (currentText.memory = paper.value)
-      : (currentText.text = paper.value)
+  const eventCache = event.value
+  if (eventCache) {
+    eventCache.name = name.value
+    eventCache.time = time.value
+    if (activePaperType.value === PAPER_TYPES.MEMORY) {
+      eventCache.memory = paper.value
+      debouncedUpdateMemoryList(eventCache)
+    } else {
+      eventCache.text = paper.value
+    }
   }
   debouncedSaveLocalStorageItem()
+}
+function updateMemoryList(event) {
+  event.memoryIds.forEach((id) => delete memoryList.value[id])
+  event.memoryIds = []
+  event.memoryLength = null
+  try {
+    const parsedMemory = JSON.parse(paper.value)
+    if (Array.isArray(parsedMemory)) {
+      parsedMemory.forEach((item) => {
+        const id = newId()
+        event.memoryIds.push(id)
+        memoryList.value[id] = item
+      })
+      event.memoryLength = parsedMemory.length
+    } else {
+      throw new Error("memory input must be a JSON array,")
+    }
+    console.log(`⏬ memory updated! [${timestamp()}]`)
+  } catch (error) {
+    const resetString = "memory of this event has been reset"
+    if (error instanceof SyntaxError) {
+      console.log(`❗ invalid JSON format, ${resetString} [${timestamp()}]`)
+    } else {
+      console.log(`❗ ${error.message} ${resetString} [${timestamp()}]`)
+    }
+  }
 }
 function removeText() {
   removed = {}
@@ -282,6 +330,7 @@ function getStorage() {
   return {
     eventList: eventList.value,
     eventId: eventId.value,
+    memoryList: memoryList.value,
     activePaperType: activePaperType.value,
   }
 }
@@ -296,6 +345,7 @@ function injectStorage(storage) {
   eventList.value = storage.eventList
   eventId.value = storage.eventId
   activePaperType.value = storage.activePaperType
+  memoryList.value = storage.memoryList
   updateInputFields()
 }
 function onTextScroll(event) {
