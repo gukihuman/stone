@@ -33,34 +33,48 @@
           >
             new
           </button>
-          <div
-            class="bg-stone-700 text-stone-400 w-32 text-end pr-2 pt-[1px] cursor-default"
+          <button
+            v-if="eventId"
+            @click="copyAllMemoriesToClipboard"
+            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+            :class="
+              recentlyCopiedMemories
+                ? 'cursor-default text-stone-500/60'
+                : 'hover:bg-stone-800 hover:text-stone-300'
+            "
           >
-            {{ Object.keys(memoryList).length * AVERAGE_TOKENS || "" }}
-          </div>
+            copy
+          </button>
           <div
             class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
           >
-            {{ Object.keys(memoryList).length || "" }}
+            {{ totalRecentMemories || "" }}
           </div>
         </div>
         <div ref="eventListRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
-            <button
-              v-for="[id, { name, memoryLength }] in eventListSorted"
-              class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-              :class="
-                eventId === id
-                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-              "
-              @click="toggleText(id)"
-            >
-              <span class="truncate">{{ name }}</span>
-              <div>
-                {{ memoryLength }}
-              </div>
-            </button>
+            <div v-for="[id, { name, memoryLength, sort }] in eventListSorted">
+              <button
+                class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                :class="
+                  eventId === id
+                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                "
+                @click="toggleText(id)"
+              >
+                <span class="truncate">{{ name }}</span>
+                <div>
+                  {{ memoryLength }}
+                </div>
+              </button>
+              <div
+                v-if="
+                  eventId && sort === Math.max(event.sort - RECENT_THRESHOLD, 0)
+                "
+                class="-mb-[2px] h-[2px] w-full bg-stone-400"
+              ></div>
+            </div>
           </div>
         </div>
       </div>
@@ -120,7 +134,8 @@
               : 'hover:bg-stone-800 hover:text-stone-300'
           "
         >
-          copy
+          copy {{ totalRecentMemories + totalTopicMemories }}
+          {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
         </button>
         <div v-if="eventId" class="flex">
           <button
@@ -194,27 +209,54 @@
             new
           </button>
           <div
-            class="bg-stone-700 text-stone-400 w-32 text-end pr-2 pt-[1px] cursor-default"
-          >
-            {{ totalTopicMemoryTokens || "" }}
-          </div>
-          <div
             class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
           >
             {{ totalTopicMemories || "" }}
           </div>
         </div>
+        <div class="flex">
+          <button
+            @click="setTopicModToSelect"
+            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+            :class="
+              activeTopicMod === TOPIC_MOD_TYPES.SELECT
+                ? 'cursor-default text-stone-500/60'
+                : 'hover:bg-stone-800 hover:text-stone-300'
+            "
+          >
+            select
+          </button>
+          <button
+            @click="setTopicModToEdit"
+            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+            :class="
+              activeTopicMod === TOPIC_MOD_TYPES.EDIT
+                ? 'cursor-default text-stone-500/60'
+                : 'hover:bg-stone-800 hover:text-stone-300'
+            "
+          >
+            edit
+          </button>
+        </div>
         <div ref="topicListRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              v-for="[id, { name, memoryLength }] in topicListSorted"
+              v-for="[id, { name, memoryLength, selected }] in topicListSorted"
               class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
               :class="
-                topicId === id
+                activeTopicMod === TOPIC_MOD_TYPES.EDIT
+                  ? topicId === id
+                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                  : selected
                   ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                   : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
               "
-              @click="toggleTopic(id)"
+              @click="
+                activeTopicMod === TOPIC_MOD_TYPES.SELECT
+                  ? toggleSelectTopic(id)
+                  : toggleEditTopic(id)
+              "
             >
               <span class="truncate">{{ name }}</span>
               <div>
@@ -235,8 +277,9 @@ import newId from "./utils/newId"
 import timestamp from "./utils/timestamp"
 import { onMounted } from "vue"
 const LOCAL_STORAGE_KEY = "stone"
-const AVERAGE_TOKENS = 42
+const AVERAGE_TOKENS = 50
 const COPY_DELAY = 200
+const RECENT_THRESHOLD = 5
 const eventListRef = ref(null)
 const paperRef = ref(null)
 const topicListRef = ref(null)
@@ -255,9 +298,13 @@ const paper = ref("")
 const PAPER_TYPES = { TEXT: 0, MEMORY: 1, TOPIC: 2 }
 const activePaperType = ref(PAPER_TYPES.TEXT)
 
+const TOPIC_MOD_TYPES = { SELECT: 0, EDIT: 1 }
+const activeTopicMod = ref(TOPIC_MOD_TYPES.SELECT)
+
 let removed = null
 
 const recentlyCopied = ref(false)
+const recentlyCopiedMemories = ref(false)
 const backgroundPositionY = ref("0px")
 const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 const debouncedUpdateMemoryList = _.debounce(updateMemoryList, 300)
@@ -273,11 +320,21 @@ const topicListSorted = computed(() => {
 })
 const totalTopicMemories = computed(() => {
   return Object.values(topicList.value).reduce((sum, topic) => {
-    return sum + topic.memoryIds.length
+    if (topic.selected) return sum + topic.memoryIds.length
+    return sum
   }, 0)
 })
-const totalTopicMemoryTokens = computed(() => {
-  return totalTopicMemories.value * AVERAGE_TOKENS
+const totalRecentMemories = computed(() => {
+  return Object.values(eventList.value).reduce((sum, e) => {
+    if (
+      eventId.value &&
+      event.value.sort > e.sort &&
+      e.sort >= Math.max(event.value.sort - RECENT_THRESHOLD, 0)
+    ) {
+      return sum + e.memoryIds.length
+    }
+    return sum
+  }, 0)
 })
 
 onMounted(loadLocalStorageItem)
@@ -306,9 +363,10 @@ function createTopic() {
     memoryIdsRaw: "", // valid JSON array
     memoryIds: [],
     memoryLength: null,
+    selected: true,
     sort: Object.keys(topicList.value).length,
   }
-  toggleTopic(id)
+  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) toggleEditTopic(id)
   nextTick(() => scrollToTop(topicListRef))
 }
 function toggleText(id) {
@@ -320,7 +378,7 @@ function toggleText(id) {
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
-function toggleTopic(id) {
+function toggleEditTopic(id) {
   activePaperType.value = PAPER_TYPES.TOPIC
   if (topicId.value === id) topicId.value = null
   else topicId.value = id
@@ -328,6 +386,9 @@ function toggleTopic(id) {
   onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
+}
+function toggleSelectTopic(id) {
+  topicList.value[id].selected = !topicList.value[id].selected
 }
 function setPaperToMemory() {
   if (activePaperType.value === PAPER_TYPES.MEMORY) return
@@ -339,6 +400,17 @@ function setPaperToText() {
   if (activePaperType.value === PAPER_TYPES.TEXT) return
   activePaperType.value = PAPER_TYPES.TEXT
   updateInputFields()
+  debouncedSaveLocalStorageItem()
+}
+function setTopicModToSelect() {
+  if (activeTopicMod.value === TOPIC_MOD_TYPES.SELECT) return
+  activeTopicMod.value = TOPIC_MOD_TYPES.SELECT
+  topicId.value = null
+  debouncedSaveLocalStorageItem()
+}
+function setTopicModToEdit() {
+  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) return
+  activeTopicMod.value = TOPIC_MOD_TYPES.EDIT
   debouncedSaveLocalStorageItem()
 }
 function updateInputFields() {
@@ -440,7 +512,7 @@ function removeTopic() {
   const id = topicId.value
   removed.topic = topic.value
   removed.topicId = id
-  toggleTopic(id)
+  toggleEditTopic(id)
   delete topicList.value[id]
   Object.values(topicList.value).forEach((topic) => {
     if (topic.sort > removed.topic.sort) topic.sort--
@@ -460,7 +532,7 @@ function restore() {
       ...removed.topic,
       sort: Object.keys(topicList.value).length,
     }
-    toggleTopic(removed.topicId)
+    toggleEditTopic(removed.topicId)
   }
   removed = null
   debouncedSaveLocalStorageItem()
@@ -495,6 +567,7 @@ function getStorage() {
     topicId: topicId.value,
     memoryList: memoryList.value,
     activePaperType: activePaperType.value,
+    activeTopicMod: activeTopicMod.value,
   }
 }
 function saveLocalStorageItem() {
@@ -510,6 +583,7 @@ function injectStorage(storage) {
   topicList.value = storage.topicList
   topicId.value = storage.topicId
   activePaperType.value = storage.activePaperType
+  activeTopicMod.value = storage.activeTopicMod
   memoryList.value = storage.memoryList
   updateInputFields()
 }
@@ -523,24 +597,48 @@ function onTextScroll(event) {
 function scrollToTop(ref) {
   ref.value.scrollTop = ref.value.clientHeight - ref.value.scrollHeight
 }
+async function copyAllMemoriesToClipboard() {
+  if (recentlyCopiedMemories.value) return
+  recentlyCopiedMemories.value = true
+  setTimeout(() => (recentlyCopiedMemories.value = false), COPY_DELAY)
+  let output = JSON.stringify(memoryList.value)
+  try {
+    await navigator.clipboard.writeText(output)
+    console.log(`⏬ all memories copied! [${timestamp()}]`)
+  } catch (err) {
+    console.error("Failed to copy:", err)
+  }
+}
 async function copyToClipboard() {
   if (recentlyCopied.value) return
   recentlyCopied.value = true
   setTimeout(() => (recentlyCopied.value = false), COPY_DELAY)
-  let output = ""
-  _.forEach(eventList.value, ({ name, time, memory, sort }) => {
-    if (sort >= event.value.sort) return
-    output += time + "\n"
-    output += name + "\n\n"
-    JSON.parse(memory).forEach((item) => (output += item + "\n"))
-    output += "\n---\n"
+  let output = "# I am Jane\n\n"
+  output += "## my memories\n\n"
+  output +=
+    "### specific topics, selected as relevant, its kinda long-term memory, could be selected from a long time ago\n\n"
+  _.forEach(topicList.value, ({ name, memoryIds, selected }) => {
+    if (!selected || !memoryIds.length) return
+    output += `#### ${name}\n\n`
+    memoryIds.forEach((id) => (output += memoryList.value[id] + " "))
+    output += "\n\n"
   })
-  output += event.value.time + "\n"
-  output += event.value.name + "\n\n"
-  output += event.value.text
+  output += "### just recent, kinda short-term memory\n\n"
+  const eventCache = event.value
+  _.forEach(eventList.value, ({ name, time, memory, sort }) => {
+    if (sort >= eventCache.sort || sort < eventCache.sort - RECENT_THRESHOLD) {
+      return
+    }
+    output += `#### ${name} ${time}\n\n`
+    JSON.parse(memory).forEach((item) => (output += item + " "))
+    output += "\n\n"
+  })
+  output += "## current ongoing event\n\n"
+  output += `### ${eventCache.name} ${eventCache.time}\n\n`
+  output += eventCache.text
   try {
     await navigator.clipboard.writeText(output)
-    console.log(`⏬ copied! [${timestamp()}]`)
+    console.log(`⏬ selected memories copied! [${timestamp()}]`)
   } catch (err) {
     console.error("Failed to copy:", err)
   }

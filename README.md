@@ -51,11 +51,11 @@ npm run build
 ```json
 {
   "9874122603798017": {
-    "name": "Philosophy Discussion",
-    "time": "2025-02-14",
+    "name": "Philosophy",
     "memoryIdsRaw": "",
     "memoryLength": 2,
     "memoryIds": [0214702358321752, 1752890679257238],
+    "selected": true,
     "sort": 0
   }
 }
