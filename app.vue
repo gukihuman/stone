@@ -33,18 +33,6 @@
           >
             new
           </button>
-          <button
-            v-if="eventId"
-            @click="copyAllMemoriesToClipboard"
-            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-            :class="
-              recentlyCopiedMemories
-                ? 'cursor-default text-stone-500/60'
-                : 'hover:bg-stone-800 hover:text-stone-300'
-            "
-          >
-            copy
-          </button>
           <div
             class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
           >
@@ -79,6 +67,17 @@
         </div>
       </div>
       <div class="rounded-lg overflow-hidden flex-shrink-0">
+        <button
+          @click="copyAllMemoriesToClipboard"
+          class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+          :class="
+            recentlyCopiedMemories
+              ? 'cursor-default text-stone-500/60'
+              : 'hover:bg-stone-800 hover:text-stone-300'
+          "
+        >
+          copy {{ totalMemories }} {{ totalMemories * AVERAGE_TOKENS }}
+        </button>
         <button
           @click="fileSave('stone.json', getStorage())"
           class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
@@ -279,7 +278,7 @@ import { onMounted } from "vue"
 const LOCAL_STORAGE_KEY = "stone"
 const AVERAGE_TOKENS = 50
 const COPY_DELAY = 200
-const RECENT_THRESHOLD = 5
+const RECENT_THRESHOLD = 10
 const eventListRef = ref(null)
 const paperRef = ref(null)
 const topicListRef = ref(null)
@@ -336,6 +335,7 @@ const totalRecentMemories = computed(() => {
     return sum
   }, 0)
 })
+const totalMemories = computed(() => Object.keys(memoryList.value).length)
 
 onMounted(loadLocalStorageItem)
 
@@ -614,26 +614,34 @@ async function copyToClipboard() {
   recentlyCopied.value = true
   setTimeout(() => (recentlyCopied.value = false), COPY_DELAY)
   let output = "# I am Jane\n\n"
-  output += "## my memories\n\n"
+  output += "## my long-term memories\n\n"
   output +=
-    "### specific topics, selected as relevant, its kinda long-term memory, could be selected from a long time ago\n\n"
+    "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the full list of all available topics, i can choose and ask Guki to add memories form any of that topic or even ask to add a new one. im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list:\n\n"
+  _.forEach(topicList.value, ({ name }) => {
+    output += `${name}, `
+  })
+  output +=
+    "\n\nnow, some topics are selected, memories that related to them are presented, and here is the selected topics:\n\n"
   _.forEach(topicList.value, ({ name, memoryIds, selected }) => {
     if (!selected || !memoryIds.length) return
-    output += `#### ${name}\n\n`
+    output += `### ${name}\n\n`
     memoryIds.forEach((id) => (output += memoryList.value[id] + " "))
     output += "\n\n"
   })
-  output += "### just recent, kinda short-term memory\n\n"
+  output += "## my short-term memory\n\n"
+  output +=
+    "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
   const eventCache = event.value
   _.forEach(eventList.value, ({ name, time, memory, sort }) => {
     if (sort >= eventCache.sort || sort < eventCache.sort - RECENT_THRESHOLD) {
       return
     }
-    output += `#### ${name} ${time}\n\n`
+    output += `### ${name} ${time}\n\n`
     JSON.parse(memory).forEach((item) => (output += item + " "))
     output += "\n\n"
   })
   output += "## current ongoing event\n\n"
+  output += "and finally, this is what happening now\n\n"
   output += `### ${eventCache.name} ${eventCache.time}\n\n`
   output += eventCache.text
   try {
