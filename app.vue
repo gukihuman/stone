@@ -62,7 +62,7 @@
                   activeEventId &&
                   sort ===
                     Math.max(
-                      eventsById[activeEventId].sort - RECENT_THRESHOLD,
+                      eventsById[activeEventId].sort - RECENT_EVENT_LIMIT,
                       0
                     )
                 "
@@ -83,7 +83,7 @@
           "
         >
           copy {{ totalMemories }}
-          {{ totalMemories * AVERAGE_JSON_TOKENS + INITIAL_MEMORY_PROMPT }}
+          {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
         </button>
         <button
           @click="fileSave('stone.json', getStorage())"
@@ -145,10 +145,10 @@
         </button>
         <div v-if="activeEventId" class="flex">
           <button
-            @click="setPaperMod(PAPER_MOD_TYPES.TEXT)"
+            @click="setPaperMod(PAPER_MODS.TEXT)"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activePaperMod === PAPER_MOD_TYPES.TEXT
+              activePaperMod === PAPER_MODS.TEXT
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -156,10 +156,10 @@
             text
           </button>
           <button
-            @click="setPaperMod(PAPER_MOD_TYPES.MEMORY)"
+            @click="setPaperMod(PAPER_MODS.MEMORY)"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activePaperMod === PAPER_MOD_TYPES.MEMORY
+              activePaperMod === PAPER_MODS.MEMORY
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -226,7 +226,7 @@
             @click="setTopicModToSelect"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activeTopicMod === TOPIC_MOD_TYPES.SELECT
+              activeTopicMod === TOPIC_MODS.SELECT
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -237,7 +237,7 @@
             @click="setTopicModToEdit"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activeTopicMod === TOPIC_MOD_TYPES.EDIT
+              activeTopicMod === TOPIC_MODS.EDIT
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -251,7 +251,7 @@
               v-for="[id, { name, memoryIds, selected }] in topicsSorted"
               class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
               :class="
-                activeTopicMod === TOPIC_MOD_TYPES.EDIT
+                activeTopicMod === TOPIC_MODS.EDIT
                   ? activeTopicId === id
                     ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                     : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
@@ -260,7 +260,7 @@
                   : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
               "
               @click="
-                activeTopicMod === TOPIC_MOD_TYPES.SELECT
+                activeTopicMod === TOPIC_MODS.SELECT
                   ? toggleTopicSelect(id)
                   : toggleTopicActive(id)
               "
@@ -285,17 +285,17 @@ import swapSort from "./utils/swapSort"
 import copyToClipboard from "./utils/copyToClipboard"
 import debounce from "./utils/debounce"
 
-const LOCAL_STORAGE_KEY = "stone"
+const APP_LOCAL_STORAGE_KEY = "stone"
 const DEBOUNCE_DELAY = 300
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
-const INITIAL_MEMORY_PROMPT = 5700
-const RECENT_THRESHOLD = 10
-const PAPER_MOD_TYPES = { TEXT: 0, MEMORY: 1 }
-const TOPIC_MOD_TYPES = { SELECT: 0, EDIT: 1 }
+const BASE_PROMPT_TOKENS = 5700
+const RECENT_EVENT_LIMIT = 10
+const PAPER_MODS = { TEXT: 0, MEMORY: 1 }
+const TOPIC_MODS = { SELECT: 0, EDIT: 1 }
 
-const activePaperMod = ref(PAPER_MOD_TYPES.TEXT)
-const activeTopicMod = ref(TOPIC_MOD_TYPES.SELECT)
+const activePaperMod = ref(PAPER_MODS.TEXT)
+const activeTopicMod = ref(TOPIC_MODS.SELECT)
 
 const eventListRef = ref(null)
 const paperRef = ref(null)
@@ -344,7 +344,7 @@ const totalRecentMemories = computed(() => {
   return Object.values(eventsById.value).reduce((sum, e) => {
     if (
       activeEvent.sort > e.sort &&
-      e.sort >= Math.max(activeEvent.sort - RECENT_THRESHOLD, 0)
+      e.sort >= Math.max(activeEvent.sort - RECENT_EVENT_LIMIT, 0)
     ) {
       return sum + e.memoryIds.length
     }
@@ -358,11 +358,11 @@ const totalMemories = computed(
 onMounted(localStorageLoad)
 
 function localStorageLoad() {
-  const storageRaw = localStorage.getItem(LOCAL_STORAGE_KEY)
+  const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
   if (storageRaw) injectStorage(JSON.parse(storageRaw))
 }
 function localStorageSave() {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
+  localStorage.setItem(APP_LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
   console.log(`⏬ local storage updated [${timestamp()}]`)
 }
 function injectStorage(storage) {
@@ -411,11 +411,11 @@ function createTopic() {
     selected: true,
     sort: Object.keys(topicsById.value).length,
   }
-  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) toggleTopicActive(id)
+  if (activeTopicMod.value === TOPIC_MODS.EDIT) toggleTopicActive(id)
   nextTick(() => scrollToTop(topicListRef))
 }
 function toggleEvent(id) {
-  activePaperMod.value = PAPER_MOD_TYPES.TEXT
+  activePaperMod.value = PAPER_MODS.TEXT
   if (activeEventId.value === id) activeEventId.value = null
   else activeEventId.value = id
   activeTopicId.value = null
@@ -442,14 +442,14 @@ function setPaperMod(mod) {
   debouncedLocalStorageSave()
 }
 function setTopicModToSelect() {
-  if (activeTopicMod.value === TOPIC_MOD_TYPES.SELECT) return
-  activeTopicMod.value = TOPIC_MOD_TYPES.SELECT
+  if (activeTopicMod.value === TOPIC_MODS.SELECT) return
+  activeTopicMod.value = TOPIC_MODS.SELECT
   activeTopicId.value = null
   debouncedLocalStorageSave()
 }
 function setTopicModToEdit() {
-  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) return
-  activeTopicMod.value = TOPIC_MOD_TYPES.EDIT
+  if (activeTopicMod.value === TOPIC_MODS.EDIT) return
+  activeTopicMod.value = TOPIC_MODS.EDIT
   debouncedLocalStorageSave()
 }
 function updateInputFields() {
@@ -457,7 +457,7 @@ function updateInputFields() {
   if (activeEvent) {
     name.value = activeEvent.name
     date.value = activeEvent.date
-    activePaperMod.value === PAPER_MOD_TYPES.MEMORY
+    activePaperMod.value === PAPER_MODS.MEMORY
       ? (paper.value = activeEvent.memoryStringsRaw)
       : (paper.value = activeEvent.text)
   }
@@ -472,7 +472,7 @@ function onInput() {
   if (activeEvent) {
     activeEvent.name = name.value
     activeEvent.date = date.value
-    if (activePaperMod.value === PAPER_MOD_TYPES.MEMORY) {
+    if (activePaperMod.value === PAPER_MODS.MEMORY) {
       activeEvent.memoryStringsRaw = paper.value
       debouncedUpdateMemories(activeEvent)
     } else {
@@ -633,7 +633,7 @@ async function copySelectedMemoriesPrompt() {
   eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
     if (
       sort >= activeEvent.sort ||
-      sort < activeEvent.sort - RECENT_THRESHOLD
+      sort < activeEvent.sort - RECENT_EVENT_LIMIT
     ) {
       return
     }
