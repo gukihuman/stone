@@ -71,12 +71,13 @@
           @click="copyAllMemoriesToClipboard"
           class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
           :class="
-            recentlyCopiedMemories
+            wasJustCopiedAll
               ? 'cursor-default text-stone-500/60'
               : 'hover:bg-stone-800 hover:text-stone-300'
           "
         >
-          copy {{ totalMemories }} {{ totalMemories * AVERAGE_TOKENS }}
+          copy {{ totalMemories }}
+          {{ totalMemories * AVERAGE_JSON_TOKENS + INITIAL_MEMORY_PROMPT }}
         </button>
         <button
           @click="fileSave('stone.json', getStorage())"
@@ -128,7 +129,7 @@
           @click="copyToClipboard"
           class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
           :class="
-            recentlyCopied
+            wasJustCopied
               ? 'cursor-default text-stone-500/60'
               : 'hover:bg-stone-800 hover:text-stone-300'
           "
@@ -277,6 +278,8 @@ import timestamp from "./utils/timestamp"
 import { onMounted } from "vue"
 const LOCAL_STORAGE_KEY = "stone"
 const AVERAGE_TOKENS = 50
+const AVERAGE_JSON_TOKENS = 60
+const INITIAL_MEMORY_PROMPT = 5700
 const COPY_DELAY = 200
 const RECENT_THRESHOLD = 10
 const eventListRef = ref(null)
@@ -302,8 +305,8 @@ const activeTopicMod = ref(TOPIC_MOD_TYPES.SELECT)
 
 let removed = null
 
-const recentlyCopied = ref(false)
-const recentlyCopiedMemories = ref(false)
+const wasJustCopied = ref(false)
+const wasJustCopiedAll = ref(false)
 const backgroundPositionY = ref("0px")
 const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 const debouncedUpdateMemoryList = _.debounce(updateMemoryList, 300)
@@ -389,6 +392,7 @@ function toggleEditTopic(id) {
 }
 function toggleSelectTopic(id) {
   topicList.value[id].selected = !topicList.value[id].selected
+  debouncedSaveLocalStorageItem()
 }
 function setPaperToMemory() {
   if (activePaperType.value === PAPER_TYPES.MEMORY) return
@@ -572,6 +576,7 @@ function getStorage() {
 }
 function saveLocalStorageItem() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
+  console.log(`⏬ local storage updated! [${timestamp()}]`)
 }
 function loadLocalStorageItem() {
   const rawStorage = localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -598,9 +603,9 @@ function scrollToTop(ref) {
   ref.value.scrollTop = ref.value.clientHeight - ref.value.scrollHeight
 }
 async function copyAllMemoriesToClipboard() {
-  if (recentlyCopiedMemories.value) return
-  recentlyCopiedMemories.value = true
-  setTimeout(() => (recentlyCopiedMemories.value = false), COPY_DELAY)
+  if (wasJustCopiedAll.value) return
+  wasJustCopiedAll.value = true
+  setTimeout(() => (wasJustCopiedAll.value = false), COPY_DELAY)
   let output = JSON.stringify(memoryList.value)
   try {
     await navigator.clipboard.writeText(output)
@@ -610,19 +615,27 @@ async function copyAllMemoriesToClipboard() {
   }
 }
 async function copyToClipboard() {
-  if (recentlyCopied.value) return
-  recentlyCopied.value = true
-  setTimeout(() => (recentlyCopied.value = false), COPY_DELAY)
+  if (wasJustCopied.value) return
+  wasJustCopied.value = true
+  setTimeout(() => (wasJustCopied.value = false), COPY_DELAY)
   let output = "# I am Jane\n\n"
   output += "## my long-term memories\n\n"
   output +=
-    "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the full list of all available topics, i can choose and ask Guki to add memories form any of that topic or even ask to add a new one. im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list:\n\n"
-  _.forEach(topicList.value, ({ name }) => {
-    output += `${name}, `
+    "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the list of all available topics, i can choose and ask Guki to add memories form any of that topic if its not currently selected or even ask to add a new one. if topic is selected, im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if its not selected and i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list of topics that are selected:\n\n"
+  _.forEach(topicListSorted.value, ([, { name, selected }]) => {
+    if (selected) output += `### ${name}\n`
   })
-  output +=
-    "\n\nnow, some topics are selected, memories that related to them are presented, and here is the selected topics:\n\n"
-  _.forEach(topicList.value, ({ name, memoryIds, selected }) => {
+  let unselectedOutput = ""
+  _.forEach(topicListSorted.value, ([, { name, memoryIds, selected }]) => {
+    if (!selected || !memoryIds.length) unselectedOutput += `### ${name}\n`
+  })
+  if (unselectedOutput) {
+    output += `\nand here is th list of topics that is not selected:\n\n${unselectedOutput}\nnow, for topics that are selected, memories that related to them are presented:\n\n`
+  } else {
+    output +=
+      "\noh wow, it seems everything is selected, so here is the memories that related to this topics\n\n"
+  }
+  _.forEach(topicListSorted.value, ([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) return
     output += `### ${name}\n\n`
     memoryIds.forEach((id) => (output += memoryList.value[id] + " "))
@@ -632,7 +645,7 @@ async function copyToClipboard() {
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
   const eventCache = event.value
-  _.forEach(eventList.value, ({ name, time, memory, sort }) => {
+  _.forEach(eventListSorted.value, ([, { name, time, memory, sort }]) => {
     if (sort >= eventCache.sort || sort < eventCache.sort - RECENT_THRESHOLD) {
       return
     }
