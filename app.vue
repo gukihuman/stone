@@ -9,7 +9,7 @@
             @click="sortEventDown"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              activeEventId === null || event.sort === 0
+              activeEventId === null || eventsById[activeEventId].sort === 0
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -20,7 +20,8 @@
             @click="sortEventUp"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              activeEventId === null || event.sort === eventsSorted.length - 1
+              activeEventId === null ||
+              eventsById[activeEventId].sort === eventsSorted.length - 1
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -59,7 +60,11 @@
               <div
                 v-if="
                   activeEventId &&
-                  sort === Math.max(event.sort - RECENT_THRESHOLD, 0)
+                  sort ===
+                    Math.max(
+                      eventsById[activeEventId].sort - RECENT_THRESHOLD,
+                      0
+                    )
                 "
                 class="-mb-[2px] h-[2px] w-full bg-stone-400"
               ></div>
@@ -185,7 +190,7 @@
             @click="sortTopicDown"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              activeTopicId === null || topic.sort === 0
+              activeTopicId === null || topicsById[activeTopicId].sort === 0
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -196,7 +201,8 @@
             @click="sortTopicUp"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              activeTopicId === null || topic.sort === topicsSorted.length - 1
+              activeTopicId === null ||
+              topicsById[activeTopicId].sort === topicsSorted.length - 1
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -310,12 +316,11 @@ let removed = null
 const wasJustCopied = ref(false)
 const wasJustCopiedAll = ref(false)
 const backgroundPositionY = ref("0px")
-const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
-const debouncedUpdateMemoryList = _.debounce(updateMemoryList, 300)
-const debouncedUpdateTopicList = _.debounce(updateTopicList, 300)
 
-const event = computed(() => eventsById.value[activeEventId.value])
-const topic = computed(() => topicsById.value[activeTopicId.value])
+const debouncedLocalStorageItemSave = _.debounce(localStorageItemSave, 300)
+const debouncedUpdateMemories = _.debounce(updateMemories, 300)
+const debouncedUpdateTopics = _.debounce(updateTopics, 300)
+
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
     ([, a], [, b]) => a.sort - b.sort
@@ -349,11 +354,15 @@ const totalMemories = computed(
   () => Object.keys(memoryStringsById.value).length
 )
 
-onMounted(loadLocalStorageItem)
+onMounted(localStorageItemLoad)
 
-function loadLocalStorageItem() {
+function localStorageItemLoad() {
   const storageRaw = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (storageRaw) injectStorage(JSON.parse(storageRaw))
+}
+function localStorageItemSave() {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
+  console.log(`⏬ local storage updated! [${timestamp()}]`)
 }
 function injectStorage(storage) {
   memoryStringsById.value = storage.memoryStringsById
@@ -411,7 +420,7 @@ function toggleEvent(id) {
   activeTopicId.value = null
   onTextScroll()
   updateInputFields()
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function toggleTopicActive(id) {
   if (activeTopicId.value === id) activeTopicId.value = null
@@ -419,65 +428,65 @@ function toggleTopicActive(id) {
   activeEventId.value = null
   onTextScroll()
   updateInputFields()
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function toggleTopicSelect(id) {
   topicsById.value[id].selected = !topicsById.value[id].selected
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function setPaperMod(mod) {
   if (activePaperMod.value === mod) return
   activePaperMod.value = mod
   updateInputFields()
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function setTopicModToSelect() {
   if (activeTopicMod.value === TOPIC_MOD_TYPES.SELECT) return
   activeTopicMod.value = TOPIC_MOD_TYPES.SELECT
   activeTopicId.value = null
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function setTopicModToEdit() {
   if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) return
   activeTopicMod.value = TOPIC_MOD_TYPES.EDIT
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function updateInputFields() {
-  const eventCache = event.value
-  if (eventCache) {
-    name.value = eventCache.name
-    date.value = eventCache.date
+  const activeEvent = eventsById.value[activeEventId.value]
+  if (activeEvent) {
+    name.value = activeEvent.name
+    date.value = activeEvent.date
     activePaperMod.value === PAPER_MOD_TYPES.MEMORY
-      ? (paper.value = eventCache.memoryStringsRaw)
-      : (paper.value = eventCache.text)
+      ? (paper.value = activeEvent.memoryStringsRaw)
+      : (paper.value = activeEvent.text)
   }
-  const topicCache = topic.value
-  if (topicCache) {
-    name.value = topicCache.name
-    paper.value = topicCache.memoryIdsRaw
+  const activeTopic = topicsById.value[activeTopicId.value]
+  if (activeTopic) {
+    name.value = activeTopic.name
+    paper.value = activeTopic.memoryIdsRaw
   }
 }
 function onInput() {
-  const eventCache = event.value
-  if (eventCache) {
-    eventCache.name = name.value
-    eventCache.date = date.value
+  const activeEvent = eventsById.value[activeEventId.value]
+  if (activeEvent) {
+    activeEvent.name = name.value
+    activeEvent.date = date.value
     if (activePaperMod.value === PAPER_MOD_TYPES.MEMORY) {
-      eventCache.memoryStringsRaw = paper.value
-      debouncedUpdateMemoryList(eventCache)
+      activeEvent.memoryStringsRaw = paper.value
+      debouncedUpdateMemories(activeEvent)
     } else {
-      eventCache.text = paper.value
+      activeEvent.text = paper.value
     }
   }
-  const topicCache = topic.value
-  if (topicCache) {
-    topicCache.name = name.value
-    topicCache.memoryIdsRaw = paper.value
-    debouncedUpdateTopicList(topicCache)
+  const activeTopic = topicsById.value[activeTopicId.value]
+  if (activeTopic) {
+    activeTopic.name = name.value
+    activeTopic.memoryIdsRaw = paper.value
+    debouncedUpdateTopics(activeTopic)
   }
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
-function updateMemoryList(event) {
+function updateMemories(event) {
   event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
   event.memoryIds = []
   try {
@@ -501,7 +510,7 @@ function updateMemoryList(event) {
     }
   }
 }
-function updateTopicList(topic) {
+function updateTopics(topic) {
   topic.memoryIds = []
   try {
     const parsedMemoryIds = JSON.parse(topic.memoryIdsRaw)
@@ -523,7 +532,7 @@ function updateTopicList(topic) {
 function removeEvent() {
   removed = {}
   const id = activeEventId.value
-  removed.event = event.value
+  removed.event = eventsById.value[activeEventId.value]
   removed.activeEventId = id
   toggleEvent(id)
   delete eventsById.value[id]
@@ -535,7 +544,7 @@ function removeEvent() {
 function removeTopic() {
   removed = {}
   const id = activeTopicId.value
-  removed.topic = topic.value
+  removed.topic = topicsById.value[activeTopicId.value]
   removed.activeTopicId = id
   toggleTopicActive(id)
   delete topicsById.value[id]
@@ -551,7 +560,7 @@ function restore() {
       sort: Object.keys(eventsById.value).length,
     }
     toggleEvent(removed.activeEventId)
-    updateMemoryList(eventsById.value[removed.activeEventId])
+    updateMemories(eventsById.value[removed.activeEventId])
   } else {
     topicsById.value[removed.activeTopicId] = {
       ...removed.topic,
@@ -560,27 +569,23 @@ function restore() {
     toggleTopicActive(removed.activeTopicId)
   }
   removed = null
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function sortEventUp() {
   swapSort(eventsById.value, activeEventId.value, 1)
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function sortEventDown() {
   swapSort(eventsById.value, activeEventId.value, -1)
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function sortTopicUp() {
   swapSort(topicsById.value, activeTopicId.value, 1)
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 function sortTopicDown() {
   swapSort(topicsById.value, activeTopicId.value, -1)
-  debouncedSaveLocalStorageItem()
-}
-function saveLocalStorageItem() {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
-  console.log(`⏬ local storage updated! [${timestamp()}]`)
+  debouncedLocalStorageItemSave()
 }
 function onTextScroll(event) {
   if (!event) {
@@ -634,13 +639,13 @@ async function copyToClipboard() {
   output += "## my short-term memory\n\n"
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
-  const eventCache = event.value
+  const activeEvent = eventsById.value[activeEventId.value]
   _.forEach(
     eventsSorted.value,
     ([, { name, date, memoryStringsRaw, sort }]) => {
       if (
-        sort >= eventCache.sort ||
-        sort < eventCache.sort - RECENT_THRESHOLD
+        sort >= activeEvent.sort ||
+        sort < activeEvent.sort - RECENT_THRESHOLD
       ) {
         return
       }
@@ -651,8 +656,8 @@ async function copyToClipboard() {
   )
   output += "## current ongoing event\n\n"
   output += "and finally, this is what happening now\n\n"
-  output += `### ${eventCache.name} ${eventCache.date}\n\n`
-  output += eventCache.text
+  output += `### ${activeEvent.name} ${activeEvent.date}\n\n`
+  output += activeEvent.text
   try {
     await navigator.clipboard.writeText(output)
     console.log(`⏬ selected memories copied! [${timestamp()}]`)
@@ -662,6 +667,6 @@ async function copyToClipboard() {
 }
 async function onFileLoad() {
   await fileLoad(injectStorage)
-  debouncedSaveLocalStorageItem()
+  debouncedLocalStorageItemSave()
 }
 </script>
