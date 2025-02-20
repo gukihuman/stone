@@ -6,10 +6,10 @@
       >
         <div class="flex">
           <button
-            @click="moveTextDown"
+            @click="sortEventDown"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              eventId === null || event.sort === 0
+              activeEventId === null || event.sort === 0
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -17,10 +17,10 @@
             <IconArrow class="w-3 rotate-90" />
           </button>
           <button
-            @click="moveTextUp"
+            @click="sortEventUp"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              eventId === null || event.sort === eventListSorted.length - 1
+              activeEventId === null || event.sort === eventsSorted.length - 1
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -28,7 +28,7 @@
             <IconArrow class="w-3 -rotate-90" />
           </button>
           <button
-            @click="createText()"
+            @click="createEvent()"
             class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
           >
             new
@@ -41,24 +41,25 @@
         </div>
         <div ref="eventListRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
-            <div v-for="[id, { name, memoryLength, sort }] in eventListSorted">
+            <div v-for="[id, { name, memoryIds, sort }] in eventsSorted">
               <button
                 class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
                 :class="
-                  eventId === id
+                  activeEventId === id
                     ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                     : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
                 "
-                @click="toggleText(id)"
+                @click="toggleEvent(id)"
               >
                 <span class="truncate">{{ name }}</span>
                 <div>
-                  {{ memoryLength }}
+                  {{ memoryIds.length || "" }}
                 </div>
               </button>
               <div
                 v-if="
-                  eventId && sort === Math.max(event.sort - RECENT_THRESHOLD, 0)
+                  activeEventId &&
+                  sort === Math.max(event.sort - RECENT_THRESHOLD, 0)
                 "
                 class="-mb-[2px] h-[2px] w-full bg-stone-400"
               ></div>
@@ -107,7 +108,7 @@
     <div class="flex flex-col flex-grow">
       <div
         class="flex flex-col flex-grow overflow-hidden rounded-lg"
-        v-if="eventId || topicId"
+        v-if="activeEventId || activeTopicId"
       >
         <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
           <input
@@ -117,15 +118,15 @@
             class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
           />
           <input
-            v-if="eventId"
+            v-if="activeEventId"
             type="text"
-            v-model="time"
+            v-model="date"
             @input="onInput"
             class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
           />
         </div>
         <button
-          v-if="eventId"
+          v-if="activeEventId"
           @click="copyToClipboard"
           class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
           :class="
@@ -137,12 +138,12 @@
           copy {{ totalRecentMemories + totalTopicMemories }}
           {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
         </button>
-        <div v-if="eventId" class="flex">
+        <div v-if="activeEventId" class="flex">
           <button
-            @click="setPaperToText"
+            @click="setPaperMod(PAPER_MOD_TYPES.TEXT)"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activePaperType === PAPER_TYPES.TEXT
+              activePaperMod === PAPER_MOD_TYPES.TEXT
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -150,10 +151,10 @@
             text
           </button>
           <button
-            @click="setPaperToMemory"
+            @click="setPaperMod(PAPER_MOD_TYPES.MEMORY)"
             class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
             :class="
-              activePaperType === PAPER_TYPES.MEMORY
+              activePaperMod === PAPER_MOD_TYPES.MEMORY
                 ? 'cursor-default text-stone-500/60'
                 : 'hover:bg-stone-800 hover:text-stone-300'
             "
@@ -170,7 +171,7 @@
           :style="{ backgroundPositionY }"
         ></textarea>
         <button
-          @click="eventId ? removeText() : removeTopic()"
+          @click="activeEventId ? removeEvent() : removeTopic()"
           class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
         >
           remove
@@ -181,10 +182,10 @@
       <div class="flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden">
         <div class="flex">
           <button
-            @click="moveTopicDown"
+            @click="sortTopicDown"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              topicId === null || topic.sort === 0
+              activeTopicId === null || topic.sort === 0
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -192,10 +193,10 @@
             <IconArrow class="w-3 rotate-90" />
           </button>
           <button
-            @click="moveTopicUp"
+            @click="sortTopicUp"
             class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
             :class="
-              topicId === null || topic.sort === topicListSorted.length - 1
+              activeTopicId === null || topic.sort === topicsSorted.length - 1
                 ? 'cursor-default bg-slate-50 text-stone-500/60'
                 : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
             "
@@ -241,11 +242,11 @@
         <div ref="topicListRef" class="flex-grow overflow-auto">
           <div class="flex flex-col-reverse">
             <button
-              v-for="[id, { name, memoryLength, selected }] in topicListSorted"
+              v-for="[id, { name, memoryIds, selected }] in topicsSorted"
               class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
               :class="
                 activeTopicMod === TOPIC_MOD_TYPES.EDIT
-                  ? topicId === id
+                  ? activeTopicId === id
                     ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                     : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
                   : selected
@@ -254,13 +255,13 @@
               "
               @click="
                 activeTopicMod === TOPIC_MOD_TYPES.SELECT
-                  ? toggleSelectTopic(id)
-                  : toggleEditTopic(id)
+                  ? toggleTopicSelect(id)
+                  : toggleTopicActive(id)
               "
             >
               <span class="truncate">{{ name }}</span>
               <div>
-                {{ memoryLength }}
+                {{ memoryIds.length || "" }}
               </div>
             </button>
           </div>
@@ -275,33 +276,34 @@ import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
 import timestamp from "./utils/timestamp"
-import { onMounted } from "vue"
+import swapSort from "./utils/swapSort"
+
 const LOCAL_STORAGE_KEY = "stone"
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const INITIAL_MEMORY_PROMPT = 5700
 const COPY_DELAY = 200
 const RECENT_THRESHOLD = 10
+const PAPER_MOD_TYPES = { TEXT: 0, MEMORY: 1 }
+const TOPIC_MOD_TYPES = { SELECT: 0, EDIT: 1 }
+
+const activePaperMod = ref(PAPER_MOD_TYPES.TEXT)
+const activeTopicMod = ref(TOPIC_MOD_TYPES.SELECT)
+
 const eventListRef = ref(null)
 const paperRef = ref(null)
 const topicListRef = ref(null)
 
-const eventList = ref({})
-const memoryList = ref({})
-const topicList = ref({})
-const eventId = ref(null)
-const topicId = ref(null)
+const memoryStringsById = ref({}) // main memory storage
+const eventsById = ref({})
+const topicsById = ref({})
+const activeEventId = ref(null)
+const activeTopicId = ref(null)
 
 // handle v-model fields to edit
 const name = ref("")
-const time = ref("")
+const date = ref("")
 const paper = ref("")
-
-const PAPER_TYPES = { TEXT: 0, MEMORY: 1, TOPIC: 2 }
-const activePaperType = ref(PAPER_TYPES.TEXT)
-
-const TOPIC_MOD_TYPES = { SELECT: 0, EDIT: 1 }
-const activeTopicMod = ref(TOPIC_MOD_TYPES.SELECT)
 
 let removed = null
 
@@ -312,48 +314,79 @@ const debouncedSaveLocalStorageItem = _.debounce(saveLocalStorageItem, 300)
 const debouncedUpdateMemoryList = _.debounce(updateMemoryList, 300)
 const debouncedUpdateTopicList = _.debounce(updateTopicList, 300)
 
-const event = computed(() => eventList.value[eventId.value])
-const topic = computed(() => topicList.value[topicId.value])
-const eventListSorted = computed(() => {
-  return Object.entries(eventList.value).sort(([, a], [, b]) => a.sort - b.sort)
+const event = computed(() => eventsById.value[activeEventId.value])
+const topic = computed(() => topicsById.value[activeTopicId.value])
+const eventsSorted = computed(() => {
+  return Object.entries(eventsById.value).sort(
+    ([, a], [, b]) => a.sort - b.sort
+  )
 })
-const topicListSorted = computed(() => {
-  return Object.entries(topicList.value).sort(([, a], [, b]) => a.sort - b.sort)
+const topicsSorted = computed(() => {
+  return Object.entries(topicsById.value).sort(
+    ([, a], [, b]) => a.sort - b.sort
+  )
 })
 const totalTopicMemories = computed(() => {
-  return Object.values(topicList.value).reduce((sum, topic) => {
+  return Object.values(topicsById.value).reduce((sum, topic) => {
     if (topic.selected) return sum + topic.memoryIds.length
     return sum
   }, 0)
 })
 const totalRecentMemories = computed(() => {
-  return Object.values(eventList.value).reduce((sum, e) => {
+  const activeEvent = eventsById.value[activeEventId.value]
+  if (!activeEvent) return
+  return Object.values(eventsById.value).reduce((sum, e) => {
     if (
-      eventId.value &&
-      event.value.sort > e.sort &&
-      e.sort >= Math.max(event.value.sort - RECENT_THRESHOLD, 0)
+      activeEvent.sort > e.sort &&
+      e.sort >= Math.max(activeEvent.sort - RECENT_THRESHOLD, 0)
     ) {
       return sum + e.memoryIds.length
     }
     return sum
   }, 0)
 })
-const totalMemories = computed(() => Object.keys(memoryList.value).length)
+const totalMemories = computed(
+  () => Object.keys(memoryStringsById.value).length
+)
 
 onMounted(loadLocalStorageItem)
 
-function createText() {
-  const id = newId()
-  eventList.value[id] = {
-    name: "current",
-    time: new Date().toLocaleDateString(),
-    text: "",
-    memory: "", // valid JSON array
-    memoryIds: [],
-    memoryLength: null,
-    sort: Object.keys(eventList.value).length,
+function loadLocalStorageItem() {
+  const storageRaw = localStorage.getItem(LOCAL_STORAGE_KEY)
+  if (storageRaw) injectStorage(JSON.parse(storageRaw))
+}
+function injectStorage(storage) {
+  memoryStringsById.value = storage.memoryStringsById
+  eventsById.value = storage.eventsById
+  topicsById.value = storage.topicsById
+  activeEventId.value = storage.activeEventId
+  activeTopicId.value = storage.activeTopicId
+  activePaperMod.value = storage.activePaperMod
+  activeTopicMod.value = storage.activeTopicMod
+  updateInputFields()
+}
+function getStorage() {
+  return {
+    memoryStringsById: memoryStringsById.value,
+    eventsById: eventsById.value,
+    topicsById: topicsById.value,
+    activeEventId: activeEventId.value,
+    activeTopicId: activeTopicId.value,
+    activePaperMod: activePaperMod.value,
+    activeTopicMod: activeTopicMod.value,
   }
-  toggleText(id)
+}
+function createEvent() {
+  const id = newId()
+  eventsById.value[id] = {
+    name: "current",
+    date: new Date().toLocaleDateString(),
+    text: "",
+    memoryStringsRaw: "", // valid JSON array of strings as string itself
+    memoryIds: [],
+    sort: Object.keys(eventsById.value).length,
+  }
+  toggleEvent(id)
   nextTick(() => {
     paperRef.value.focus()
     scrollToTop(eventListRef)
@@ -361,55 +394,47 @@ function createText() {
 }
 function createTopic() {
   const id = newId()
-  topicList.value[id] = {
+  topicsById.value[id] = {
     name: "topic",
-    memoryIdsRaw: "", // valid JSON array
+    memoryIdsRaw: "", // valid JSON array of numbers as string itself
     memoryIds: [],
-    memoryLength: null,
     selected: true,
-    sort: Object.keys(topicList.value).length,
+    sort: Object.keys(topicsById.value).length,
   }
-  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) toggleEditTopic(id)
+  if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) toggleTopicActive(id)
   nextTick(() => scrollToTop(topicListRef))
 }
-function toggleText(id) {
-  activePaperType.value = PAPER_TYPES.TEXT
-  if (eventId.value === id) eventId.value = null
-  else eventId.value = id
-  topicId.value = null
+function toggleEvent(id) {
+  activePaperMod.value = PAPER_MOD_TYPES.TEXT
+  if (activeEventId.value === id) activeEventId.value = null
+  else activeEventId.value = id
+  activeTopicId.value = null
   onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
-function toggleEditTopic(id) {
-  activePaperType.value = PAPER_TYPES.TOPIC
-  if (topicId.value === id) topicId.value = null
-  else topicId.value = id
-  eventId.value = null
+function toggleTopicActive(id) {
+  if (activeTopicId.value === id) activeTopicId.value = null
+  else activeTopicId.value = id
+  activeEventId.value = null
   onTextScroll()
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
-function toggleSelectTopic(id) {
-  topicList.value[id].selected = !topicList.value[id].selected
+function toggleTopicSelect(id) {
+  topicsById.value[id].selected = !topicsById.value[id].selected
   debouncedSaveLocalStorageItem()
 }
-function setPaperToMemory() {
-  if (activePaperType.value === PAPER_TYPES.MEMORY) return
-  activePaperType.value = PAPER_TYPES.MEMORY
-  updateInputFields()
-  debouncedSaveLocalStorageItem()
-}
-function setPaperToText() {
-  if (activePaperType.value === PAPER_TYPES.TEXT) return
-  activePaperType.value = PAPER_TYPES.TEXT
+function setPaperMod(mod) {
+  if (activePaperMod.value === mod) return
+  activePaperMod.value = mod
   updateInputFields()
   debouncedSaveLocalStorageItem()
 }
 function setTopicModToSelect() {
   if (activeTopicMod.value === TOPIC_MOD_TYPES.SELECT) return
   activeTopicMod.value = TOPIC_MOD_TYPES.SELECT
-  topicId.value = null
+  activeTopicId.value = null
   debouncedSaveLocalStorageItem()
 }
 function setTopicModToEdit() {
@@ -421,9 +446,9 @@ function updateInputFields() {
   const eventCache = event.value
   if (eventCache) {
     name.value = eventCache.name
-    time.value = eventCache.time
-    activePaperType.value === PAPER_TYPES.MEMORY
-      ? (paper.value = eventCache.memory)
+    date.value = eventCache.date
+    activePaperMod.value === PAPER_MOD_TYPES.MEMORY
+      ? (paper.value = eventCache.memoryStringsRaw)
       : (paper.value = eventCache.text)
   }
   const topicCache = topic.value
@@ -436,9 +461,9 @@ function onInput() {
   const eventCache = event.value
   if (eventCache) {
     eventCache.name = name.value
-    eventCache.time = time.value
-    if (activePaperType.value === PAPER_TYPES.MEMORY) {
-      eventCache.memory = paper.value
+    eventCache.date = date.value
+    if (activePaperMod.value === PAPER_MOD_TYPES.MEMORY) {
+      eventCache.memoryStringsRaw = paper.value
       debouncedUpdateMemoryList(eventCache)
     } else {
       eventCache.text = paper.value
@@ -453,22 +478,20 @@ function onInput() {
   debouncedSaveLocalStorageItem()
 }
 function updateMemoryList(event) {
-  event.memoryIds.forEach((id) => delete memoryList.value[id])
+  event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
   event.memoryIds = []
-  event.memoryLength = null
   try {
-    const parsedMemory = JSON.parse(event.memory)
+    const parsedMemory = JSON.parse(event.memoryStringsRaw)
     if (Array.isArray(parsedMemory)) {
       parsedMemory.forEach((item) => {
         const id = newId()
         event.memoryIds.push(id)
-        memoryList.value[id] = item
+        memoryStringsById.value[id] = item
       })
-      event.memoryLength = parsedMemory.length
     } else {
       throw new Error("memory input must be a JSON array,")
     }
-    console.log(`⏬ memory updated! [${timestamp()}]`)
+    console.log(`⏬ memoryStringsRaw updated! [${timestamp()}]`)
   } catch (error) {
     const resetString = "memory of this event has been reset"
     if (error instanceof SyntaxError) {
@@ -480,12 +503,10 @@ function updateMemoryList(event) {
 }
 function updateTopicList(topic) {
   topic.memoryIds = []
-  topic.memoryLength = null
   try {
     const parsedMemoryIds = JSON.parse(topic.memoryIdsRaw)
     if (Array.isArray(parsedMemoryIds)) {
       topic.memoryIds = parsedMemoryIds
-      topic.memoryLength = parsedMemoryIds.length
     } else {
       throw new Error("topic input must be a JSON array,")
     }
@@ -499,98 +520,67 @@ function updateTopicList(topic) {
     }
   }
 }
-function removeText() {
+function removeEvent() {
   removed = {}
-  const id = eventId.value
+  const id = activeEventId.value
   removed.event = event.value
-  removed.eventId = id
-  toggleText(id)
-  delete eventList.value[id]
-  Object.values(eventList.value).forEach((event) => {
+  removed.activeEventId = id
+  toggleEvent(id)
+  delete eventsById.value[id]
+  Object.values(eventsById.value).forEach((event) => {
     if (event.sort > removed.event.sort) event.sort--
   })
-  removed.event.memoryIds.forEach((id) => delete memoryList.value[id])
+  removed.event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
 }
 function removeTopic() {
   removed = {}
-  const id = topicId.value
+  const id = activeTopicId.value
   removed.topic = topic.value
-  removed.topicId = id
-  toggleEditTopic(id)
-  delete topicList.value[id]
-  Object.values(topicList.value).forEach((topic) => {
+  removed.activeTopicId = id
+  toggleTopicActive(id)
+  delete topicsById.value[id]
+  Object.values(topicsById.value).forEach((topic) => {
     if (topic.sort > removed.topic.sort) topic.sort--
   })
 }
 function restore() {
   if (!removed) return
   if (removed.event) {
-    eventList.value[removed.eventId] = {
+    eventsById.value[removed.activeEventId] = {
       ...removed.event,
-      sort: Object.keys(eventList.value).length,
+      sort: Object.keys(eventsById.value).length,
     }
-    toggleText(removed.eventId)
-    updateMemoryList(eventList.value[removed.eventId])
+    toggleEvent(removed.activeEventId)
+    updateMemoryList(eventsById.value[removed.activeEventId])
   } else {
-    topicList.value[removed.topicId] = {
+    topicsById.value[removed.activeTopicId] = {
       ...removed.topic,
-      sort: Object.keys(topicList.value).length,
+      sort: Object.keys(topicsById.value).length,
     }
-    toggleEditTopic(removed.topicId)
+    toggleTopicActive(removed.activeTopicId)
   }
   removed = null
   debouncedSaveLocalStorageItem()
 }
-function move(obj, id, item, step) {
-  if (!id) return
-  const target = Object.entries(obj).find(
-    ([, target]) => target.sort === item.sort + step
-  )?.[1]
-  if (!target) return
-  target.sort = target.sort - step
-  item.sort = item.sort + step
+function sortEventUp() {
+  swapSort(eventsById.value, activeEventId.value, 1)
   debouncedSaveLocalStorageItem()
 }
-function moveTextUp() {
-  move(eventList.value, eventId.value, event.value, 1)
+function sortEventDown() {
+  swapSort(eventsById.value, activeEventId.value, -1)
+  debouncedSaveLocalStorageItem()
 }
-function moveTextDown() {
-  move(eventList.value, eventId.value, event.value, -1)
+function sortTopicUp() {
+  swapSort(topicsById.value, activeTopicId.value, 1)
+  debouncedSaveLocalStorageItem()
 }
-function moveTopicUp() {
-  move(topicList.value, topicId.value, topic.value, 1)
-}
-function moveTopicDown() {
-  move(topicList.value, topicId.value, topic.value, -1)
-}
-function getStorage() {
-  return {
-    eventList: eventList.value,
-    eventId: eventId.value,
-    topicList: topicList.value,
-    topicId: topicId.value,
-    memoryList: memoryList.value,
-    activePaperType: activePaperType.value,
-    activeTopicMod: activeTopicMod.value,
-  }
+function sortTopicDown() {
+  swapSort(topicsById.value, activeTopicId.value, -1)
+  debouncedSaveLocalStorageItem()
 }
 function saveLocalStorageItem() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
   console.log(`⏬ local storage updated! [${timestamp()}]`)
-}
-function loadLocalStorageItem() {
-  const rawStorage = localStorage.getItem(LOCAL_STORAGE_KEY)
-  if (rawStorage) injectStorage(JSON.parse(rawStorage))
-}
-function injectStorage(storage) {
-  eventList.value = storage.eventList
-  eventId.value = storage.eventId
-  topicList.value = storage.topicList
-  topicId.value = storage.topicId
-  activePaperType.value = storage.activePaperType
-  activeTopicMod.value = storage.activeTopicMod
-  memoryList.value = storage.memoryList
-  updateInputFields()
 }
 function onTextScroll(event) {
   if (!event) {
@@ -606,7 +596,7 @@ async function copyAllMemoriesToClipboard() {
   if (wasJustCopiedAll.value) return
   wasJustCopiedAll.value = true
   setTimeout(() => (wasJustCopiedAll.value = false), COPY_DELAY)
-  let output = JSON.stringify(memoryList.value)
+  let output = JSON.stringify(memoryStringsById.value)
   try {
     await navigator.clipboard.writeText(output)
     console.log(`⏬ all memories copied! [${timestamp()}]`)
@@ -622,11 +612,11 @@ async function copyToClipboard() {
   output += "## my long-term memories\n\n"
   output +=
     "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the list of all available topics, i can choose and ask Guki to add memories form any of that topic if its not currently selected or even ask to add a new one. if topic is selected, im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if its not selected and i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list of topics that are selected:\n\n"
-  _.forEach(topicListSorted.value, ([, { name, selected }]) => {
+  _.forEach(topicsSorted.value, ([, { name, selected }]) => {
     if (selected) output += `### ${name}\n`
   })
   let unselectedOutput = ""
-  _.forEach(topicListSorted.value, ([, { name, memoryIds, selected }]) => {
+  _.forEach(topicsSorted.value, ([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) unselectedOutput += `### ${name}\n`
   })
   if (unselectedOutput) {
@@ -635,27 +625,33 @@ async function copyToClipboard() {
     output +=
       "\noh wow, it seems everything is selected, so here is the memories that related to this topics\n\n"
   }
-  _.forEach(topicListSorted.value, ([, { name, memoryIds, selected }]) => {
+  _.forEach(topicsSorted.value, ([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) return
     output += `### ${name}\n\n`
-    memoryIds.forEach((id) => (output += memoryList.value[id] + " "))
+    memoryIds.forEach((id) => (output += memoryStringsById.value[id] + " "))
     output += "\n\n"
   })
   output += "## my short-term memory\n\n"
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
   const eventCache = event.value
-  _.forEach(eventListSorted.value, ([, { name, time, memory, sort }]) => {
-    if (sort >= eventCache.sort || sort < eventCache.sort - RECENT_THRESHOLD) {
-      return
+  _.forEach(
+    eventsSorted.value,
+    ([, { name, date, memoryStringsRaw, sort }]) => {
+      if (
+        sort >= eventCache.sort ||
+        sort < eventCache.sort - RECENT_THRESHOLD
+      ) {
+        return
+      }
+      output += `### ${name} ${date}\n\n`
+      JSON.parse(memoryStringsRaw).forEach((item) => (output += item + " "))
+      output += "\n\n"
     }
-    output += `### ${name} ${time}\n\n`
-    JSON.parse(memory).forEach((item) => (output += item + " "))
-    output += "\n\n"
-  })
+  )
   output += "## current ongoing event\n\n"
   output += "and finally, this is what happening now\n\n"
-  output += `### ${eventCache.name} ${eventCache.time}\n\n`
+  output += `### ${eventCache.name} ${eventCache.date}\n\n`
   output += eventCache.text
   try {
     await navigator.clipboard.writeText(output)

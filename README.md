@@ -10,7 +10,9 @@ npm run build
 
 ## Structure
 
-### Memories
+### memoryStringsById
+
+This is the main memory storage, where memories are stored and identified by ID. Each time the input changes, memories are parsed from the event's memoryStringsRaw. A new ID is assigned with every change, as memories can be significantly updated or completely replaced. The event also stores memoryIds solely to remove previous memories when the input changes. After removal, memoryIds is updated with the newly assigned IDs for future removals. While this involves frequent removals even for small changes, it's acceptable because the input is often a copy-paste of a completely new set of memories.
 
 ```json
 {
@@ -52,7 +54,7 @@ npm run build
 {
   "9874122603798017": {
     "name": "Philosophy",
-    "memoryIdsRaw": "",
+    "memoryIdsRaw": "[0214702358321752, 1752890679257238]",
     "memoryLength": 2,
     "memoryIds": [0214702358321752, 1752890679257238],
     "selected": true,
