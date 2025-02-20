@@ -15,7 +15,6 @@
     "vue-router": "latest"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.13.1",
-    "lodash": "^4.17.21"
+    "@nuxtjs/tailwindcss": "^6.13.1"
   }
 }

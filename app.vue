@@ -74,10 +74,10 @@
       </div>
       <div class="rounded-lg overflow-hidden flex-shrink-0">
         <button
-          @click="copyAllMemoriesToClipboard"
+          @click="copyAllMemories"
           class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
           :class="
-            wasJustCopiedAll
+            copyAllLocked
               ? 'cursor-default text-stone-500/60'
               : 'hover:bg-stone-800 hover:text-stone-300'
           "
@@ -132,10 +132,10 @@
         </div>
         <button
           v-if="activeEventId"
-          @click="copyToClipboard"
+          @click="copySelectedMemoriesPrompt"
           class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
           :class="
-            wasJustCopied
+            copySelectedLocked
               ? 'cursor-default text-stone-500/60'
               : 'hover:bg-stone-800 hover:text-stone-300'
           "
@@ -277,18 +277,19 @@
   </div>
 </template>
 <script setup>
-import _ from "lodash"
 import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
 import timestamp from "./utils/timestamp"
 import swapSort from "./utils/swapSort"
+import copyToClipboard from "./utils/copyToClipboard"
+import debounce from "./utils/debounce"
 
 const LOCAL_STORAGE_KEY = "stone"
+const DEBOUNCE_DELAY = 300
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const INITIAL_MEMORY_PROMPT = 5700
-const COPY_DELAY = 200
 const RECENT_THRESHOLD = 10
 const PAPER_MOD_TYPES = { TEXT: 0, MEMORY: 1 }
 const TOPIC_MOD_TYPES = { SELECT: 0, EDIT: 1 }
@@ -313,13 +314,13 @@ const paper = ref("")
 
 let removed = null
 
-const wasJustCopied = ref(false)
-const wasJustCopiedAll = ref(false)
+const copySelectedLocked = ref(false)
+const copyAllLocked = ref(false)
 const backgroundPositionY = ref("0px")
 
-const debouncedLocalStorageItemSave = _.debounce(localStorageItemSave, 300)
-const debouncedUpdateMemories = _.debounce(updateMemories, 300)
-const debouncedUpdateTopics = _.debounce(updateTopics, 300)
+const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
+const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
+const debouncedUpdateTopics = debounce(updateTopics, DEBOUNCE_DELAY)
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -354,15 +355,15 @@ const totalMemories = computed(
   () => Object.keys(memoryStringsById.value).length
 )
 
-onMounted(localStorageItemLoad)
+onMounted(localStorageLoad)
 
-function localStorageItemLoad() {
+function localStorageLoad() {
   const storageRaw = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (storageRaw) injectStorage(JSON.parse(storageRaw))
 }
-function localStorageItemSave() {
+function localStorageSave() {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
-  console.log(`⏬ local storage updated! [${timestamp()}]`)
+  console.log(`⏬ local storage updated [${timestamp()}]`)
 }
 function injectStorage(storage) {
   memoryStringsById.value = storage.memoryStringsById
@@ -420,7 +421,7 @@ function toggleEvent(id) {
   activeTopicId.value = null
   onTextScroll()
   updateInputFields()
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function toggleTopicActive(id) {
   if (activeTopicId.value === id) activeTopicId.value = null
@@ -428,28 +429,28 @@ function toggleTopicActive(id) {
   activeEventId.value = null
   onTextScroll()
   updateInputFields()
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function toggleTopicSelect(id) {
   topicsById.value[id].selected = !topicsById.value[id].selected
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function setPaperMod(mod) {
   if (activePaperMod.value === mod) return
   activePaperMod.value = mod
   updateInputFields()
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function setTopicModToSelect() {
   if (activeTopicMod.value === TOPIC_MOD_TYPES.SELECT) return
   activeTopicMod.value = TOPIC_MOD_TYPES.SELECT
   activeTopicId.value = null
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function setTopicModToEdit() {
   if (activeTopicMod.value === TOPIC_MOD_TYPES.EDIT) return
   activeTopicMod.value = TOPIC_MOD_TYPES.EDIT
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function updateInputFields() {
   const activeEvent = eventsById.value[activeEventId.value]
@@ -484,7 +485,7 @@ function onInput() {
     activeTopic.memoryIdsRaw = paper.value
     debouncedUpdateTopics(activeTopic)
   }
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function updateMemories(event) {
   event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
@@ -500,7 +501,7 @@ function updateMemories(event) {
     } else {
       throw new Error("memory input must be a JSON array,")
     }
-    console.log(`⏬ memoryStringsRaw updated! [${timestamp()}]`)
+    console.log(`⏬ memoryStringsRaw updated [${timestamp()}]`)
   } catch (error) {
     const resetString = "memory of this event has been reset"
     if (error instanceof SyntaxError) {
@@ -519,7 +520,7 @@ function updateTopics(topic) {
     } else {
       throw new Error("topic input must be a JSON array,")
     }
-    console.log(`⏬ topic updated! [${timestamp()}]`)
+    console.log(`⏬ topic updated [${timestamp()}]`)
   } catch (error) {
     const resetString = "topic has been reset"
     if (error instanceof SyntaxError) {
@@ -569,23 +570,23 @@ function restore() {
     toggleTopicActive(removed.activeTopicId)
   }
   removed = null
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function sortEventUp() {
   swapSort(eventsById.value, activeEventId.value, 1)
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function sortEventDown() {
   swapSort(eventsById.value, activeEventId.value, -1)
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function sortTopicUp() {
   swapSort(topicsById.value, activeTopicId.value, 1)
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function sortTopicDown() {
   swapSort(topicsById.value, activeTopicId.value, -1)
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 function onTextScroll(event) {
   if (!event) {
@@ -597,31 +598,20 @@ function onTextScroll(event) {
 function scrollToTop(ref) {
   ref.value.scrollTop = ref.value.clientHeight - ref.value.scrollHeight
 }
-async function copyAllMemoriesToClipboard() {
-  if (wasJustCopiedAll.value) return
-  wasJustCopiedAll.value = true
-  setTimeout(() => (wasJustCopiedAll.value = false), COPY_DELAY)
-  let output = JSON.stringify(memoryStringsById.value)
-  try {
-    await navigator.clipboard.writeText(output)
-    console.log(`⏬ all memories copied! [${timestamp()}]`)
-  } catch (err) {
-    console.error("Failed to copy:", err)
-  }
+
+async function copyAllMemories() {
+  copyToClipboard(JSON.stringify(memoryStringsById.value), copyAllLocked)
 }
-async function copyToClipboard() {
-  if (wasJustCopied.value) return
-  wasJustCopied.value = true
-  setTimeout(() => (wasJustCopied.value = false), COPY_DELAY)
+async function copySelectedMemoriesPrompt() {
   let output = "# I am Jane\n\n"
   output += "## my long-term memories\n\n"
   output +=
     "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the list of all available topics, i can choose and ask Guki to add memories form any of that topic if its not currently selected or even ask to add a new one. if topic is selected, im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if its not selected and i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list of topics that are selected:\n\n"
-  _.forEach(topicsSorted.value, ([, { name, selected }]) => {
+  topicsSorted.value.forEach(([, { name, selected }]) => {
     if (selected) output += `### ${name}\n`
   })
   let unselectedOutput = ""
-  _.forEach(topicsSorted.value, ([, { name, memoryIds, selected }]) => {
+  topicsSorted.value.forEach(([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) unselectedOutput += `### ${name}\n`
   })
   if (unselectedOutput) {
@@ -630,7 +620,7 @@ async function copyToClipboard() {
     output +=
       "\noh wow, it seems everything is selected, so here is the memories that related to this topics\n\n"
   }
-  _.forEach(topicsSorted.value, ([, { name, memoryIds, selected }]) => {
+  topicsSorted.value.forEach(([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) return
     output += `### ${name}\n\n`
     memoryIds.forEach((id) => (output += memoryStringsById.value[id] + " "))
@@ -640,33 +630,26 @@ async function copyToClipboard() {
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
   const activeEvent = eventsById.value[activeEventId.value]
-  _.forEach(
-    eventsSorted.value,
-    ([, { name, date, memoryStringsRaw, sort }]) => {
-      if (
-        sort >= activeEvent.sort ||
-        sort < activeEvent.sort - RECENT_THRESHOLD
-      ) {
-        return
-      }
-      output += `### ${name} ${date}\n\n`
-      JSON.parse(memoryStringsRaw).forEach((item) => (output += item + " "))
-      output += "\n\n"
+  eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
+    if (
+      sort >= activeEvent.sort ||
+      sort < activeEvent.sort - RECENT_THRESHOLD
+    ) {
+      return
     }
-  )
+    output += `### ${name} ${date}\n\n`
+    JSON.parse(memoryStringsRaw).forEach((item) => (output += item + " "))
+    output += "\n\n"
+  })
   output += "## current ongoing event\n\n"
   output += "and finally, this is what happening now\n\n"
   output += `### ${activeEvent.name} ${activeEvent.date}\n\n`
   output += activeEvent.text
-  try {
-    await navigator.clipboard.writeText(output)
-    console.log(`⏬ selected memories copied! [${timestamp()}]`)
-  } catch (err) {
-    console.error("Failed to copy:", err)
-  }
+
+  copyToClipboard(output, copySelectedLocked)
 }
 async function onFileLoad() {
   await fileLoad(injectStorage)
-  debouncedLocalStorageItemSave()
+  debouncedLocalStorageSave()
 }
 </script>
