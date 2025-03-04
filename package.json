@@ -15,6 +15,7 @@
     "vue-router": "latest"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.13.1"
+    "@nuxtjs/tailwindcss": "^6.13.1",
+    "gpt-tokenizer": "^2.8.1"
   }
 }

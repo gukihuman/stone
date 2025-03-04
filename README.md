@@ -1,6 +1,6 @@
-# Stone
+# stone
 
-Cognitive stone
+cognitive stone
 
 ```bash
 npm install
@@ -8,7 +8,7 @@ npm run dev
 npm run build
 ```
 
-## Structure
+## structure
 
 ### memoryStringsById
 
@@ -23,7 +23,7 @@ This is the main memory storage, where memories are stored and identified by ID.
 }
 ```
 
-### Events
+### eventsById
 
 ```json
 {
@@ -48,7 +48,7 @@ This is the main memory storage, where memories are stored and identified by ID.
 }
 ```
 
-### Topics
+### topicsById
 
 ```json
 {

@@ -1,77 +1,275 @@
 <template>
-  <div class="flex justify-between bg-stone-600 h-screen gap-1 p-1">
-    <div class="w-[250px] flex flex-col gap-1">
-      <div
-        class="flex flex-col flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden"
-      >
-        <div class="flex">
-          <button
-            @click="sortEventDown"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              activeEventId === null || eventsById[activeEventId].sort === 0
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 rotate-90" />
-          </button>
-          <button
-            @click="sortEventUp"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              activeEventId === null ||
-              eventsById[activeEventId].sort === eventsSorted.length - 1
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 -rotate-90" />
-          </button>
-          <button
-            @click="createEvent()"
-            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-          >
-            new
-          </button>
-          <div
-            class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-          >
-            {{ totalRecentMemories || "" }}
+  <div class="flex bg-stone-600 h-screen gap-1 p-1">
+    <div class="flex flex-grow flex-col gap-1">
+      <div class="flex gap-1 overflow-hidden justify-between flex-grow">
+        <!-- events -->
+        <div
+          class="w-[250px] flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg overflow-hidden"
+        >
+          <!-- events top menu -->
+          <div class="flex">
+            <button
+              @click="sortEventDown"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editEventId === null || eventsById[editEventId].sort === 0
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 rotate-90" />
+            </button>
+            <button
+              @click="sortEventUp"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editEventId === null ||
+                eventsById[editEventId].sort === eventsSorted.length - 1
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 -rotate-90" />
+            </button>
+            <button
+              @click="createEvent()"
+              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+            >
+              new
+            </button>
+            <div
+              class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
+            >
+              {{ totalRecentMemories || "" }}
+            </div>
+          </div>
+          <!-- event list -->
+          <div ref="eventListRef" class="overflow-y-scroll">
+            <div class="flex flex-col-reverse">
+              <div
+                v-for="[id, { name, memoryIds, sort }] in eventsSorted"
+                :key="id"
+              >
+                <button
+                  class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                  :class="
+                    editEventId === id
+                      ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                      : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                  "
+                  @click="toggleEventEdit(id)"
+                >
+                  <span class="truncate">{{ name }}</span>
+                  <div>
+                    {{ memoryIds.length || "" }}
+                  </div>
+                </button>
+                <div
+                  v-if="
+                    editEventId &&
+                    sort ===
+                      Math.max(
+                        eventsById[editEventId].sort - RECENT_EVENT_LIMIT,
+                        0
+                      )
+                  "
+                  class="-mb-[2px] h-[2px] w-full bg-stone-400"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div ref="eventListRef" class="flex-grow overflow-auto">
-          <div class="flex flex-col-reverse">
-            <div v-for="[id, { name, memoryIds, sort }] in eventsSorted">
+        <!-- paper -->
+        <div
+          class="flex w-full flex-col gap-24"
+          v-if="editEventId || editTopicId"
+        >
+          <div
+            class="relative flex flex-col flex-grow overflow-hidden rounded-lg"
+          >
+            <div
+              class="flex min-h-11 rounded-t-lg overflow-hidden justify-between"
+            >
+              <input
+                type="text"
+                v-model="name"
+                @input="onInput"
+                class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+              />
+              <input
+                v-if="editEventId"
+                type="text"
+                v-model="date"
+                @input="onInput"
+                class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
+              />
+            </div>
+            <button
+              v-if="editEventId"
+              @click="copySelectedMemoriesPrompt"
+              class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+              :class="
+                copySelectedLocked
+                  ? 'cursor-default text-stone-500/60'
+                  : 'hover:bg-stone-800 hover:text-stone-300'
+              "
+            >
+              copy {{ totalRecentMemories + totalTopicMemories }}
+              {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
+            </button>
+            <div v-if="editEventId" class="flex">
               <button
-                class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                @click="setPaperMod(PAPER_MODS.TEXT)"
+                class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
                 :class="
-                  activeEventId === id
+                  activePaperMod === PAPER_MODS.TEXT
+                    ? 'cursor-default text-stone-500/60'
+                    : 'hover:bg-stone-800 hover:text-stone-300'
+                "
+              >
+                text
+              </button>
+              <button
+                @click="setPaperMod(PAPER_MODS.MEMORY)"
+                class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+                :class="
+                  activePaperMod === PAPER_MODS.MEMORY
+                    ? 'cursor-default text-stone-500/60'
+                    : 'hover:bg-stone-800 hover:text-stone-300'
+                "
+              >
+                memory
+              </button>
+            </div>
+            <textarea
+              ref="paperRef"
+              v-model="paper"
+              @input="onInput"
+              @scroll="onTextScroll"
+              @keydown="onKeyDown"
+              class="h-full bg-lines scroll-light bg-stone-400 py-5 p-8 resize-none text-stone-800 text-xl"
+              :style="{ backgroundPositionY }"
+            ></textarea>
+            <!-- scroll buttons -->
+            <div class="flex flex-col gap-1 absolute bottom-4 right-4">
+              <button
+                @click="scrollToTop(paperRef)"
+                class="size-8 pb-1 text-stone-400 bg-stone-500 opacity-50 hover:bg-stone-800 hover:text-stone-300 rounded-full"
+              >
+                <IconArrow class="w-3 -rotate-90 inline-block" />
+              </button>
+              <button
+                @click="scrollToBot(paperRef)"
+                class="size-8 pb-1 text-stone-400 bg-stone-500 opacity-50 hover:bg-stone-800 hover:text-stone-300 rounded-full"
+              >
+                <IconArrow class="w-3 rotate-90 inline-block" />
+              </button>
+            </div>
+          </div>
+          <button
+            @click="editEventId ? removeEvent() : removeTopic()"
+            class="max-h-7 w-20 bg-stone-700 text-stone-400 pb-1 hover:bg-stone-800 hover:text-stone-300 rounded-lg"
+          >
+            remove
+          </button>
+        </div>
+        <!-- topics -->
+        <div
+          class="w-[250px] flex-shrink-0 bg-circles bg-stone-500 rounded-lg overflow-hidden"
+        >
+          <!-- topics top menu -->
+          <div class="flex">
+            <button
+              @click="sortTopicDown"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editTopicId === null || topicsById[editTopicId].sort === 0
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 rotate-90" />
+            </button>
+            <button
+              @click="sortTopicUp"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editTopicId === null ||
+                topicsById[editTopicId].sort === topicsSorted.length - 1
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 -rotate-90" />
+            </button>
+            <button
+              @click="createTopic()"
+              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+            >
+              new
+            </button>
+            <div
+              class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
+            >
+              {{ totalTopicMemories || "" }}
+            </div>
+          </div>
+          <div class="flex">
+            <button
+              @click="setTopicModToSelect"
+              class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+              :class="
+                activeTopicMod === TOPIC_MODS.SELECT
+                  ? 'cursor-default text-stone-500/60'
+                  : 'hover:bg-stone-800 hover:text-stone-300'
+              "
+            >
+              select
+            </button>
+            <button
+              @click="setTopicModToEdit"
+              class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+              :class="
+                activeTopicMod === TOPIC_MODS.EDIT
+                  ? 'cursor-default text-stone-500/60'
+                  : 'hover:bg-stone-800 hover:text-stone-300'
+              "
+            >
+              edit
+            </button>
+          </div>
+          <!-- topic list -->
+          <div ref="topicListRef" class="flex-grow overflow-auto">
+            <div class="flex flex-col-reverse">
+              <button
+                v-for="[id, { name, memoryIds, selected }] in topicsSorted"
+                :key="id"
+                class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                :class="
+                  activeTopicMod === TOPIC_MODS.EDIT
+                    ? editTopicId === id
+                      ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                      : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                    : selected
                     ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                     : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
                 "
-                @click="toggleEvent(id)"
+                @click="
+                  activeTopicMod === TOPIC_MODS.SELECT
+                    ? toggleTopicSelect(id)
+                    : toggleTopicEdit(id)
+                "
               >
                 <span class="truncate">{{ name }}</span>
                 <div>
                   {{ memoryIds.length || "" }}
                 </div>
               </button>
-              <div
-                v-if="
-                  activeEventId &&
-                  sort ===
-                    Math.max(
-                      eventsById[activeEventId].sort - RECENT_EVENT_LIMIT,
-                      0
-                    )
-                "
-                class="-mb-[2px] h-[2px] w-full bg-stone-400"
-              ></div>
             </div>
           </div>
         </div>
       </div>
+      <!-- menu -->
       <div class="rounded-lg overflow-hidden flex-shrink-0">
         <button
           @click="copyAllMemories"
@@ -110,173 +308,10 @@
         </button>
       </div>
     </div>
-    <div class="flex flex-col flex-grow">
-      <div
-        class="flex flex-col flex-grow overflow-hidden rounded-lg"
-        v-if="activeEventId || activeTopicId"
-      >
-        <div class="flex min-h-11 rounded-t-lg overflow-hidden justify-between">
-          <input
-            type="text"
-            v-model="name"
-            @input="onInput"
-            class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
-          />
-          <input
-            v-if="activeEventId"
-            type="text"
-            v-model="date"
-            @input="onInput"
-            class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
-          />
-        </div>
-        <button
-          v-if="activeEventId"
-          @click="copySelectedMemoriesPrompt"
-          class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-          :class="
-            copySelectedLocked
-              ? 'cursor-default text-stone-500/60'
-              : 'hover:bg-stone-800 hover:text-stone-300'
-          "
-        >
-          copy {{ totalRecentMemories + totalTopicMemories }}
-          {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
-        </button>
-        <div v-if="activeEventId" class="flex">
-          <button
-            @click="setPaperMod(PAPER_MODS.TEXT)"
-            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-            :class="
-              activePaperMod === PAPER_MODS.TEXT
-                ? 'cursor-default text-stone-500/60'
-                : 'hover:bg-stone-800 hover:text-stone-300'
-            "
-          >
-            text
-          </button>
-          <button
-            @click="setPaperMod(PAPER_MODS.MEMORY)"
-            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-            :class="
-              activePaperMod === PAPER_MODS.MEMORY
-                ? 'cursor-default text-stone-500/60'
-                : 'hover:bg-stone-800 hover:text-stone-300'
-            "
-          >
-            memory
-          </button>
-        </div>
-        <textarea
-          ref="paperRef"
-          v-model="paper"
-          @input="onInput"
-          @scroll="onTextScroll"
-          class="h-full bg-lines scroll-light bg-stone-400 pt-7 pb-7 p-8 resize-none text-stone-800 text-xl"
-          :style="{ backgroundPositionY }"
-        ></textarea>
-        <button
-          @click="activeEventId ? removeEvent() : removeTopic()"
-          class="max-h-7 w-full bg-stone-700 justify-self-end text-stone-400 pb-1 hover:bg-stone-800 self-end hover:text-stone-300"
-        >
-          remove
-        </button>
-      </div>
-    </div>
-    <div class="w-[250px] flex flex-col gap-1">
-      <div class="flex-grow bg-circles bg-stone-500 rounded-lg overflow-hidden">
-        <div class="flex">
-          <button
-            @click="sortTopicDown"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              activeTopicId === null || topicsById[activeTopicId].sort === 0
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 rotate-90" />
-          </button>
-          <button
-            @click="sortTopicUp"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              activeTopicId === null ||
-              topicsById[activeTopicId].sort === topicsSorted.length - 1
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 -rotate-90" />
-          </button>
-          <button
-            @click="createTopic()"
-            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-          >
-            new
-          </button>
-          <div
-            class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-          >
-            {{ totalTopicMemories || "" }}
-          </div>
-        </div>
-        <div class="flex">
-          <button
-            @click="setTopicModToSelect"
-            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-            :class="
-              activeTopicMod === TOPIC_MODS.SELECT
-                ? 'cursor-default text-stone-500/60'
-                : 'hover:bg-stone-800 hover:text-stone-300'
-            "
-          >
-            select
-          </button>
-          <button
-            @click="setTopicModToEdit"
-            class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-            :class="
-              activeTopicMod === TOPIC_MODS.EDIT
-                ? 'cursor-default text-stone-500/60'
-                : 'hover:bg-stone-800 hover:text-stone-300'
-            "
-          >
-            edit
-          </button>
-        </div>
-        <div ref="topicListRef" class="flex-grow overflow-auto">
-          <div class="flex flex-col-reverse">
-            <button
-              v-for="[id, { name, memoryIds, selected }] in topicsSorted"
-              class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-              :class="
-                activeTopicMod === TOPIC_MODS.EDIT
-                  ? activeTopicId === id
-                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                  : selected
-                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-              "
-              @click="
-                activeTopicMod === TOPIC_MODS.SELECT
-                  ? toggleTopicSelect(id)
-                  : toggleTopicActive(id)
-              "
-            >
-              <span class="truncate">{{ name }}</span>
-              <div>
-                {{ memoryIds.length || "" }}
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 <script setup>
+import { encode } from "gpt-tokenizer"
 import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
@@ -284,6 +319,7 @@ import timestamp from "./utils/timestamp"
 import swapSort from "./utils/swapSort"
 import copyToClipboard from "./utils/copyToClipboard"
 import debounce from "./utils/debounce"
+import { nextTick } from "vue"
 
 const APP_LOCAL_STORAGE_KEY = "stone"
 const DEBOUNCE_DELAY = 300
@@ -293,6 +329,8 @@ const BASE_PROMPT_TOKENS = 5700
 const RECENT_EVENT_LIMIT = 10
 const PAPER_MODS = { TEXT: 0, MEMORY: 1 }
 const TOPIC_MODS = { SELECT: 0, EDIT: 1 }
+const PAPER_EXTRA_SCROLL = 24
+const PAPER_BG_OFFSET = -8
 
 const activePaperMod = ref(PAPER_MODS.TEXT)
 const activeTopicMod = ref(TOPIC_MODS.SELECT)
@@ -304,8 +342,8 @@ const topicListRef = ref(null)
 const memoryStringsById = ref({}) // main memory storage
 const eventsById = ref({})
 const topicsById = ref({})
-const activeEventId = ref(null)
-const activeTopicId = ref(null)
+const editEventId = ref(null)
+const editTopicId = ref(null)
 
 // handle v-model fields to edit
 const name = ref("")
@@ -316,7 +354,7 @@ let removed = null
 
 const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
-const backgroundPositionY = ref("0px")
+const backgroundPositionY = ref(`${PAPER_BG_OFFSET}px`)
 
 const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
 const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
@@ -339,7 +377,7 @@ const totalTopicMemories = computed(() => {
   }, 0)
 })
 const totalRecentMemories = computed(() => {
-  const activeEvent = eventsById.value[activeEventId.value]
+  const activeEvent = eventsById.value[editEventId.value]
   if (!activeEvent) return
   return Object.values(eventsById.value).reduce((sum, e) => {
     if (
@@ -364,13 +402,22 @@ function localStorageLoad() {
 function localStorageSave() {
   localStorage.setItem(APP_LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
   console.log(`⏬ local storage updated [${timestamp()}]`)
+  if (editEventId.value) {
+    const text = eventsById.value[editEventId.value].text
+    try {
+      const tokenCount = encode(text).length
+      console.log(`Tokens in current event text: ${tokenCount}`)
+    } catch (error) {
+      console.error("Error counting tokens:", error)
+    }
+  }
 }
 function injectStorage(storage) {
   memoryStringsById.value = storage.memoryStringsById
   eventsById.value = storage.eventsById
   topicsById.value = storage.topicsById
-  activeEventId.value = storage.activeEventId
-  activeTopicId.value = storage.activeTopicId
+  editEventId.value = storage.editEventId
+  editTopicId.value = storage.editTopicId
   activePaperMod.value = storage.activePaperMod
   activeTopicMod.value = storage.activeTopicMod
   updateInputFields()
@@ -380,8 +427,8 @@ function getStorage() {
     memoryStringsById: memoryStringsById.value,
     eventsById: eventsById.value,
     topicsById: topicsById.value,
-    activeEventId: activeEventId.value,
-    activeTopicId: activeTopicId.value,
+    editEventId: editEventId.value,
+    editTopicId: editTopicId.value,
     activePaperMod: activePaperMod.value,
     activeTopicMod: activeTopicMod.value,
   }
@@ -396,10 +443,10 @@ function createEvent() {
     memoryIds: [],
     sort: Object.keys(eventsById.value).length,
   }
-  toggleEvent(id)
+  toggleEventEdit(id)
   nextTick(() => {
     paperRef.value.focus()
-    scrollToTop(eventListRef)
+    scrollToTop(eventListRef.value)
   })
 }
 function createTopic() {
@@ -411,25 +458,27 @@ function createTopic() {
     selected: true,
     sort: Object.keys(topicsById.value).length,
   }
-  if (activeTopicMod.value === TOPIC_MODS.EDIT) toggleTopicActive(id)
-  nextTick(() => scrollToTop(topicListRef))
+  if (activeTopicMod.value === TOPIC_MODS.EDIT) toggleTopicEdit(id)
+  nextTick(() => scrollToTop(topicListRef.value))
 }
-function toggleEvent(id) {
+function toggleEventEdit(id) {
   activePaperMod.value = PAPER_MODS.TEXT
-  if (activeEventId.value === id) activeEventId.value = null
-  else activeEventId.value = id
-  activeTopicId.value = null
+  if (editEventId.value === id) editEventId.value = null
+  else editEventId.value = id
+  editTopicId.value = null
   onTextScroll()
   updateInputFields()
   debouncedLocalStorageSave()
+  scrollToTop(paperRef.value)
 }
-function toggleTopicActive(id) {
-  if (activeTopicId.value === id) activeTopicId.value = null
-  else activeTopicId.value = id
-  activeEventId.value = null
-  onTextScroll()
+function toggleTopicEdit(id) {
+  if (editTopicId.value === id) editTopicId.value = null
+  else editTopicId.value = id
+  editEventId.value = null
+  onTextScroll() // reset paper bg lines
   updateInputFields()
   debouncedLocalStorageSave()
+  scrollToTop(paperRef.value)
 }
 function toggleTopicSelect(id) {
   topicsById.value[id].selected = !topicsById.value[id].selected
@@ -444,7 +493,7 @@ function setPaperMod(mod) {
 function setTopicModToSelect() {
   if (activeTopicMod.value === TOPIC_MODS.SELECT) return
   activeTopicMod.value = TOPIC_MODS.SELECT
-  activeTopicId.value = null
+  editTopicId.value = null
   debouncedLocalStorageSave()
 }
 function setTopicModToEdit() {
@@ -453,7 +502,7 @@ function setTopicModToEdit() {
   debouncedLocalStorageSave()
 }
 function updateInputFields() {
-  const activeEvent = eventsById.value[activeEventId.value]
+  const activeEvent = eventsById.value[editEventId.value]
   if (activeEvent) {
     name.value = activeEvent.name
     date.value = activeEvent.date
@@ -461,14 +510,14 @@ function updateInputFields() {
       ? (paper.value = activeEvent.memoryStringsRaw)
       : (paper.value = activeEvent.text)
   }
-  const activeTopic = topicsById.value[activeTopicId.value]
+  const activeTopic = topicsById.value[editTopicId.value]
   if (activeTopic) {
     name.value = activeTopic.name
     paper.value = activeTopic.memoryIdsRaw
   }
 }
 function onInput() {
-  const activeEvent = eventsById.value[activeEventId.value]
+  const activeEvent = eventsById.value[editEventId.value]
   if (activeEvent) {
     activeEvent.name = name.value
     activeEvent.date = date.value
@@ -479,13 +528,30 @@ function onInput() {
       activeEvent.text = paper.value
     }
   }
-  const activeTopic = topicsById.value[activeTopicId.value]
+  const activeTopic = topicsById.value[editTopicId.value]
   if (activeTopic) {
     activeTopic.name = name.value
     activeTopic.memoryIdsRaw = paper.value
     debouncedUpdateTopics(activeTopic)
   }
   debouncedLocalStorageSave()
+  adjustPaperScroll()
+}
+function adjustPaperScroll() {
+  const el = paperRef.value
+  if (!el) return
+  const initialScrollTop = el.scrollTop
+  requestAnimationFrame(() => {
+    if (el.scrollTop === initialScrollTop) return
+    if (el.scrollTop < initialScrollTop) {
+      el.scrollTop = Math.max(0, el.scrollTop - PAPER_EXTRA_SCROLL)
+    } else {
+      el.scrollTop = Math.min(
+        el.scrollHeight,
+        el.scrollTop + PAPER_EXTRA_SCROLL
+      )
+    }
+  })
 }
 function updateMemories(event) {
   event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
@@ -532,10 +598,10 @@ function updateTopics(topic) {
 }
 function removeEvent() {
   removed = {}
-  const id = activeEventId.value
-  removed.event = eventsById.value[activeEventId.value]
-  removed.activeEventId = id
-  toggleEvent(id)
+  const id = editEventId.value
+  removed.event = eventsById.value[editEventId.value]
+  removed.editEventId = id
+  toggleEventEdit(id)
   delete eventsById.value[id]
   Object.values(eventsById.value).forEach((event) => {
     if (event.sort > removed.event.sort) event.sort--
@@ -544,10 +610,10 @@ function removeEvent() {
 }
 function removeTopic() {
   removed = {}
-  const id = activeTopicId.value
-  removed.topic = topicsById.value[activeTopicId.value]
-  removed.activeTopicId = id
-  toggleTopicActive(id)
+  const id = editTopicId.value
+  removed.topic = topicsById.value[editTopicId.value]
+  removed.editTopicId = id
+  toggleTopicEdit(id)
   delete topicsById.value[id]
   Object.values(topicsById.value).forEach((topic) => {
     if (topic.sort > removed.topic.sort) topic.sort--
@@ -556,49 +622,45 @@ function removeTopic() {
 function restore() {
   if (!removed) return
   if (removed.event) {
-    eventsById.value[removed.activeEventId] = {
+    eventsById.value[removed.editEventId] = {
       ...removed.event,
       sort: Object.keys(eventsById.value).length,
     }
-    toggleEvent(removed.activeEventId)
-    updateMemories(eventsById.value[removed.activeEventId])
+    toggleEventEdit(removed.editEventId)
+    updateMemories(eventsById.value[removed.editEventId])
   } else {
-    topicsById.value[removed.activeTopicId] = {
+    topicsById.value[removed.editTopicId] = {
       ...removed.topic,
       sort: Object.keys(topicsById.value).length,
     }
-    toggleTopicActive(removed.activeTopicId)
+    toggleTopicEdit(removed.editTopicId)
   }
   removed = null
   debouncedLocalStorageSave()
 }
 function sortEventUp() {
-  swapSort(eventsById.value, activeEventId.value, 1)
+  swapSort(eventsById.value, editEventId.value, 1)
   debouncedLocalStorageSave()
 }
 function sortEventDown() {
-  swapSort(eventsById.value, activeEventId.value, -1)
+  swapSort(eventsById.value, editEventId.value, -1)
   debouncedLocalStorageSave()
 }
 function sortTopicUp() {
-  swapSort(topicsById.value, activeTopicId.value, 1)
+  swapSort(topicsById.value, editTopicId.value, 1)
   debouncedLocalStorageSave()
 }
 function sortTopicDown() {
-  swapSort(topicsById.value, activeTopicId.value, -1)
+  swapSort(topicsById.value, editTopicId.value, -1)
   debouncedLocalStorageSave()
 }
 function onTextScroll(event) {
   if (!event) {
-    backgroundPositionY.value = 0
+    backgroundPositionY.value = `${PAPER_BG_OFFSET}px`
     return
   }
-  backgroundPositionY.value = `-${event.target.scrollTop}px`
+  backgroundPositionY.value = `-${event.target.scrollTop - PAPER_BG_OFFSET}px`
 }
-function scrollToTop(ref) {
-  ref.value.scrollTop = ref.value.clientHeight - ref.value.scrollHeight
-}
-
 async function copyAllMemories() {
   copyToClipboard(JSON.stringify(memoryStringsById.value), copyAllLocked)
 }
@@ -629,7 +691,7 @@ async function copySelectedMemoriesPrompt() {
   output += "## my short-term memory\n\n"
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
-  const activeEvent = eventsById.value[activeEventId.value]
+  const activeEvent = eventsById.value[editEventId.value]
   eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
     if (
       sort >= activeEvent.sort ||
@@ -651,5 +713,15 @@ async function copySelectedMemoriesPrompt() {
 async function onFileLoad() {
   await fileLoad(injectStorage)
   debouncedLocalStorageSave()
+}
+function scrollToTop(ref) {
+  ref.scrollTo({ top: 0, behavior: "smooth" })
+}
+function scrollToBot(ref) {
+  ref.scrollTo({ top: ref.scrollHeight, behavior: "smooth" })
+}
+function onKeyDown(event) {
+  const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+  if (navigationKeys.includes(event.key)) adjustPaperScroll()
 }
 </script>
