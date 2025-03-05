@@ -28,22 +28,20 @@ This is the main memory storage, where memories are stored and identified by ID.
 ```json
 {
   "9874122603798017": {
+    "sort": 0,
     "name": "Philosophy Discussion",
     "time": "2025-02-14",
     "text": "To be, or not to be, that is the question",
     "memory": "['to be', 'not to be']",
-    "memoryLength": 2,
-    "memoryIds": [0214702358321752, 1752890679257238],
-    "sort": 0
+    "memoryIds": [0214702358321752, 1752890679257238]
   },
   "4526373295305388": {
+    "sort": 1,
     "name": "Dream Journal",
     "time": "2025-02-14",
     "text": "I was flying over a city made of glass",
     "memory": "['flying', 'city made of glass']",
-    "memoryLength": 2,
-    "memoryIds": [4527307323225730, 7252124575123408],
-    "sort": 1
+    "memoryIds": [4527307323225730, 7252124575123408]
   }
 }
 ```
@@ -53,12 +51,11 @@ This is the main memory storage, where memories are stored and identified by ID.
 ```json
 {
   "9874122603798017": {
+    "sort": 0,
     "name": "Philosophy",
     "memoryIdsRaw": "[0214702358321752, 1752890679257238]",
-    "memoryLength": 2,
     "memoryIds": [0214702358321752, 1752890679257238],
-    "selected": true,
-    "sort": 0
+    "selected": true
   }
 }
 ```
