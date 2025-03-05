@@ -127,11 +127,14 @@
             v-if="editEventId"
             @click="copySelectedMemoriesPrompt"
             :disabled="copySelectedLocked"
+            theme="light"
           >
             copy {{ totalRecentMemories + totalTopicMemories }}
             {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
           </Button>
-          <Button @click="editEventId ? removeEvent() : removeTopic()"
+          <Button
+            @click="editEventId ? removeEvent() : removeTopic()"
+            theme="light"
             >remove
           </Button>
         </div>
@@ -207,52 +210,34 @@
               </button>
             </div>
           </div>
+          <div class="bg-stone-700 p-3">
+            <Switch
+              v-model="topicMod"
+              :labels="topicModLabels"
+              @change="handleTopicModChange"
+              class="self-center w-full"
+            />
+          </div>
         </div>
-        <Switch
-          v-model="topicMod"
-          :labels="topicModLabels"
-          @change="handleTopicModChange"
-          class="self-center w-full"
-        />
       </div>
     </div>
     <!-- menu -->
-    <div class="rounded-lg overflow-hidden flex-shrink-0">
-      <button
-        @click="copyAllMemories"
-        class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-        :class="
-          copyAllLocked
-            ? 'cursor-default text-stone-500/60'
-            : 'hover:bg-stone-800 hover:text-stone-300'
-        "
-      >
-        copy {{ totalMemories }}
-        {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
-      </button>
-      <button
-        @click="fileSave('stone.json', getStorage())"
-        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        save
-      </button>
-      <button
-        @click="onFileLoad"
-        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-      >
-        load
-      </button>
-      <button
-        @click="restore"
-        class="w-full bg-stone-700 justify-self-end pb-1"
-        :class="
-          removed
-            ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            : 'cursor-default text-stone-500/80'
-        "
-      >
-        restore
-      </button>
+    <div
+      class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
+    >
+      <div class="w-fit rounded-lg overflow-hidden">
+        <Button @click="copyAllMemories" theme="dark" :disabled="copyAllLocked">
+          copy {{ totalMemories }}
+          {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
+        </Button>
+        <Button @click="fileSave('stone.json', getStorage())" theme="dark">
+          save
+        </Button>
+        <Button @click="onFileLoad" theme="dark"> load </Button>
+        <Button @click="restore" theme="dark" :disabled="!removed">
+          restore
+        </Button>
+      </div>
     </div>
   </div>
 </template>
