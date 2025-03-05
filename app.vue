@@ -34,6 +34,7 @@
               class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
             />
           </div>
+          <!-- paper -->
           <Paper
             v-model="paper"
             @input="updateOnInput"
@@ -48,8 +49,11 @@
           />
         </div>
         <!-- edit buttons -->
-        <div class="flex w-full p-3 bg-stone-700 justify-between">
-          <!-- mod buttons -->
+        <div
+          class="flex w-full p-3 bg-stone-700"
+          :class="editEventId ? 'justify-between' : 'justify-end'"
+        >
+          <!-- paper mod buttons -->
           <Switch
             v-if="editEventId"
             v-model="editEventMod"
@@ -117,39 +121,38 @@
           <!-- topic list -->
           <div ref="topicListRef" class="flex-grow overflow-auto pb-2">
             <div class="flex flex-col-reverse">
-              <button
+              <div
+                class="flex max-w-full"
                 v-for="[id, { name, memoryIds, selected }] in topicsSorted"
                 :key="id"
-                class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-                :class="
-                  topicMod === TOPIC_MODS.EDIT
-                    ? editTopicId === id
+              >
+                <button
+                  class="flex-grow overflow-hidden flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                  :class="
+                    editTopicId === id
                       ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                       : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                    : selected
-                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                "
-                @click="
-                  topicMod === TOPIC_MODS.SELECT
-                    ? toggleTopicSelect(id)
-                    : toggleTopicEdit(id)
-                "
-              >
-                <span class="truncate">{{ name }}</span>
-                <div>
+                  "
+                  @click="toggleTopicEdit(id)"
+                >
+                  <span class="truncate">{{ name }}</span>
                   {{ memoryIds.length || "" }}
+                </button>
+                <div
+                  class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
+                  @click="toggleTopicSelect(id)"
+                >
+                  <div
+                    class="flex items-center justify-center rounded-full size-5 bg-stone-600"
+                  >
+                    <div
+                      class="rounded-full size-3"
+                      :class="[selected ? 'bg-stone-400' : 'bg-stone-600']"
+                    />
+                  </div>
                 </div>
-              </button>
+              </div>
             </div>
-          </div>
-          <div class="bg-stone-700 p-3">
-            <Switch
-              v-model="topicMod"
-              :labels="topicModLabels"
-              @change="handleTopicModChange"
-              class="self-center w-full"
-            />
           </div>
         </div>
       </div>
@@ -193,17 +196,11 @@ const AVERAGE_JSON_TOKENS = 60
 const BASE_PROMPT_TOKENS = 5700
 const RECENT_EVENT_LIMIT = 5
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
-const TOPIC_MODS = { SELECT: 0, EDIT: 1 }
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
 const editEventModLabels = {
   text: EDIT_EVENT_MODS.TEXT,
   memory: EDIT_EVENT_MODS.MEMORY,
-}
-const topicMod = ref(TOPIC_MODS.SELECT)
-const topicModLabels = {
-  select: TOPIC_MODS.SELECT,
-  edit: TOPIC_MODS.EDIT,
 }
 
 const topicListRef = ref(null)
@@ -291,7 +288,6 @@ function injectStorage(storage) {
   editEventId.value = storage.editEventId
   editTopicId.value = storage.editTopicId
   editEventMod.value = storage.editEventMod
-  topicMod.value = storage.topicMod
   updateInputFields()
 }
 function getStorage() {
@@ -302,7 +298,6 @@ function getStorage() {
     editEventId: editEventId.value,
     editTopicId: editTopicId.value,
     editEventMod: editEventMod.value,
-    topicMod: topicMod.value,
   }
 }
 function createTopic() {
@@ -314,7 +309,7 @@ function createTopic() {
     selected: true,
     sort: Object.keys(topicsById.value).length,
   }
-  if (topicMod.value === TOPIC_MODS.EDIT) toggleTopicEdit(id)
+  toggleTopicEdit(id)
   nextTick(() => scrollToTop(topicListRef.value))
 }
 function toggleEventEdit(id) {
@@ -337,10 +332,6 @@ function toggleTopicSelect(id) {
 }
 const handlePaperModChange = () => {
   updateInputFields()
-  debouncedLocalStorageSave()
-}
-const handleTopicModChange = (newValue) => {
-  if (newValue === TOPIC_MODS.SELECT) editTopicId.value = null
   debouncedLocalStorageSave()
 }
 function updateInputFields() {

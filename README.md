@@ -59,3 +59,14 @@ This is the main memory storage, where memories are stored and identified by ID.
   }
 }
 ```
+
+### local storage
+
+```json
+  "memoryStringsById": {},
+  "eventsById": {},
+  "topicsById": {},
+  "editEventId": "8348657830678625",
+  "editTopicId": null,
+  "editEventMod": 0
+```

@@ -15,5 +15,6 @@
   </button>
 </template>
 <script setup>
+// theme: light, dark
 defineProps(["disabled", "theme"])
 </script>
