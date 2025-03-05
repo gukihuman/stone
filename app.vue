@@ -84,85 +84,14 @@
         </div>
       </div>
       <!-- topics -->
-      <div class="w-[250px] flex flex-col gap-3">
-        <div
-          class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
-        >
-          <!-- topics top menu -->
-          <div class="flex">
-            <button
-              @click="sortTopicDown"
-              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-              :class="
-                editTopicId === null || topicsById[editTopicId].sort === 0
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <IconArrow class="w-3 rotate-90" />
-            </button>
-            <button
-              @click="sortTopicUp"
-              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-              :class="
-                editTopicId === null ||
-                topicsById[editTopicId].sort === topicsSorted.length - 1
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <IconArrow class="w-3 -rotate-90" />
-            </button>
-            <button
-              @click="createTopic()"
-              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-            >
-              new
-            </button>
-            <div
-              class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-            >
-              {{ totalTopicMemories || "" }}
-            </div>
-          </div>
-          <!-- topic list -->
-          <div ref="topicListRef" class="overflow-auto pb-2">
-            <div class="flex flex-col-reverse">
-              <div
-                class="flex max-w-full"
-                v-for="[id, { name, memoryIds, selected }] in topicsSorted"
-                :key="id"
-              >
-                <button
-                  class="flex-grow overflow-hidden flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-                  :class="
-                    editTopicId === id
-                      ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                      : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                  "
-                  @click="toggleTopicEdit(id)"
-                >
-                  <span class="truncate">{{ name }}</span>
-                  {{ memoryIds.length || "" }}
-                </button>
-                <div
-                  class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
-                  @click="toggleTopicSelect(id)"
-                >
-                  <div
-                    class="flex items-center justify-center rounded-full size-5 bg-stone-600"
-                  >
-                    <div
-                      class="rounded-full size-3"
-                      :class="[selected ? 'bg-stone-400' : 'bg-stone-600']"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Topics
+        :topics-by-id="topicsById"
+        :topics-sorted="topicsSorted"
+        :edit-topic-id="editTopicId"
+        :total-topic-memories="totalTopicMemories"
+        @toggle-topic-edit="toggleTopicEdit"
+        @local-storage-save="debouncedLocalStorageSave"
+      />
     </div>
     <!-- main bottom menu -->
     <div
@@ -190,10 +119,8 @@ import fileSave from "./utils/fileSave"
 import fileLoad from "./utils/fileLoad"
 import newId from "./utils/newId"
 import timestamp from "./utils/timestamp"
-import swapSort from "./utils/swapSort"
 import copyToClipboard from "./utils/copyToClipboard"
 import debounce from "./utils/debounce"
-import scrollToTop from "./utils/scrollToTop"
 import { nextTick } from "vue"
 
 const APP_LOCAL_STORAGE_KEY = "stone"
@@ -210,7 +137,6 @@ const editEventModLabels = {
   memory: EDIT_EVENT_MODS.MEMORY,
 }
 
-const topicListRef = ref(null)
 const nameRef = ref(null)
 const dateRef = ref(null)
 
@@ -309,18 +235,6 @@ function getStorage() {
     editEventMod: editEventMod.value,
   }
 }
-function createTopic() {
-  const id = newId()
-  topicsById.value[id] = {
-    name: "topic",
-    memoryIdsRaw: "", // valid JSON array of numbers as string itself
-    memoryIds: [],
-    selected: true,
-    sort: Object.keys(topicsById.value).length,
-  }
-  toggleTopicEdit(id)
-  nextTick(() => scrollToTop(topicListRef.value))
-}
 function toggleEventEdit(id) {
   if (editEventId.value === id) editEventId.value = null
   else editEventId.value = id
@@ -333,10 +247,6 @@ function toggleTopicEdit(id) {
   else editTopicId.value = id
   editEventId.value = null
   updateInputFields()
-  debouncedLocalStorageSave()
-}
-function toggleTopicSelect(id) {
-  topicsById.value[id].selected = !topicsById.value[id].selected
   debouncedLocalStorageSave()
 }
 const handlePaperModChange = () => {
@@ -461,14 +371,6 @@ function restore() {
     toggleTopicEdit(removed.editTopicId)
   }
   removed = null
-  debouncedLocalStorageSave()
-}
-function sortTopicUp() {
-  swapSort(topicsById.value, editTopicId.value, 1)
-  debouncedLocalStorageSave()
-}
-function sortTopicDown() {
-  swapSort(topicsById.value, editTopicId.value, -1)
   debouncedLocalStorageSave()
 }
 async function copyAllMemories() {

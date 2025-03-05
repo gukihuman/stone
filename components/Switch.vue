@@ -18,8 +18,8 @@
       </span>
       <div
         v-if="index < labelEntries.length - 1"
-        class="h-full border-dotted border-r-[3px] border-stone-400"
-      ></div>
+        class="h-full bg-stone-500 border-dotted border-r-[3px] border-stone-400"
+      />
     </button>
   </div>
 </template>
