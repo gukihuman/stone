@@ -3,82 +3,15 @@
     <!-- main field -->
     <div class="flex overflow-hidden justify-between gap-3 flex-grow">
       <!-- events -->
-      <div
-        class="w-[250px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
-      >
-        <!-- events top menu -->
-        <div class="flex">
-          <button
-            @click="sortEventDown"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              editEventId === null || eventsById[editEventId].sort === 0
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 rotate-90" />
-          </button>
-          <button
-            @click="sortEventUp"
-            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-            :class="
-              editEventId === null ||
-              eventsById[editEventId].sort === eventsSorted.length - 1
-                ? 'cursor-default bg-slate-50 text-stone-500/60'
-                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-            "
-          >
-            <IconArrow class="w-3 -rotate-90" />
-          </button>
-          <button
-            @click="createEvent()"
-            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-          >
-            new
-          </button>
-          <div
-            class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-          >
-            {{ totalRecentMemories || "" }}
-          </div>
-        </div>
-        <!-- event list -->
-        <div ref="eventListRef" class="overflow-y-scroll pb-2">
-          <div class="flex flex-col-reverse">
-            <div
-              v-for="[id, { name, memoryIds, sort }] in eventsSorted"
-              :key="id"
-            >
-              <button
-                class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-                :class="
-                  editEventId === id
-                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                "
-                @click="toggleEventEdit(id)"
-              >
-                <span class="truncate">{{ name }}</span>
-                <div>
-                  {{ memoryIds.length || "" }}
-                </div>
-              </button>
-              <div
-                v-if="
-                  editEventId &&
-                  sort ===
-                    Math.max(
-                      eventsById[editEventId].sort - RECENT_EVENT_LIMIT,
-                      0
-                    )
-                "
-                class="-mb-[2px] h-[2px] w-full bg-gradient-to-r from-stone-400 to-transparent"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Events
+        :events-by-id="eventsById"
+        :events-sorted="eventsSorted"
+        :edit-event-id="editEventId"
+        :total-recent-memories="totalRecentMemories"
+        :recent-event-limit="RECENT_EVENT_LIMIT"
+        @toggle-event-edit="toggleEventEdit"
+        @local-storage-save="debouncedLocalStorageSave"
+      />
       <!-- paper and buttons -->
       <div
         class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
@@ -221,7 +154,7 @@
         </div>
       </div>
     </div>
-    <!-- menu -->
+    <!-- main bottom menu -->
     <div
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
@@ -258,7 +191,7 @@ const DEBOUNCE_DELAY = 300
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const BASE_PROMPT_TOKENS = 5700
-const RECENT_EVENT_LIMIT = 10
+const RECENT_EVENT_LIMIT = 5
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
 const TOPIC_MODS = { SELECT: 0, EDIT: 1 }
 
@@ -273,7 +206,6 @@ const topicModLabels = {
   edit: TOPIC_MODS.EDIT,
 }
 
-const eventListRef = ref(null)
 const topicListRef = ref(null)
 
 const memoryStringsById = ref({}) // main memory storage
@@ -314,12 +246,12 @@ const totalTopicMemories = computed(() => {
   }, 0)
 })
 const totalRecentMemories = computed(() => {
-  const activeEvent = eventsById.value[editEventId.value]
-  if (!activeEvent) return
+  const editEvent = eventsById.value[editEventId.value]
+  if (!editEvent) return
   return Object.values(eventsById.value).reduce((sum, e) => {
     if (
-      activeEvent.sort > e.sort &&
-      e.sort >= Math.max(activeEvent.sort - RECENT_EVENT_LIMIT, 0)
+      editEvent.sort > e.sort &&
+      e.sort >= Math.max(editEvent.sort - RECENT_EVENT_LIMIT, 0)
     ) {
       return sum + e.memoryIds.length
     }
@@ -373,19 +305,6 @@ function getStorage() {
     topicMod: topicMod.value,
   }
 }
-function createEvent() {
-  const id = newId()
-  eventsById.value[id] = {
-    name: "current",
-    date: new Date().toLocaleDateString(),
-    text: "",
-    memoryStringsRaw: "", // valid JSON array of strings as string itself
-    memoryIds: [],
-    sort: Object.keys(eventsById.value).length,
-  }
-  toggleEventEdit(id)
-  nextTick(() => scrollToTop(eventListRef.value))
-}
 function createTopic() {
   const id = newId()
   topicsById.value[id] = {
@@ -425,37 +344,37 @@ const handleTopicModChange = (newValue) => {
   debouncedLocalStorageSave()
 }
 function updateInputFields() {
-  const activeEvent = eventsById.value[editEventId.value]
-  if (activeEvent) {
-    name.value = activeEvent.name
-    date.value = activeEvent.date
+  const editEvent = eventsById.value[editEventId.value]
+  if (editEvent) {
+    name.value = editEvent.name
+    date.value = editEvent.date
     editEventMod.value === EDIT_EVENT_MODS.MEMORY
-      ? (paper.value = activeEvent.memoryStringsRaw)
-      : (paper.value = activeEvent.text)
+      ? (paper.value = editEvent.memoryStringsRaw)
+      : (paper.value = editEvent.text)
   }
-  const activeTopic = topicsById.value[editTopicId.value]
-  if (activeTopic) {
-    name.value = activeTopic.name
-    paper.value = activeTopic.memoryIdsRaw
+  const editTopic = topicsById.value[editTopicId.value]
+  if (editTopic) {
+    name.value = editTopic.name
+    paper.value = editTopic.memoryIdsRaw
   }
 }
 function updateOnInput() {
-  const activeEvent = eventsById.value[editEventId.value]
-  if (activeEvent) {
-    activeEvent.name = name.value
-    activeEvent.date = date.value
+  const editEvent = eventsById.value[editEventId.value]
+  if (editEvent) {
+    editEvent.name = name.value
+    editEvent.date = date.value
     if (editEventMod.value === EDIT_EVENT_MODS.MEMORY) {
-      activeEvent.memoryStringsRaw = paper.value
-      debouncedUpdateMemories(activeEvent)
+      editEvent.memoryStringsRaw = paper.value
+      debouncedUpdateMemories(editEvent)
     } else {
-      activeEvent.text = paper.value
+      editEvent.text = paper.value
     }
   }
-  const activeTopic = topicsById.value[editTopicId.value]
-  if (activeTopic) {
-    activeTopic.name = name.value
-    activeTopic.memoryIdsRaw = paper.value
-    debouncedUpdateTopics(activeTopic)
+  const editTopic = topicsById.value[editTopicId.value]
+  if (editTopic) {
+    editTopic.name = name.value
+    editTopic.memoryIdsRaw = paper.value
+    debouncedUpdateTopics(editTopic)
   }
   debouncedLocalStorageSave()
 }
@@ -544,14 +463,6 @@ function restore() {
   removed = null
   debouncedLocalStorageSave()
 }
-function sortEventUp() {
-  swapSort(eventsById.value, editEventId.value, 1)
-  debouncedLocalStorageSave()
-}
-function sortEventDown() {
-  swapSort(eventsById.value, editEventId.value, -1)
-  debouncedLocalStorageSave()
-}
 function sortTopicUp() {
   swapSort(topicsById.value, editTopicId.value, 1)
   debouncedLocalStorageSave()
@@ -590,12 +501,12 @@ async function copySelectedMemoriesPrompt() {
   output += "## my short-term memory\n\n"
   output +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
-  const activeEvent = eventsById.value[editEventId.value]
+  const editEvent = eventsById.value[editEventId.value]
   eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
     if (
       !memoryStringsRaw ||
-      sort >= activeEvent.sort ||
-      sort < activeEvent.sort - RECENT_EVENT_LIMIT
+      sort >= editEvent.sort ||
+      sort < editEvent.sort - RECENT_EVENT_LIMIT
     ) {
       return
     }
@@ -605,8 +516,8 @@ async function copySelectedMemoriesPrompt() {
   })
   output += "## current ongoing event\n\n"
   output += "and finally, this is what happening now\n\n"
-  output += `### ${activeEvent.name} ${activeEvent.date}\n\n`
-  output += activeEvent.text
+  output += `### ${editEvent.name} ${editEvent.date}\n\n`
+  output += editEvent.text
 
   copyToClipboard(output, copySelectedLocked)
 }
