@@ -43,20 +43,42 @@
     <div ref="eventListRef" class="overflow-auto pb-2">
       <div class="flex flex-col-reverse">
         <div v-for="[id, { name, memoryIds, sort }] in eventsSorted" :key="id">
-          <button
-            class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-            :class="
-              editEventId === id
-                ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-            "
+          <ButtonList
+            :active="editEventId === id"
             @click="emit('toggle-event-edit', id)"
           >
             <span class="truncate">{{ name }}</span>
-            <div>
-              {{ memoryIds.length || "" }}
+            <div class="flex gap-4">
+              <div class="flex gap-2 justify-end">
+                <div
+                  v-for="(tokenString, index) in eventTokensById[id]"
+                  :key="`memory-tokens-${id}`"
+                  class="h-5 text-xl flex items-center justify-end tracking-[-0.25rem]"
+                  :class="
+                    index === eventTokensById[id].length - 1
+                      ? 'text-stone-400'
+                      : 'text-stone-300'
+                  "
+                >
+                  {{ tokenString }}
+                </div>
+              </div>
+              <div class="flex gap-2 justify-end w-16" v-if="memoryIds.length">
+                <div
+                  v-for="(tokenString, index) in formatNumber(memoryIds.length)"
+                  :key="`memory-length-${id}`"
+                  class="h-5 text-2xl flex items-center justify-end tracking-[-0.25rem]"
+                  :class="
+                    index === formatNumber(memoryIds.length).length - 1
+                      ? 'text-stone-400'
+                      : 'text-stone-300'
+                  "
+                >
+                  {{ tokenString }}
+                </div>
+              </div>
             </div>
-          </button>
+          </ButtonList>
           <div
             v-if="
               editEventId &&
@@ -64,19 +86,16 @@
                 Math.max(eventsById[editEventId].sort - recentEventLimit, 0)
             "
             class="-mb-[2px] h-[2px] w-full bg-gradient-to-r from-stone-400 to-transparent"
-          ></div>
+          />
         </div>
       </div>
     </div>
   </div>
 </template>
 <script setup>
-import newId from "./utils/newId"
-import swapSort from "./utils/swapSort"
-import scrollToTop from "./utils/scrollToTop"
-
 const props = defineProps([
   "eventsById",
+  "eventTokensById",
   "eventsSorted",
   "editEventId",
   "totalRecentMemories",
@@ -101,7 +120,6 @@ function createEvent() {
   nextTick(() => scrollToTop(eventListRef.value))
 }
 function sortEventUp() {
-  console.log(props.eventsById)
   swapSort(props.eventsById, props.editEventId, 1)
   emit("local-storage-save")
 }

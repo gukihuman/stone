@@ -48,18 +48,13 @@
             v-for="[id, { name, memoryIds, selected }] in topicsSorted"
             :key="id"
           >
-            <button
-              class="flex-grow overflow-hidden flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-              :class="
-                editTopicId === id
-                  ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                  : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-              "
+            <ButtonList
+              :active="editTopicId === id"
               @click="emit('toggle-topic-edit', id)"
             >
               <span class="truncate">{{ name }}</span>
               {{ memoryIds.length || "" }}
-            </button>
+            </ButtonList>
             <div
               class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
               @click="toggleTopicSelect(id)"
@@ -80,9 +75,9 @@
   </div>
 </template>
 <script setup>
-import newId from "./utils/newId"
-import swapSort from "./utils/swapSort"
-import scrollToTop from "./utils/scrollToTop"
+import newId from "~/utils/newId"
+import swapSort from "~/utils/swapSort"
+import scrollToTop from "~/utils/scrollToTop"
 
 const props = defineProps([
   "topicsById",

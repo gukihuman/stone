@@ -8,6 +8,10 @@ npm run dev
 npm run build
 ```
 
+## numbers
+
+The larger number shows the token count, displayed to the nearest hundred. The smaller number indicates the number of memory records.
+
 ## structure
 
 ### memoryStringsById
@@ -32,7 +36,7 @@ This is the main memory storage, where memories are stored and identified by ID.
     "name": "Philosophy Discussion",
     "time": "2025-02-14",
     "text": "To be, or not to be, that is the question",
-    "memory": "['to be', 'not to be']",
+    "memoryStringsRaw": "['to be', 'not to be']",
     "memoryIds": [0214702358321752, 1752890679257238]
   },
   "4526373295305388": {
@@ -40,7 +44,7 @@ This is the main memory storage, where memories are stored and identified by ID.
     "name": "Dream Journal",
     "time": "2025-02-14",
     "text": "I was flying over a city made of glass",
-    "memory": "['flying', 'city made of glass']",
+    "memoryStringsRaw": "['flying', 'city made of glass']",
     "memoryIds": [4527307323225730, 7252124575123408]
   }
 }

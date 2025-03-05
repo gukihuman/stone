@@ -5,6 +5,7 @@
       <!-- events -->
       <Events
         :events-by-id="eventsById"
+        :event-tokens-by-id="eventTokensById"
         :events-sorted="eventsSorted"
         :edit-event-id="editEventId"
         :total-recent-memories="totalRecentMemories"
@@ -67,20 +68,17 @@
             :labels="editEventModLabels"
             @change="handlePaperModChange"
           />
-          <Button
+          <ButtonLight
             v-if="editEventId"
             @click="copySelectedMemoriesPrompt"
             :disabled="copySelectedLocked"
-            theme="light"
           >
             copy {{ totalRecentMemories + totalTopicMemories }}
             {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
-          </Button>
-          <Button
-            @click="editEventId ? removeEvent() : removeTopic()"
-            theme="light"
+          </ButtonLight>
+          <ButtonLight @click="editEventId ? removeEvent() : removeTopic()"
             >remove
-          </Button>
+          </ButtonLight>
         </div>
       </div>
       <!-- topics -->
@@ -98,33 +96,23 @@
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
       <div class="w-fit rounded-lg overflow-hidden">
-        <Button @click="copyAllMemories" theme="dark" :disabled="copyAllLocked">
+        <ButtonDark @click="copyAllMemories" :disabled="copyAllLocked">
           copy {{ totalMemories }}
           {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
-        </Button>
-        <Button @click="fileSave('stone.json', getStorage())" theme="dark">
+        </ButtonDark>
+        <ButtonDark @click="fileSave('stone.json', getStorage())">
           save
-        </Button>
-        <Button @click="onFileLoad" theme="dark"> load </Button>
-        <Button @click="restore" theme="dark" :disabled="!removed">
+        </ButtonDark>
+        <ButtonDark @click="onFileLoad" theme="dark"> load </ButtonDark>
+        <ButtonDark @click="restore" theme="dark" :disabled="!removed">
           restore
-        </Button>
+        </ButtonDark>
       </div>
     </div>
   </div>
 </template>
 <script setup>
-import { encode } from "gpt-tokenizer"
-import fileSave from "./utils/fileSave"
-import fileLoad from "./utils/fileLoad"
-import newId from "./utils/newId"
-import timestamp from "./utils/timestamp"
-import copyToClipboard from "./utils/copyToClipboard"
-import debounce from "./utils/debounce"
-import { nextTick } from "vue"
-
 const APP_LOCAL_STORAGE_KEY = "stone"
-const DEBOUNCE_DELAY = 300
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const BASE_PROMPT_TOKENS = 5700
@@ -142,6 +130,7 @@ const dateRef = ref(null)
 
 const memoryStringsById = ref({}) // main memory storage
 const eventsById = ref({})
+const eventTokensById = ref({})
 const topicsById = ref({})
 const editEventId = ref(null)
 const editTopicId = ref(null)
@@ -157,9 +146,10 @@ const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
 const isAnyInputFocused = ref(false)
 
-const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
-const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
-const debouncedUpdateTopics = debounce(updateTopics, DEBOUNCE_DELAY)
+const debouncedLocalStorageSave = debounce(localStorageSave)
+const debouncedUpdateMemories = debounce(updateMemories)
+const debouncedUpdateTopics = debounce(updateTopics)
+const debouncedExtractEventTokens = debounce(extractEventTokens)
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -197,6 +187,8 @@ const totalMemories = computed(
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
   localStorageLoad()
+  extractEventTokens()
+  window.binary = () => extractEventTokens("hint")
 })
 
 function localStorageLoad() {
@@ -206,15 +198,6 @@ function localStorageLoad() {
 function localStorageSave() {
   localStorage.setItem(APP_LOCAL_STORAGE_KEY, JSON.stringify(getStorage()))
   console.log(`⏬ local storage updated [${timestamp()}]`)
-  if (editEventId.value) {
-    const text = eventsById.value[editEventId.value].text
-    try {
-      const tokenCount = encode(text).length
-      console.log(`Tokens in current event text: ${tokenCount}`)
-    } catch (error) {
-      console.error("Error counting tokens:", error)
-    }
-  }
 }
 function injectStorage(storage) {
   memoryStringsById.value = storage.memoryStringsById
@@ -286,6 +269,7 @@ function updateOnInput() {
     editTopic.memoryIdsRaw = paper.value
     debouncedUpdateTopics(editTopic)
   }
+  debouncedExtractEventTokens()
   debouncedLocalStorageSave()
 }
 function updateMemories(event) {
@@ -460,5 +444,18 @@ function onKeyDown(event) {
       handlePaperModChange()
     }
   }
+}
+function extractEventTokens() {
+  eventsSorted.value.forEach(([id, { memoryStringsRaw }]) => {
+    let onlyStrings = ""
+    try {
+      const memoryStrings = JSON.parse(memoryStringsRaw)
+      if (!memoryStrings.length) return
+      memoryStrings.forEach((string) => (onlyStrings += string + " "))
+      eventTokensById.value[id] = formatNumber(getTokens(onlyStrings), 100)
+    } catch (e) {
+      delete eventTokensById.value[id]
+    }
+  })
 }
 </script>
