@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1">
     <!-- main field -->
-    <div class="flex overflow-hidden justify-between gap-1 flex-grow">
+    <div class="flex overflow-hidden justify-between gap-3 flex-grow">
       <!-- events -->
       <div
         class="w-[250px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
@@ -81,48 +81,39 @@
       </div>
       <!-- paper and buttons -->
       <div
-        class="flex w-full flex-col gap-1 items-center"
+        class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
         v-if="editEventId || editTopicId"
       >
         <!-- paper block with name and date -->
-        <div
-          class="w-full flex flex-grow p-[6px] pt-0 rounded-lg"
-          :class="{ 'bg-stone-700 ': isPaperFocused }"
-        >
-          <div
-            class="w-full flex flex-col flex-grow overflow-hidden rounded-lg"
-          >
-            <div class="flex min-h-11 rounded-t-lg overflow-hidden">
-              <input
-                type="text"
-                v-model="name"
-                @input="updateOnInput"
-                class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
-              />
-              <input
-                v-if="editEventId"
-                type="text"
-                v-model="date"
-                @input="updateOnInput"
-                class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
-              />
-            </div>
-            <Paper
-              v-model="paper"
+        <div class="w-full flex flex-col flex-grow">
+          <div class="flex min-h-11 rounded-t-lg overflow-hidden">
+            <input
+              type="text"
+              v-model="name"
               @input="updateOnInput"
-              @focus="isPaperFocused = true"
-              @blur="isPaperFocused = false"
-              :editId="editEventId || editTopicId"
-              :theme="
-                editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
-                  ? 'dark'
-                  : 'light'
-              "
+              class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+            />
+            <input
+              v-if="editEventId"
+              type="text"
+              v-model="date"
+              @input="updateOnInput"
+              class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
             />
           </div>
+          <Paper
+            v-model="paper"
+            @input="updateOnInput"
+            :update="`${editEventMod}${editEventId}${editTopicId}`"
+            :theme="
+              editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
+                ? 'dark'
+                : 'light'
+            "
+          />
         </div>
         <!-- edit buttons -->
-        <div class="flex gap-6">
+        <div class="flex w-full p-3 bg-stone-700 justify-between">
           <!-- mod buttons -->
           <Switch
             v-if="editEventId"
@@ -130,7 +121,7 @@
             :labels="editEventModLabels"
             @change="handlePaperModChange"
           />
-          <div class="flex gap-1">
+          <div class="flex gap-2">
             <Button
               v-if="editEventId"
               @click="copySelectedMemoriesPrompt"
@@ -315,7 +306,6 @@ let removed = null
 
 const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
-const isPaperFocused = ref(false)
 
 const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
 const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
@@ -354,7 +344,10 @@ const totalMemories = computed(
   () => Object.keys(memoryStringsById.value).length
 )
 
-onMounted(localStorageLoad)
+onMounted(() => {
+  addEventListener("keydown", onKeyDown)
+  localStorageLoad()
+})
 
 function localStorageLoad() {
   const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
@@ -634,5 +627,15 @@ async function copySelectedMemoriesPrompt() {
 async function onFileLoad() {
   await fileLoad(injectStorage)
   debouncedLocalStorageSave()
+}
+function onKeyDown(event) {
+  if (!editEventId.value) return
+  if (event.key === "t") {
+    editEventMod.value = EDIT_EVENT_MODS.MEMORY
+    handlePaperModChange()
+  } else if (event.key === "h") {
+    editEventMod.value = EDIT_EVENT_MODS.TEXT
+    handlePaperModChange()
+  }
 }
 </script>

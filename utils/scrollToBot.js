@@ -1,3 +1,3 @@
-export default function (ref) {
-  ref.scrollTo({ top: ref.scrollHeight, behavior: "smooth" })
+export default function (ref, behavior = "smooth") {
+  ref.scrollTo({ top: ref.scrollHeight, behavior: behavior })
 }

@@ -1,85 +1,87 @@
 <!-- wrapper to textarea that encapsulates additional logic: scroll up / down and updating background position, so this paper-like lines are scrolling along the text -->
 <template>
-  <div class="relative h-full">
-    <textarea
-      ref="paperRef"
-      :value="modelValue"
-      @input="onInput"
-      @scroll="onScroll"
-      @focus="emit('focus')"
-      @blur="emit('blur')"
-      class="w-full h-full bg-paper py-5 p-8 resize-none text-xl rounded-b-lg"
-      :class="{
-        'bg-stone-400 text-stone-800 scroll-light': theme === 'light',
-        'bg-stone-500 text-stone-200': theme === 'dark',
-      }"
-      :style="{ backgroundPositionY }"
-    ></textarea>
-    <!-- scroll buttons -->
-    <div
-      v-if="
-        updateScrollButtons &&
-        paperRef &&
-        paperRef.scrollHeight > paperRef.clientHeight
-      "
-      class="flex flex-col absolute bottom-4 right-4"
-    >
+  <div
+    class="relative h-full p-3 pb-4"
+    :class="[isFocused ? 'bg-stone-700' : '']"
+  >
+    <div class="relative overflow-hidden rounded-xl h-full">
+      <textarea
+        ref="paperRef"
+        :value="modelValue"
+        @input="onInput"
+        @scroll="onScroll"
+        @focus="isFocused = true"
+        @blur="isFocused = false"
+        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
+        :class="{
+          'bg-stone-400 text-stone-800': theme === 'light',
+          'bg-stone-600 bg-lines-light selection-light text-stone-300':
+            theme === 'dark',
+        }"
+        :style="{ backgroundPositionY }"
+      ></textarea>
+      <!-- scroll buttons -->
       <div
-        @click="onScrollTop"
-        class="group pb-[2px] p-1"
-        :class="[
-          !disabledAfterClickTop && paperRef.scrollTop !== 0
-            ? 'cursor-pointer opacity-60'
-            : 'opacity-25',
-        ]"
+        v-if="
+          updateScrollButtons &&
+          paperRef &&
+          paperRef.scrollHeight > paperRef.clientHeight
+        "
+        class="flex flex-col absolute bottom-4 right-4"
       >
-        <button
-          class="size-8 pb-1 rounded-full"
-          :class="{
-            'bg-stone-500 text-stone-400 cursor-default': theme === 'light',
-            'bg-stone-700 text-stone-400 cursor-default': theme === 'dark',
-            'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
-              theme === 'light' &&
-              !disabledAfterClickTop &&
-              paperRef.scrollTop !== 0,
-            'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
-              theme === 'dark' &&
-              !disabledAfterClickTop &&
-              paperRef.scrollTop !== 0,
-          }"
+        <div
+          @click="onScrollTop"
+          class="group pb-[3px] p-1"
+          :class="[
+            !disabledAfterClickTop && paperRef.scrollTop !== 0
+              ? 'cursor-pointer opacity-60'
+              : 'opacity-25',
+          ]"
         >
-          <IconArrow class="w-3 -rotate-90 inline-block" />
-        </button>
-      </div>
-      <div
-        @click="onScrollBot"
-        class="group pt-[2px] p-1"
-        :class="[
-          !disabledAfterClickBot &&
-          paperRef.scrollTop + paperRef.clientHeight !== paperRef.scrollHeight
-            ? 'cursor-pointer opacity-60'
-            : 'opacity-25',
-        ]"
-      >
-        <button
-          class="size-8 pb-1 rounded-full"
-          :class="{
-            'bg-stone-500 text-stone-400 cursor-default': theme === 'light',
-            'bg-stone-600 text-stone-400 cursor-default': theme === 'dark',
-            'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
-              theme === 'light' &&
-              !disabledAfterClickBot &&
-              paperRef.scrollTop + paperRef.clientHeight !==
-                paperRef.scrollHeight,
-            'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
-              theme === 'dark' &&
-              !disabledAfterClickBot &&
-              paperRef.scrollTop + paperRef.clientHeight !==
-                paperRef.scrollHeight,
-          }"
+          <button
+            class="size-8 pb-1 rounded-full bg-stone-500 text-stone-400 cursor-default"
+            :class="{
+              'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
+                theme === 'light' &&
+                !disabledAfterClickTop &&
+                paperRef.scrollTop !== 0,
+              'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
+                theme === 'dark' &&
+                !disabledAfterClickTop &&
+                paperRef.scrollTop !== 0,
+            }"
+          >
+            <IconArrow class="w-3 -rotate-90 inline-block" />
+          </button>
+        </div>
+        <div
+          @click="onScrollBot"
+          class="group pt-[3px] p-1"
+          :class="[
+            !disabledAfterClickBot &&
+            paperRef.scrollTop + paperRef.clientHeight !== paperRef.scrollHeight
+              ? 'cursor-pointer opacity-60'
+              : 'opacity-25',
+          ]"
         >
-          <IconArrow class="w-3 rotate-90 inline-block" />
-        </button>
+          <button
+            class="size-8 pb-1 rounded-full bg-stone-500 text-stone-400 cursor-default"
+            :class="{
+              'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
+                theme === 'light' &&
+                !disabledAfterClickBot &&
+                paperRef.scrollTop + paperRef.clientHeight !==
+                  paperRef.scrollHeight,
+              'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
+                theme === 'dark' &&
+                !disabledAfterClickBot &&
+                paperRef.scrollTop + paperRef.clientHeight !==
+                  paperRef.scrollHeight,
+            }"
+          >
+            <IconArrow class="w-3 rotate-90 inline-block" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -92,10 +94,11 @@ const PAPER_EXTRA_SCROLL = 24
 const PAPER_BG_OFFSET = -8
 const DISABLED_AFTER_CLICK_DELAY = 1000
 
-const props = defineProps(["modelValue", "editId", "theme"])
-const emit = defineEmits(["input", "update:modelValue", "focus", "blur"])
+const props = defineProps(["modelValue", "theme", "update"])
+const emit = defineEmits(["input", "update:modelValue"])
 
 const paperRef = ref(null)
+const isFocused = ref(false)
 const backgroundPositionY = ref(`${PAPER_BG_OFFSET}px`)
 const disabledAfterClickTop = ref(false)
 const disabledAfterClickBot = ref(false)
@@ -103,7 +106,7 @@ const updateScrollButtons = ref(1)
 
 onMounted(() => addEventListener("keydown", onKeyDown))
 watch(
-  () => props.editId,
+  () => props.update,
   () => {
     paperRef.value.scrollTop = 0
     backgroundPositionY.value = `${PAPER_BG_OFFSET}px`
@@ -111,15 +114,31 @@ watch(
   }
 )
 function onKeyDown(event) {
-  if (event.key === "o") paperRef.value.focus()
-  else if (event.key === "Escape") paperRef.value.blur()
-
-  if (document.activeElement === paperRef.value) {
-    const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
-    if (navigationKeys.includes(event.key)) adjustPaperScroll()
-  } else {
+  if (document.activeElement !== paperRef.value) {
     if (event.key === "i") onScrollTop()
     else if (event.key === "g") onScrollBot()
+    if (event.key === "o") {
+      event.preventDefault()
+      nextTick(() => {
+        paperRef.value.focus()
+        scrollToBot(paperRef.value, "auto")
+        paperRef.value.setSelectionRange(
+          paperRef.value.value.length,
+          paperRef.value.value.length
+        )
+      })
+    } else if (event.key === "e") {
+      event.preventDefault()
+      nextTick(() => {
+        paperRef.value.focus()
+        scrollToTop(paperRef.value, "auto")
+        paperRef.value.setSelectionRange(0, 0)
+      })
+    }
+  } else {
+    const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+    if (navigationKeys.includes(event.key)) adjustPaperScroll()
+    if (event.key === "Escape") paperRef.value.blur()
   }
 }
 function onScrollTop() {
@@ -168,10 +187,18 @@ function adjustPaperScroll() {
 }
 </script>
 <style>
-.bg-paper {
+.bg-lines {
   background-image: linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0.04) 3px,
+    transparent 4px
+  );
+  background-size: 100% 28px;
+}
+.bg-lines-light {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.04) 3px,
     transparent 4px
   );
   background-size: 100% 28px;

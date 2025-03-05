@@ -4,19 +4,22 @@
       v-for="([label, value], index) in labelEntries"
       :key="value"
       @click="handleClick(value)"
-      class="w-full min-w-24 px-2 pb-1"
+      class="flex justify-between w-full min-w-24"
       :class="[
         value === modelValue
-          ? 'cursor-default bg-stone-800 text-stone-300'
-          : 'bg-stone-700  text-stone-400 hover:bg-stone-800 hover:text-stone-300',
+          ? 'cursor-default bg-stone-500 text-stone-200'
+          : 'bg-stone-600  text-stone-400 hover:bg-stone-500 hover:text-stone-200',
         index === 0 ? 'rounded-l-lg' : '',
         index === labelEntries.length - 1 ? 'rounded-r-lg' : '',
-        index < labelEntries.length - 1
-          ? 'border-dotted border-r-[3px] border-stone-500'
-          : '',
       ]"
     >
-      {{ label }}
+      <span class="pb-1 mx-auto">
+        {{ label }}
+      </span>
+      <div
+        v-if="index < labelEntries.length - 1"
+        class="h-full border-dotted border-r-[3px] border-stone-400"
+      ></div>
     </button>
   </div>
 </template>
