@@ -1,17 +1,14 @@
 <!-- wrapper to textarea that encapsulates additional logic: scroll up / down and updating background position, so this paper-like lines are scrolling along the text -->
 <template>
-  <div
-    class="relative h-full p-3 pb-4"
-    :class="[isFocused ? 'bg-stone-700' : '']"
-  >
+  <div class="relative h-full p-3" :class="[isFocused ? 'bg-stone-700' : '']">
     <div class="relative overflow-hidden rounded-xl h-full">
       <textarea
         ref="paperRef"
         :value="modelValue"
         @input="onInput"
         @scroll="onScroll"
-        @focus="isFocused = true"
-        @blur="isFocused = false"
+        @focus="onFocus"
+        @blur="onBlur"
         class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
         :class="{
           'bg-stone-400 text-stone-800': theme === 'light',
@@ -94,7 +91,7 @@ const PAPER_EXTRA_SCROLL = 24
 const PAPER_BG_OFFSET = -8
 const DISABLED_AFTER_CLICK_DELAY = 1000
 
-const props = defineProps(["modelValue", "theme", "update"])
+const props = defineProps(["modelValue", "theme", "update", "focus", "blur"])
 const emit = defineEmits(["input", "update:modelValue"])
 
 const paperRef = ref(null)
@@ -113,6 +110,14 @@ watch(
     nextTick(() => updateScrollButtons.value++)
   }
 )
+function onFocus() {
+  isFocused.value = true
+  emit("focus")
+}
+function onBlur() {
+  isFocused.value = false
+  emit("blur")
+}
 function onKeyDown(event) {
   if (document.activeElement !== paperRef.value) {
     if (event.key === "i") onScrollTop()

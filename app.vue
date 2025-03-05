@@ -104,6 +104,8 @@
           <Paper
             v-model="paper"
             @input="updateOnInput"
+            @focus="isPaperFocused = true"
+            @blur="isPaperFocused = false"
             :update="`${editEventMod}${editEventId}${editTopicId}`"
             :theme="
               editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
@@ -121,19 +123,17 @@
             :labels="editEventModLabels"
             @change="handlePaperModChange"
           />
-          <div class="flex gap-2">
-            <Button
-              v-if="editEventId"
-              @click="copySelectedMemoriesPrompt"
-              :disabled="copySelectedLocked"
-            >
-              copy {{ totalRecentMemories + totalTopicMemories }}
-              {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
-            </Button>
-            <Button @click="editEventId ? removeEvent() : removeTopic()"
-              >remove
-            </Button>
-          </div>
+          <Button
+            v-if="editEventId"
+            @click="copySelectedMemoriesPrompt"
+            :disabled="copySelectedLocked"
+          >
+            copy {{ totalRecentMemories + totalTopicMemories }}
+            {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
+          </Button>
+          <Button @click="editEventId ? removeEvent() : removeTopic()"
+            >remove
+          </Button>
         </div>
       </div>
       <!-- topics -->
@@ -306,6 +306,7 @@ let removed = null
 
 const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
+const isPaperFocused = ref(false)
 
 const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
 const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
@@ -629,7 +630,7 @@ async function onFileLoad() {
   debouncedLocalStorageSave()
 }
 function onKeyDown(event) {
-  if (!editEventId.value) return
+  if (!editEventId.value || isPaperFocused.value) return
   if (event.key === "t") {
     editEventMod.value = EDIT_EVENT_MODS.MEMORY
     handlePaperModChange()
