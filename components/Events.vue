@@ -8,7 +8,7 @@
         @click="sortEventDown"
         class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
         :class="
-          editEventId === null || eventsById[editEventId].sort === 0
+          !editEventId || eventsById[editEventId].sort === 0
             ? 'cursor-default bg-slate-50 text-stone-500/60'
             : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
         "
@@ -19,7 +19,7 @@
         @click="sortEventUp"
         class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
         :class="
-          editEventId === null ||
+          !editEventId ||
           eventsById[editEventId].sort === eventsSorted.length - 1
             ? 'cursor-default bg-slate-50 text-stone-500/60'
             : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
@@ -40,7 +40,7 @@
       </div>
     </div>
     <!-- event list -->
-    <div ref="eventListRef" class="overflow-y-scroll pb-2">
+    <div ref="eventListRef" class="overflow-auto pb-2">
       <div class="flex flex-col-reverse">
         <div v-for="[id, { name, memoryIds, sort }] in eventsSorted" :key="id">
           <button
@@ -97,7 +97,7 @@ function createEvent() {
     memoryIds: [],
     sort: Object.keys(props.eventsById).length,
   }
-  emit("toggle-event-edit")
+  emit("toggle-event-edit", id)
   nextTick(() => scrollToTop(eventListRef.value))
 }
 function sortEventUp() {

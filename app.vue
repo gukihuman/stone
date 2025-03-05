@@ -21,16 +21,22 @@
         <div class="w-full flex flex-col flex-grow">
           <div class="flex min-h-11 rounded-t-lg overflow-hidden">
             <input
+              ref="nameRef"
               type="text"
               v-model="name"
               @input="updateOnInput"
+              @focus="isAnyInputFocused = true"
+              @blur="isAnyInputFocused = false"
               class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
             />
             <input
+              ref="dateRef"
               v-if="editEventId"
               type="text"
               v-model="date"
               @input="updateOnInput"
+              @focus="isAnyInputFocused = true"
+              @blur="isAnyInputFocused = false"
               class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
             />
           </div>
@@ -38,8 +44,9 @@
           <Paper
             v-model="paper"
             @input="updateOnInput"
-            @focus="isPaperFocused = true"
-            @blur="isPaperFocused = false"
+            @focus="isAnyInputFocused = true"
+            @blur="isAnyInputFocused = false"
+            :isAnyInputFocused="isAnyInputFocused"
             :update="`${editEventMod}${editEventId}${editTopicId}`"
             :theme="
               editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
@@ -79,7 +86,7 @@
       <!-- topics -->
       <div class="w-[250px] flex flex-col gap-3">
         <div
-          class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg overflow-hidden"
+          class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
         >
           <!-- topics top menu -->
           <div class="flex">
@@ -119,7 +126,7 @@
             </div>
           </div>
           <!-- topic list -->
-          <div ref="topicListRef" class="flex-grow overflow-auto pb-2">
+          <div ref="topicListRef" class="overflow-auto pb-2">
             <div class="flex flex-col-reverse">
               <div
                 class="flex max-w-full"
@@ -204,6 +211,8 @@ const editEventModLabels = {
 }
 
 const topicListRef = ref(null)
+const nameRef = ref(null)
+const dateRef = ref(null)
 
 const memoryStringsById = ref({}) // main memory storage
 const eventsById = ref({})
@@ -220,7 +229,7 @@ let removed = null
 
 const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
-const isPaperFocused = ref(false)
+const isAnyInputFocused = ref(false)
 
 const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
 const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
@@ -517,13 +526,37 @@ async function onFileLoad() {
   debouncedLocalStorageSave()
 }
 function onKeyDown(event) {
-  if (!editEventId.value || isPaperFocused.value) return
-  if (event.key === "t") {
-    editEventMod.value = EDIT_EVENT_MODS.MEMORY
-    handlePaperModChange()
-  } else if (event.key === "h") {
-    editEventMod.value = EDIT_EVENT_MODS.TEXT
-    handlePaperModChange()
+  if (document.activeElement === nameRef.value && event.key === "Escape") {
+    nameRef.value.blur()
+  }
+  if (document.activeElement === dateRef.value && event.key === "Escape") {
+    dateRef.value.blur()
+  }
+  if (!isAnyInputFocused.value && event.key === "c") {
+    event.preventDefault()
+    nextTick(() => {
+      nameRef.value.focus()
+      nameRef.value.setSelectionRange(0, nameRef.value.value.length)
+    })
+  }
+  if (!isAnyInputFocused.value && event.key === "u") {
+    event.preventDefault()
+    nextTick(() => {
+      dateRef.value.focus()
+      dateRef.value.setSelectionRange(
+        dateRef.value.value.length,
+        dateRef.value.value.length
+      )
+    })
+  }
+  if (editEventId.value && !isAnyInputFocused.value) {
+    if (event.key === "t") {
+      editEventMod.value = EDIT_EVENT_MODS.MEMORY
+      handlePaperModChange()
+    } else if (event.key === "h") {
+      editEventMod.value = EDIT_EVENT_MODS.TEXT
+      handlePaperModChange()
+    }
   }
 }
 </script>

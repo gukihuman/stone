@@ -91,8 +91,13 @@ const PAPER_EXTRA_SCROLL = 24
 const PAPER_BG_OFFSET = -8
 const DISABLED_AFTER_CLICK_DELAY = 1000
 
-const props = defineProps(["modelValue", "theme", "update", "focus", "blur"])
-const emit = defineEmits(["input", "update:modelValue"])
+const props = defineProps([
+  "modelValue",
+  "theme",
+  "update",
+  "isAnyInputFocused",
+])
+const emit = defineEmits(["input", "update:modelValue", "focus", "blur"])
 
 const paperRef = ref(null)
 const isFocused = ref(false)
@@ -119,7 +124,11 @@ function onBlur() {
   emit("blur")
 }
 function onKeyDown(event) {
-  if (document.activeElement !== paperRef.value) {
+  if (document.activeElement === paperRef.value) {
+    const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+    if (navigationKeys.includes(event.key)) adjustPaperScroll()
+    if (event.key === "Escape") paperRef.value.blur()
+  } else if (!props.isAnyInputFocused) {
     if (event.key === "i") onScrollTop()
     else if (event.key === "g") onScrollBot()
     if (event.key === "o") {
@@ -140,10 +149,6 @@ function onKeyDown(event) {
         paperRef.value.setSelectionRange(0, 0)
       })
     }
-  } else {
-    const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
-    if (navigationKeys.includes(event.key)) adjustPaperScroll()
-    if (event.key === "Escape") paperRef.value.blur()
   }
 }
 function onScrollTop() {
