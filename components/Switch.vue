@@ -4,7 +4,7 @@
       v-for="([label, value], index) in labelEntries"
       :key="value"
       @click="handleClick(value)"
-      class="min-w-24 px-2 pb-1"
+      class="w-full min-w-24 px-2 pb-1"
       :class="[
         value === modelValue
           ? 'cursor-default bg-stone-800 text-stone-300'

@@ -6,8 +6,9 @@
       :value="modelValue"
       @input="onInput"
       @scroll="onScroll"
-      @keydown="onKeyDown"
-      class="w-full h-full bg-paper py-5 p-8 resize-none text-xl"
+      @focus="emit('focus')"
+      @blur="emit('blur')"
+      class="w-full h-full bg-paper py-5 p-8 resize-none text-xl rounded-b-lg"
       :class="{
         'bg-stone-400 text-stone-800 scroll-light': theme === 'light',
         'bg-stone-500 text-stone-200': theme === 'dark',
@@ -17,9 +18,9 @@
     <!-- scroll buttons -->
     <div
       v-if="
+        updateScrollButtons &&
         paperRef &&
-        paperRef.scrollHeight > paperRef.clientHeight &&
-        updateScrollButtons
+        paperRef.scrollHeight > paperRef.clientHeight
       "
       class="flex flex-col absolute bottom-4 right-4"
     >
@@ -92,7 +93,7 @@ const PAPER_BG_OFFSET = -8
 const DISABLED_AFTER_CLICK_DELAY = 1000
 
 const props = defineProps(["modelValue", "editId", "theme"])
-const emit = defineEmits(["input", "update:modelValue"])
+const emit = defineEmits(["input", "update:modelValue", "focus", "blur"])
 
 const paperRef = ref(null)
 const backgroundPositionY = ref(`${PAPER_BG_OFFSET}px`)
@@ -100,6 +101,7 @@ const disabledAfterClickTop = ref(false)
 const disabledAfterClickBot = ref(false)
 const updateScrollButtons = ref(1)
 
+onMounted(() => addEventListener("keydown", onKeyDown))
 watch(
   () => props.editId,
   () => {
@@ -108,6 +110,18 @@ watch(
     nextTick(() => updateScrollButtons.value++)
   }
 )
+function onKeyDown(event) {
+  if (event.key === "o") paperRef.value.focus()
+  else if (event.key === "Escape") paperRef.value.blur()
+
+  if (document.activeElement === paperRef.value) {
+    const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+    if (navigationKeys.includes(event.key)) adjustPaperScroll()
+  } else {
+    if (event.key === "i") onScrollTop()
+    else if (event.key === "g") onScrollBot()
+  }
+}
 function onScrollTop() {
   scrollToTop(paperRef.value)
   disabledAfterClickTop.value = true
@@ -135,10 +149,6 @@ function onScroll(event) {
     return
   }
   backgroundPositionY.value = `-${event.target.scrollTop - PAPER_BG_OFFSET}px`
-}
-function onKeyDown(event) {
-  const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
-  if (navigationKeys.includes(event.key)) adjustPaperScroll()
 }
 function adjustPaperScroll() {
   const el = paperRef.value

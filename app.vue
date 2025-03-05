@@ -1,90 +1,94 @@
 <template>
-  <div class="flex bg-stone-600 h-screen gap-1 p-1">
-    <div class="flex flex-grow flex-col gap-1">
-      <div class="flex gap-1 overflow-hidden justify-between flex-grow">
-        <!-- events -->
-        <div
-          class="w-[250px] flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg overflow-hidden"
-        >
-          <!-- events top menu -->
-          <div class="flex">
-            <button
-              @click="sortEventDown"
-              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-              :class="
-                editEventId === null || eventsById[editEventId].sort === 0
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <IconArrow class="w-3 rotate-90" />
-            </button>
-            <button
-              @click="sortEventUp"
-              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-              :class="
-                editEventId === null ||
-                eventsById[editEventId].sort === eventsSorted.length - 1
-                  ? 'cursor-default bg-slate-50 text-stone-500/60'
-                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              "
-            >
-              <IconArrow class="w-3 -rotate-90" />
-            </button>
-            <button
-              @click="createEvent()"
-              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-            >
-              new
-            </button>
-            <div
-              class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-            >
-              {{ totalRecentMemories || "" }}
-            </div>
+  <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1">
+    <!-- main field -->
+    <div class="flex overflow-hidden justify-between gap-1 flex-grow">
+      <!-- events -->
+      <div
+        class="w-[250px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
+      >
+        <!-- events top menu -->
+        <div class="flex">
+          <button
+            @click="sortEventDown"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            :class="
+              editEventId === null || eventsById[editEventId].sort === 0
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            "
+          >
+            <IconArrow class="w-3 rotate-90" />
+          </button>
+          <button
+            @click="sortEventUp"
+            class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+            :class="
+              editEventId === null ||
+              eventsById[editEventId].sort === eventsSorted.length - 1
+                ? 'cursor-default bg-slate-50 text-stone-500/60'
+                : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            "
+          >
+            <IconArrow class="w-3 -rotate-90" />
+          </button>
+          <button
+            @click="createEvent()"
+            class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+          >
+            new
+          </button>
+          <div
+            class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
+          >
+            {{ totalRecentMemories || "" }}
           </div>
-          <!-- event list -->
-          <div ref="eventListRef" class="overflow-y-scroll">
-            <div class="flex flex-col-reverse">
-              <div
-                v-for="[id, { name, memoryIds, sort }] in eventsSorted"
-                :key="id"
+        </div>
+        <!-- event list -->
+        <div ref="eventListRef" class="overflow-y-scroll pb-2">
+          <div class="flex flex-col-reverse">
+            <div
+              v-for="[id, { name, memoryIds, sort }] in eventsSorted"
+              :key="id"
+            >
+              <button
+                class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                :class="
+                  editEventId === id
+                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                "
+                @click="toggleEventEdit(id)"
               >
-                <button
-                  class="flex w-full py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-                  :class="
-                    editEventId === id
-                      ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                      : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                  "
-                  @click="toggleEventEdit(id)"
-                >
-                  <span class="truncate">{{ name }}</span>
-                  <div>
-                    {{ memoryIds.length || "" }}
-                  </div>
-                </button>
-                <div
-                  v-if="
-                    editEventId &&
-                    sort ===
-                      Math.max(
-                        eventsById[editEventId].sort - RECENT_EVENT_LIMIT,
-                        0
-                      )
-                  "
-                  class="-mb-[2px] h-[2px] w-full bg-stone-400"
-                ></div>
-              </div>
+                <span class="truncate">{{ name }}</span>
+                <div>
+                  {{ memoryIds.length || "" }}
+                </div>
+              </button>
+              <div
+                v-if="
+                  editEventId &&
+                  sort ===
+                    Math.max(
+                      eventsById[editEventId].sort - RECENT_EVENT_LIMIT,
+                      0
+                    )
+                "
+                class="-mb-[2px] h-[2px] w-full bg-gradient-to-r from-stone-400 to-transparent"
+              ></div>
             </div>
           </div>
         </div>
-        <!-- paper and buttons -->
+      </div>
+      <!-- paper and buttons -->
+      <div
+        class="flex w-full flex-col gap-1 items-center"
+        v-if="editEventId || editTopicId"
+      >
+        <!-- paper block with name and date -->
         <div
-          class="flex w-full flex-col gap-1 items-center"
-          v-if="editEventId || editTopicId"
+          class="w-full flex flex-grow p-[6px] pt-0 rounded-lg"
+          :class="{ 'bg-stone-700 ': isPaperFocused }"
         >
-          <!-- paper block with name and date -->
           <div
             class="w-full flex flex-col flex-grow overflow-hidden rounded-lg"
           >
@@ -106,6 +110,8 @@
             <Paper
               v-model="paper"
               @input="updateOnInput"
+              @focus="isPaperFocused = true"
+              @blur="isPaperFocused = false"
               :editId="editEventId || editTopicId"
               :theme="
                 editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
@@ -114,158 +120,148 @@
               "
             />
           </div>
-          <!-- edit buttons -->
-          <div class="flex gap-6">
-            <!-- mod buttons -->
-            <Switch
+        </div>
+        <!-- edit buttons -->
+        <div class="flex gap-6">
+          <!-- mod buttons -->
+          <Switch
+            v-if="editEventId"
+            v-model="editEventMod"
+            :labels="editEventModLabels"
+            @change="handlePaperModChange"
+          />
+          <div class="flex gap-1">
+            <Button
               v-if="editEventId"
-              v-model="editEventMod"
-              :labels="editEventModLabels"
-              @change="handlePaperModChange"
-            />
-            <div class="flex gap-1">
-              <button
-                v-if="editEventId"
-                @click="copySelectedMemoriesPrompt"
-                class="px-2 justify-self-end pb-1 self-end text-stone-400 bg-stone-700 rounded-lg"
-                :class="
-                  copySelectedLocked
-                    ? 'cursor-default text-stone-500/60'
-                    : 'hover:bg-stone-800 hover:text-stone-300'
-                "
-              >
-                copy {{ totalRecentMemories + totalTopicMemories }}
-                {{
-                  (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS
-                }}
-              </button>
-              <button
-                @click="editEventId ? removeEvent() : removeTopic()"
-                class="px-2 bg-stone-700 text-stone-400 pb-1 hover:bg-stone-800 hover:text-stone-300 rounded-lg"
-              >
-                remove
-              </button>
-            </div>
+              @click="copySelectedMemoriesPrompt"
+              :disabled="copySelectedLocked"
+            >
+              copy {{ totalRecentMemories + totalTopicMemories }}
+              {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
+            </Button>
+            <Button @click="editEventId ? removeEvent() : removeTopic()"
+              >remove
+            </Button>
           </div>
         </div>
-        <!-- topics -->
-        <div class="w-[250px] flex flex-col gap-1">
-          <div
-            class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg overflow-hidden"
-          >
-            <!-- topics top menu -->
-            <div class="flex">
-              <button
-                @click="sortTopicDown"
-                class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-                :class="
-                  editTopicId === null || topicsById[editTopicId].sort === 0
-                    ? 'cursor-default bg-slate-50 text-stone-500/60'
-                    : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-                "
-              >
-                <IconArrow class="w-3 rotate-90" />
-              </button>
-              <button
-                @click="sortTopicUp"
-                class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-                :class="
-                  editTopicId === null ||
-                  topicsById[editTopicId].sort === topicsSorted.length - 1
-                    ? 'cursor-default bg-slate-50 text-stone-500/60'
-                    : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-                "
-              >
-                <IconArrow class="w-3 -rotate-90" />
-              </button>
-              <button
-                @click="createTopic()"
-                class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-              >
-                new
-              </button>
-              <div
-                class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-              >
-                {{ totalTopicMemories || "" }}
-              </div>
+      </div>
+      <!-- topics -->
+      <div class="w-[250px] flex flex-col gap-3">
+        <div
+          class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg overflow-hidden"
+        >
+          <!-- topics top menu -->
+          <div class="flex">
+            <button
+              @click="sortTopicDown"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editTopicId === null || topicsById[editTopicId].sort === 0
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 rotate-90" />
+            </button>
+            <button
+              @click="sortTopicUp"
+              class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
+              :class="
+                editTopicId === null ||
+                topicsById[editTopicId].sort === topicsSorted.length - 1
+                  ? 'cursor-default bg-slate-50 text-stone-500/60'
+                  : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+              "
+            >
+              <IconArrow class="w-3 -rotate-90" />
+            </button>
+            <button
+              @click="createTopic()"
+              class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+            >
+              new
+            </button>
+            <div
+              class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
+            >
+              {{ totalTopicMemories || "" }}
             </div>
-            <!-- topic list -->
-            <div ref="topicListRef" class="flex-grow overflow-auto">
-              <div class="flex flex-col-reverse">
-                <button
-                  v-for="[id, { name, memoryIds, selected }] in topicsSorted"
-                  :key="id"
-                  class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
-                  :class="
-                    topicMod === TOPIC_MODS.EDIT
-                      ? editTopicId === id
-                        ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
-                        : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                      : selected
+          </div>
+          <!-- topic list -->
+          <div ref="topicListRef" class="flex-grow overflow-auto pb-2">
+            <div class="flex flex-col-reverse">
+              <button
+                v-for="[id, { name, memoryIds, selected }] in topicsSorted"
+                :key="id"
+                class="flex py-[2px] text-left min-h-7 text-shadow outline-none text-stone-200 pr-2 gap-2 justify-between"
+                :class="
+                  topicMod === TOPIC_MODS.EDIT
+                    ? editTopicId === id
                       ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
                       : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
-                  "
-                  @click="
-                    topicMod === TOPIC_MODS.SELECT
-                      ? toggleTopicSelect(id)
-                      : toggleTopicEdit(id)
-                  "
-                >
-                  <span class="truncate">{{ name }}</span>
-                  <div>
-                    {{ memoryIds.length || "" }}
-                  </div>
-                </button>
-              </div>
+                    : selected
+                    ? 'pl-5 bg-gradient-to-r from-stone-600 to-transparent'
+                    : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
+                "
+                @click="
+                  topicMod === TOPIC_MODS.SELECT
+                    ? toggleTopicSelect(id)
+                    : toggleTopicEdit(id)
+                "
+              >
+                <span class="truncate">{{ name }}</span>
+                <div>
+                  {{ memoryIds.length || "" }}
+                </div>
+              </button>
             </div>
           </div>
-          <Switch
-            v-model="topicMod"
-            :labels="topicModLabels"
-            @change="handleTopicModChange"
-            class="self-center"
-          />
         </div>
+        <Switch
+          v-model="topicMod"
+          :labels="topicModLabels"
+          @change="handleTopicModChange"
+          class="self-center w-full"
+        />
       </div>
-      <!-- menu -->
-      <div class="rounded-lg overflow-hidden flex-shrink-0">
-        <button
-          @click="copyAllMemories"
-          class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
-          :class="
-            copyAllLocked
-              ? 'cursor-default text-stone-500/60'
-              : 'hover:bg-stone-800 hover:text-stone-300'
-          "
-        >
-          copy {{ totalMemories }}
-          {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
-        </button>
-        <button
-          @click="fileSave('stone.json', getStorage())"
-          class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-        >
-          save
-        </button>
-        <button
-          @click="onFileLoad"
-          class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-        >
-          load
-        </button>
-        <button
-          @click="restore"
-          class="w-full bg-stone-700 justify-self-end pb-1"
-          :class="
-            removed
-              ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-              : 'cursor-default text-stone-500/80'
-          "
-        >
-          restore
-        </button>
-      </div>
+    </div>
+    <!-- menu -->
+    <div class="rounded-lg overflow-hidden flex-shrink-0">
+      <button
+        @click="copyAllMemories"
+        class="w-full justify-self-end pb-1 self-end text-stone-400 bg-stone-700"
+        :class="
+          copyAllLocked
+            ? 'cursor-default text-stone-500/60'
+            : 'hover:bg-stone-800 hover:text-stone-300'
+        "
+      >
+        copy {{ totalMemories }}
+        {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
+      </button>
+      <button
+        @click="fileSave('stone.json', getStorage())"
+        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+      >
+        save
+      </button>
+      <button
+        @click="onFileLoad"
+        class="bg-stone-700 w-full justify-self-end text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+      >
+        load
+      </button>
+      <button
+        @click="restore"
+        class="w-full bg-stone-700 justify-self-end pb-1"
+        :class="
+          removed
+            ? 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
+            : 'cursor-default text-stone-500/80'
+        "
+      >
+        restore
+      </button>
     </div>
   </div>
 </template>
@@ -319,6 +315,7 @@ let removed = null
 
 const copySelectedLocked = ref(false)
 const copyAllLocked = ref(false)
+const isPaperFocused = ref(false)
 
 const debouncedLocalStorageSave = debounce(localStorageSave, DEBOUNCE_DELAY)
 const debouncedUpdateMemories = debounce(updateMemories, DEBOUNCE_DELAY)
@@ -617,6 +614,7 @@ async function copySelectedMemoriesPrompt() {
   const activeEvent = eventsById.value[editEventId.value]
   eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
     if (
+      !memoryStringsRaw ||
       sort >= activeEvent.sort ||
       sort < activeEvent.sort - RECENT_EVENT_LIMIT
     ) {
