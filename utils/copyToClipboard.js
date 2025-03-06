@@ -1,7 +1,7 @@
 import timestamp from "~/utils/timestamp"
 
 /** lockedRef is an optional argument, it's a vue ref with boolean value that used as feedback for the copy button, locking it briefly  */
-export default async function (content, lockedRef, lockTime = 150) {
+export default async function (content, lockedRef, lockTime = 300) {
   if (lockedRef && lockedRef.value) return
   if (lockedRef) lockedRef.value = true
   try {

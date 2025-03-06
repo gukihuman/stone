@@ -99,7 +99,7 @@ const eventListRef = ref(null)
 function createEvent() {
   const id = newId()
   props.eventsById[id] = {
-    name: "current",
+    name: "now",
     date: new Date().toLocaleDateString(),
     text: "",
     memoryStringsRaw: "", // valid JSON array of strings as string itself

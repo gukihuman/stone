@@ -60,20 +60,28 @@
           class="flex w-full p-3 bg-stone-700"
           :class="editEventId ? 'justify-between' : 'justify-end'"
         >
-          <Switch
-            v-if="editEventId"
-            v-model="editEventMod"
-            :labels="editEventModLabels"
-            @change="handlePaperModChange"
-          />
-          <ButtonLight
-            v-if="editEventId"
-            @click="copySelectedMemoriesPrompt"
-            :disabled="copySelectedLocked"
-          >
-            copy {{ totalRecentMemories + totalTopicMemories }}
-            {{ (totalRecentMemories + totalTopicMemories) * AVERAGE_TOKENS }}
-          </ButtonLight>
+          <div class="flex">
+            <Switch
+              v-if="editEventId"
+              v-model="editEventMod"
+              :labels="editEventModLabels"
+              @change="handlePaperModChange"
+            />
+            <div class="flex w-64 gap-2 justify-end">
+              <Binary
+                v-if="tokensForNow"
+                :groups="toBinaryGroups(tokensForNow)"
+                theme="light"
+              />
+              <ButtonLight
+                v-if="editEventId"
+                @click="copySelectedMemoriesPrompt"
+                :disabled="copySelectedLocked"
+              >
+                copy now
+              </ButtonLight>
+            </div>
+          </div>
           <ButtonLight @click="editEventId ? removeEvent() : removeTopic()"
             >remove
           </ButtonLight>
@@ -111,7 +119,6 @@
 </template>
 <script setup>
 const APP_LOCAL_STORAGE_KEY = "stone"
-const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const BASE_PROMPT_TOKENS = 5700
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
@@ -176,14 +183,61 @@ const totalRecentMemories = computed(() => {
     return sum
   }, 0)
 })
-const totalMemories = computed(
-  () => Object.keys(memoryStringsById.value).length
+const totalMemories = computed(() => {
+  return Object.keys(memoryStringsById.value).length
+})
+const tokensForNow = ref(0) // nicely debounced
+
+const debouncedTokensForNow = debounce(() => {
+  tokensForNow.value = getTokensForNow()
+})
+
+watch(
+  [editEventId, eventsById, recentEventLimit, memoryStringsById, topicsById],
+  debouncedTokensForNow,
+  { deep: true }
 )
 
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
   localStorageLoad()
 })
+
+function getTokensForNow() {
+  if (!editEventId.value) return
+  let totalTokens = 0
+  const editEvent = eventsById.value[editEventId.value]
+  if (editEvent) {
+    eventsSorted.value.forEach(([, { memoryStringsRaw, sort }]) => {
+      if (
+        !memoryStringsRaw ||
+        sort >= editEvent.sort ||
+        sort < editEvent.sort - recentEventLimit.value
+      ) {
+        return
+      }
+      try {
+        const parsedMemories = JSON.parse(memoryStringsRaw)
+        if (Array.isArray(parsedMemories)) {
+          const concatenatedMemories = parsedMemories.join(" ")
+          totalTokens += getTokens(concatenatedMemories)
+        }
+      } catch (error) {
+        console.error("❗ error parsing memories for token counting")
+      }
+    })
+  }
+  topicsSorted.value.forEach(([, { memoryIds, selected }]) => {
+    if (!selected || !memoryIds.length) return
+    let topicMemoriesString = ""
+    memoryIds.forEach((id) => {
+      topicMemoriesString += memoryStringsById.value[id] + " "
+    })
+    totalTokens += getTokens(topicMemoriesString)
+  })
+  totalTokens += getTokens(editEvent.text)
+  return totalTokens
+}
 
 function localStorageLoad() {
   const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
@@ -265,7 +319,6 @@ function updateOnInput() {
     editTopic.memoryIdsRaw = paper.value
     debouncedUpdateTopics(editTopic)
   }
-  debouncedUpdateBinaryGroups()
   debouncedLocalStorageSave()
 }
 function updateMemories(event) {
@@ -431,7 +484,11 @@ function onKeyDown(event) {
       )
     })
   }
-  if (editEventId.value && !isAnyInputFocused.value) {
+  if (editEventId.value && !isAnyInputFocused.value && event.key === "m") {
+    event.preventDefault()
+    nextTick(() => copySelectedMemoriesPrompt())
+  }
+  if (!isAnyInputFocused.value && editEventId.value) {
     if (event.key === "t") {
       editEventMod.value = EDIT_EVENT_MODS.MEMORY
       handlePaperModChange()
