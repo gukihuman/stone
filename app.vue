@@ -67,12 +67,14 @@
               :labels="editEventModLabels"
               @change="handlePaperModChange"
             />
-            <div class="flex w-64 gap-2 justify-end">
-              <Binary
-                v-if="tokensForNow"
-                :groups="toBinaryGroups(tokensForNow)"
-                theme="light"
-              />
+            <div class="flex gap-2 items-end justify-end w-72">
+              <div class="pb-1">
+                <Binary
+                  v-if="tokensForNow"
+                  :groups="toBinaryGroups(tokensForNow)"
+                  theme="light"
+                />
+              </div>
               <ButtonLight
                 v-if="editEventId"
                 @click="copySelectedMemoriesPrompt"
