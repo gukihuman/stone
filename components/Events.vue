@@ -57,7 +57,7 @@
       </div>
     </div>
     <!-- events menu bot -->
-    <div class="flex justify-between h-7 bg-stone-700 pr-2">
+    <div class="flex justify-between min-h-7 bg-stone-700 pr-2">
       <div>
         <ButtonArrow
           @click="emit('recent-limit-more')"

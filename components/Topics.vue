@@ -60,12 +60,27 @@
           </div>
         </div>
       </div>
-      <div class="pr-11 pt-[1px] cursor-default h-7 bg-stone-700">
+      <div
+        class="pr-2 gap-2 flex justify-end cursor-default min-h-7 bg-stone-700"
+      >
         <Binary
           v-if="totalTopicMemories"
           :groups="toBinaryGroups(totalTopicMemories)"
           theme="light"
         />
+        <div
+          class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
+          @click="toggleAll()"
+        >
+          <div
+            class="flex items-center justify-center rounded-full size-5 bg-stone-600"
+          >
+            <div
+              class="rounded-full size-3"
+              :class="{ 'bg-stone-300/80': isAllSelected }"
+            />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -86,6 +101,20 @@ const emit = defineEmits(["toggle-topic-edit", "local-storage-save"])
 
 const topicListRef = ref(null)
 
+const isAllSelected = computed(() => {
+  let result = true
+  props.topicsSorted.forEach(([, { selected }]) => {
+    if (!selected) result = false
+  })
+  return result
+})
+
+function toggleAll() {
+  console.log("eo")
+  let state = true
+  if (isAllSelected.value) state = false
+  props.topicsSorted.forEach(([, topic]) => (topic.selected = state))
+}
 function createTopic() {
   const id = newId()
   props.topicsById[id] = {
