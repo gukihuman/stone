@@ -6,7 +6,7 @@
   @apply focus:outline-none;
 }
 *::-webkit-scrollbar {
-  @apply w-[10px];
+  @apply w-[8px];
 }
 *::-webkit-scrollbar-thumb {
   @apply bg-stone-600;

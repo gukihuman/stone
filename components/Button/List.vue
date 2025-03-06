@@ -7,7 +7,7 @@
         : 'pl-3 hover:bg-gradient-to-r hover:from-stone-600/50 hover:to-transparent'
     "
   >
-    <slot />
+    <slot class="w-3" />
   </button>
 </template>
 <script setup>

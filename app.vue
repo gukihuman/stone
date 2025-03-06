@@ -5,13 +5,14 @@
       <!-- events -->
       <Events
         :events-by-id="eventsById"
-        :event-tokens-by-id="eventTokensById"
         :events-sorted="eventsSorted"
         :edit-event-id="editEventId"
         :total-recent-memories="totalRecentMemories"
-        :recent-event-limit="RECENT_EVENT_LIMIT"
+        :recent-event-limit="recentEventLimit"
         @toggle-event-edit="toggleEventEdit"
         @local-storage-save="debouncedLocalStorageSave"
+        @recent-limit-more="recentEventLimit++"
+        @recent-limit-less="recentEventLimit--"
       />
       <!-- paper and buttons -->
       <div
@@ -116,7 +117,6 @@ const APP_LOCAL_STORAGE_KEY = "stone"
 const AVERAGE_TOKENS = 50
 const AVERAGE_JSON_TOKENS = 60
 const BASE_PROMPT_TOKENS = 5700
-const RECENT_EVENT_LIMIT = 5
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
@@ -130,10 +130,10 @@ const dateRef = ref(null)
 
 const memoryStringsById = ref({}) // main memory storage
 const eventsById = ref({})
-const eventTokensById = ref({})
 const topicsById = ref({})
 const editEventId = ref(null)
 const editTopicId = ref(null)
+const recentEventLimit = ref(5)
 
 // handle v-model fields to edit
 const name = ref("")
@@ -149,7 +149,6 @@ const isAnyInputFocused = ref(false)
 const debouncedLocalStorageSave = debounce(localStorageSave)
 const debouncedUpdateMemories = debounce(updateMemories)
 const debouncedUpdateTopics = debounce(updateTopics)
-const debouncedExtractEventTokens = debounce(extractEventTokens)
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -173,7 +172,7 @@ const totalRecentMemories = computed(() => {
   return Object.values(eventsById.value).reduce((sum, e) => {
     if (
       editEvent.sort > e.sort &&
-      e.sort >= Math.max(editEvent.sort - RECENT_EVENT_LIMIT, 0)
+      e.sort >= Math.max(editEvent.sort - recentEventLimit.value, 0)
     ) {
       return sum + e.memoryIds.length
     }
@@ -187,8 +186,6 @@ const totalMemories = computed(
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
   localStorageLoad()
-  extractEventTokens()
-  window.binary = () => extractEventTokens("hint")
 })
 
 function localStorageLoad() {
@@ -206,6 +203,7 @@ function injectStorage(storage) {
   editEventId.value = storage.editEventId
   editTopicId.value = storage.editTopicId
   editEventMod.value = storage.editEventMod
+  recentEventLimit.value = storage.recentEventLimit
   updateInputFields()
 }
 function getStorage() {
@@ -216,6 +214,7 @@ function getStorage() {
     editEventId: editEventId.value,
     editTopicId: editTopicId.value,
     editEventMod: editEventMod.value,
+    recentEventLimit: recentEventLimit.value,
   }
 }
 function toggleEventEdit(id) {
@@ -269,7 +268,7 @@ function updateOnInput() {
     editTopic.memoryIdsRaw = paper.value
     debouncedUpdateTopics(editTopic)
   }
-  debouncedExtractEventTokens()
+  debouncedUpdateBinaryGroups()
   debouncedLocalStorageSave()
 }
 function updateMemories(event) {
@@ -392,7 +391,7 @@ async function copySelectedMemoriesPrompt() {
     if (
       !memoryStringsRaw ||
       sort >= editEvent.sort ||
-      sort < editEvent.sort - RECENT_EVENT_LIMIT
+      sort < editEvent.sort - recentEventLimit.value
     ) {
       return
     }
@@ -444,18 +443,5 @@ function onKeyDown(event) {
       handlePaperModChange()
     }
   }
-}
-function extractEventTokens() {
-  eventsSorted.value.forEach(([id, { memoryStringsRaw }]) => {
-    let onlyStrings = ""
-    try {
-      const memoryStrings = JSON.parse(memoryStringsRaw)
-      if (!memoryStrings.length) return
-      memoryStrings.forEach((string) => (onlyStrings += string + " "))
-      eventTokensById.value[id] = formatNumber(getTokens(onlyStrings), 100)
-    } catch (e) {
-      delete eventTokensById.value[id]
-    }
-  })
 }
 </script>

@@ -3,45 +3,30 @@
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
-      <!-- topics top menu -->
+      <!-- topics menu top -->
       <div class="flex">
-        <button
+        <ButtonArrow
           @click="sortTopicDown"
-          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-          :class="
-            !editTopicId || topicsById[editTopicId].sort === 0
-              ? 'cursor-default bg-slate-50 text-stone-500/60'
-              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
-          "
-        >
-          <IconArrow class="w-3 rotate-90" />
-        </button>
-        <button
+          :disabled="!editTopicId || topicsById[editTopicId].sort === 0"
+          direction="down"
+        />
+        <ButtonArrow
           @click="sortTopicUp"
-          class="max-h-7 bg-stone-700 pt-[3px] px-3 justify-self-end pb-1"
-          :class="
+          :disabled="
             !editTopicId ||
             topicsById[editTopicId].sort === topicsSorted.length - 1
-              ? 'cursor-default bg-slate-50 text-stone-500/60'
-              : 'hover:bg-stone-800 text-stone-400 hover:text-stone-300'
           "
-        >
-          <IconArrow class="w-3 -rotate-90" />
-        </button>
+          direction="up"
+        />
         <button
           @click="createTopic()"
           class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
         >
           new
         </button>
-        <div
-          class="bg-stone-700 text-stone-400 w-20 text-end pr-2 pt-[1px] cursor-default"
-        >
-          {{ totalTopicMemories || "" }}
-        </div>
       </div>
       <!-- topic list -->
-      <div ref="topicListRef" class="overflow-auto pb-2">
+      <div ref="topicListRef" class="overflow-y-scroll pb-2 flex-grow">
         <div class="flex flex-col-reverse">
           <div
             class="flex max-w-full"
@@ -53,7 +38,12 @@
               @click="emit('toggle-topic-edit', id)"
             >
               <span class="truncate">{{ name }}</span>
-              {{ memoryIds.length || "" }}
+              <Binary
+                class="w-10"
+                v-if="memoryIds.length"
+                :groups="toBinaryGroups(memoryIds.length)"
+                :theme="selected ? 'light' : 'dark'"
+              />
             </ButtonList>
             <div
               class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
@@ -64,12 +54,19 @@
               >
                 <div
                   class="rounded-full size-3"
-                  :class="[selected ? 'bg-stone-400' : 'bg-stone-600']"
+                  :class="{ 'bg-stone-300/80': selected }"
                 />
               </div>
             </div>
           </div>
         </div>
+      </div>
+      <div class="pr-11 pt-[1px] cursor-default h-7 bg-stone-700">
+        <Binary
+          v-if="totalTopicMemories"
+          :groups="toBinaryGroups(totalTopicMemories)"
+          theme="light"
+        />
       </div>
     </div>
   </div>

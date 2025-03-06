@@ -10,13 +10,13 @@ npm run build
 
 ## numbers
 
-The larger number shows the token count, displayed to the nearest hundred. The smaller number indicates the number of memory records.
+The larger number shows the token count, displayed to the nearest hundred. The smaller number indicates the number of memory records
 
 ## structure
 
 ### memoryStringsById
 
-This is the main memory storage, where memories are stored and identified by ID. Each time the input changes, memories are parsed from the event's memoryStringsRaw. A new ID is assigned with every change, as memories can be significantly updated or completely replaced. The event also stores memoryIds solely to remove previous memories when the input changes. After removal, memoryIds is updated with the newly assigned IDs for future removals. While this involves frequent removals even for small changes, it's acceptable because the input is often a copy-paste of a completely new set of memories.
+This is the main memory storage, where memories are stored and identified by ID. Each time the input changes, memories are parsed from the event's memoryStringsRaw. A new ID is assigned with every change, as memories can be significantly updated or completely replaced. The event also stores memoryIds solely to remove previous memories when the input changes. After removal, memoryIds is updated with the newly assigned IDs for future removals. While this involves frequent removals even for small changes, it's acceptable because the input is often a copy-paste of a completely new set of memories
 
 ```json
 {
@@ -73,4 +73,17 @@ This is the main memory storage, where memories are stored and identified by ID.
   "editEventId": "8348657830678625",
   "editTopicId": null,
   "editEventMod": 0
+```
+
+### eventBinaryGroupsById
+
+Precision of tokens reduced by one group, its 16
+
+```json
+{
+  "9874122603798017": {
+    "tokens": ["┃", "╻╻╻┃"],
+    "records": ["┃┃╻┃"]
+  }
+}
 ```
