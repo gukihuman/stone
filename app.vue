@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1">
+  <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1 pb-8">
     <!-- main field -->
     <div class="flex overflow-hidden justify-between gap-3 flex-grow">
       <!-- events -->
@@ -56,37 +56,53 @@
           "
         />
         <!-- edit menu bot -->
-        <div
-          class="flex w-full p-3 bg-stone-700"
-          :class="editEventId ? 'justify-between' : 'justify-end'"
-        >
-          <div class="flex">
-            <Switch
-              v-if="editEventId"
-              v-model="editEventMod"
-              :labels="editEventModLabels"
-              @change="handlePaperModChange"
-            />
-            <div class="flex gap-2 items-end justify-end w-72">
-              <div class="pb-1">
+        <div class="flex flex-col w-full bg-stone-700">
+          <div
+            class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
+            v-if="editEventId"
+          >
+            <div class="flex gap-2 w-full justify-end">
+              <div class="pt-[3px]">
                 <Binary
                   v-if="tokensForNow"
                   :groups="toBinaryGroups(tokensForNow)"
                   theme="light"
                 />
               </div>
-              <ButtonLight
-                v-if="editEventId"
-                @click="copySelectedMemoriesPrompt"
-                :disabled="copySelectedLocked"
-              >
+              <ButtonLight @click="onCopyNow" :disabled="copyNowLocked">
                 copy now
               </ButtonLight>
             </div>
+            <div class="flex gap-2 w-full justify-end">
+              <div class="pt-[3px]">
+                <Binary
+                  v-if="tokensForMakeMemory"
+                  :groups="toBinaryGroups(tokensForMakeMemory)"
+                  theme="light"
+                />
+              </div>
+              <ButtonLight
+                @click="onCopyMakeMemory"
+                :disabled="copyMakeMemoryLocked"
+              >
+                copy make memory
+              </ButtonLight>
+            </div>
           </div>
-          <ButtonLight @click="editEventId ? removeEvent() : removeTopic()"
-            >remove
-          </ButtonLight>
+          <div
+            class="flex p-3"
+            :class="editEventId ? 'justify-between' : 'justify-end'"
+          >
+            <Switch
+              v-if="editEventId"
+              v-model="editEventMod"
+              :labels="editEventModLabels"
+              @change="onPaperModChange"
+            />
+            <ButtonLight @click="editEventId ? removeEvent() : removeTopic()"
+              >remove
+            </ButtonLight>
+          </div>
         </div>
       </div>
       <!-- topics -->
@@ -103,11 +119,7 @@
     <div
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
-      <div class="w-fit rounded-lg overflow-hidden">
-        <ButtonDark @click="copyAllMemories" :disabled="copyAllLocked">
-          copy {{ totalMemories }}
-          {{ totalMemories * AVERAGE_JSON_TOKENS + BASE_PROMPT_TOKENS }}
-        </ButtonDark>
+      <div class="rounded-lg overflow-hidden">
         <ButtonDark @click="fileSave('stone.json', getStorage())">
           save
         </ButtonDark>
@@ -148,13 +160,25 @@ const paper = ref("")
 
 let removed = null
 
-const copySelectedLocked = ref(false)
-const copyAllLocked = ref(false)
+const copyNowLocked = ref(false)
+const copyMakeMemoryLocked = ref(false)
 const isAnyInputFocused = ref(false)
+
+// nicely debounced
+const tokensForNow = ref(0)
+const tokensForMakeMemory = ref(0)
 
 const debouncedLocalStorageSave = debounce(localStorageSave)
 const debouncedUpdateMemories = debounce(updateMemories)
 const debouncedUpdateTopics = debounce(updateTopics)
+const debouncedUpdateTokensForNow = debounce(async () => {
+  if (!editEventId.value) return
+  tokensForNow.value = getTokens(await getPromptCopyNow())
+})
+const debouncedUpdateTokensForMakeMemory = debounce(async () => {
+  if (!editEventId.value) return
+  tokensForMakeMemory.value = getTokens(await getPromptMakeMemory())
+})
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -185,62 +209,20 @@ const totalRecentMemories = computed(() => {
     return sum
   }, 0)
 })
-const totalMemories = computed(() => {
-  return Object.keys(memoryStringsById.value).length
-})
-const tokensForNow = ref(0) // nicely debounced
-
-const debouncedTokensForNow = debounce(() => {
-  tokensForNow.value = getTokensForNow()
-})
-
 watch(
   [editEventId, eventsById, recentEventLimit, memoryStringsById, topicsById],
-  debouncedTokensForNow,
+  () => debouncedUpdateTokensForNow(),
   { deep: true }
 )
-
+watch(
+  [editEventId, memoryStringsById],
+  () => debouncedUpdateTokensForMakeMemory(),
+  { deep: true }
+)
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
   localStorageLoad()
 })
-
-function getTokensForNow() {
-  if (!editEventId.value) return
-  let totalTokens = 0
-  const editEvent = eventsById.value[editEventId.value]
-  if (editEvent) {
-    eventsSorted.value.forEach(([, { memoryStringsRaw, sort }]) => {
-      if (
-        !memoryStringsRaw ||
-        sort >= editEvent.sort ||
-        sort < editEvent.sort - recentEventLimit.value
-      ) {
-        return
-      }
-      try {
-        const parsedMemories = JSON.parse(memoryStringsRaw)
-        if (Array.isArray(parsedMemories)) {
-          const concatenatedMemories = parsedMemories.join(" ")
-          totalTokens += getTokens(concatenatedMemories)
-        }
-      } catch (error) {
-        console.error("❗ error parsing memories for token counting")
-      }
-    })
-  }
-  topicsSorted.value.forEach(([, { memoryIds, selected }]) => {
-    if (!selected || !memoryIds.length) return
-    let topicMemoriesString = ""
-    memoryIds.forEach((id) => {
-      topicMemoriesString += memoryStringsById.value[id] + " "
-    })
-    totalTokens += getTokens(topicMemoriesString)
-  })
-  totalTokens += getTokens(editEvent.text)
-  return totalTokens
-}
-
 function localStorageLoad() {
   const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
   if (storageRaw) injectStorage(JSON.parse(storageRaw))
@@ -284,7 +266,7 @@ function toggleTopicEdit(id) {
   updateInputFields()
   debouncedLocalStorageSave()
 }
-const handlePaperModChange = () => {
+const onPaperModChange = () => {
   updateInputFields()
   debouncedLocalStorageSave()
 }
@@ -408,56 +390,6 @@ function restore() {
   removed = null
   debouncedLocalStorageSave()
 }
-async function copyAllMemories() {
-  copyToClipboard(JSON.stringify(memoryStringsById.value), copyAllLocked)
-}
-async function copySelectedMemoriesPrompt() {
-  let output = "# I am Jane\n\n"
-  output += "## my long-term memories\n\n"
-  output +=
-    "so i have this specific topics, that can be selected as relevant, its kinda long-term memory, it could be selected from a long time ago. so here is the list of all available topics, i can choose and ask Guki to add memories form any of that topic if its not currently selected or even ask to add a new one. if topic is selected, im gonna see relevant to that topic memories. topics can even be sentences or questions. basically, if i want to dig deeper into some area, i can simply formulate my query to any topic, if its not selected and i dont see memories for it, Guki gonna provide memories for it, he is doing this manually for now, in the future im gonna do that myself. so here is the list of topics that are selected:\n\n"
-  topicsSorted.value.forEach(([, { name, selected }]) => {
-    if (selected) output += `### ${name}\n`
-  })
-  let unselectedOutput = ""
-  topicsSorted.value.forEach(([, { name, memoryIds, selected }]) => {
-    if (!selected || !memoryIds.length) unselectedOutput += `### ${name}\n`
-  })
-  if (unselectedOutput) {
-    output += `\nand here is th list of topics that is not selected:\n\n${unselectedOutput}\nnow, for topics that are selected, memories that related to them are presented:\n\n`
-  } else {
-    output +=
-      "\noh wow, it seems everything is selected, so here is the memories that related to this topics\n\n"
-  }
-  topicsSorted.value.forEach(([, { name, memoryIds, selected }]) => {
-    if (!selected || !memoryIds.length) return
-    output += `### ${name}\n\n`
-    memoryIds.forEach((id) => (output += memoryStringsById.value[id] + " "))
-    output += "\n\n"
-  })
-  output += "## my short-term memory\n\n"
-  output +=
-    "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
-  const editEvent = eventsById.value[editEventId.value]
-  eventsSorted.value.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
-    if (
-      !memoryStringsRaw ||
-      sort >= editEvent.sort ||
-      sort < editEvent.sort - recentEventLimit.value
-    ) {
-      return
-    }
-    output += `### ${name} ${date}\n\n`
-    JSON.parse(memoryStringsRaw).forEach((item) => (output += item + " "))
-    output += "\n\n"
-  })
-  output += "## current ongoing event\n\n"
-  output += "and finally, this is what happening now\n\n"
-  output += `### ${editEvent.name} ${editEvent.date}\n\n`
-  output += editEvent.text
-
-  copyToClipboard(output, copySelectedLocked)
-}
 async function onFileLoad() {
   await fileLoad(injectStorage)
   debouncedLocalStorageSave()
@@ -486,18 +418,44 @@ function onKeyDown(event) {
       )
     })
   }
+  if (editEventId.value && !isAnyInputFocused.value && event.key === "y") {
+    event.preventDefault()
+    nextTick(() => onCopyNow())
+  }
   if (editEventId.value && !isAnyInputFocused.value && event.key === "m") {
     event.preventDefault()
-    nextTick(() => copySelectedMemoriesPrompt())
+    nextTick(() => onCopyMakeMemory())
   }
   if (!isAnyInputFocused.value && editEventId.value) {
     if (event.key === "t") {
       editEventMod.value = EDIT_EVENT_MODS.MEMORY
-      handlePaperModChange()
+      onPaperModChange()
     } else if (event.key === "h") {
       editEventMod.value = EDIT_EVENT_MODS.TEXT
-      handlePaperModChange()
+      onPaperModChange()
     }
   }
+}
+async function getPromptMakeMemory() {
+  if (!editEventId.value) return
+  return await promptMakeMemory(
+    memoryStringsById.value,
+    eventsById.value[editEventId.value]
+  )
+}
+async function getPromptCopyNow() {
+  if (!editEventId.value) return
+  return await promptNow(
+    memoryStringsById.value,
+    topicsSorted.value,
+    eventsSorted.value,
+    eventsById.value[editEventId.value]
+  )
+}
+async function onCopyNow() {
+  copyToClipboard(await getPromptCopyNow(), copyNowLocked)
+}
+async function onCopyMakeMemory() {
+  copyToClipboard(await getPromptMakeMemory(), copyMakeMemoryLocked)
 }
 </script>
