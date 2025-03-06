@@ -14,55 +14,52 @@
         @recent-limit-more="recentEventLimit++"
         @recent-limit-less="recentEventLimit--"
       />
-      <!-- paper and buttons -->
+      <!-- edit block -->
       <div
         class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
         v-if="editEventId || editTopicId"
       >
-        <!-- paper block with name and date -->
-        <div class="w-full flex flex-col flex-grow">
-          <div class="flex min-h-11 rounded-t-lg overflow-hidden">
-            <input
-              ref="nameRef"
-              type="text"
-              v-model="name"
-              @input="updateOnInput"
-              @focus="isAnyInputFocused = true"
-              @blur="isAnyInputFocused = false"
-              class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
-            />
-            <input
-              ref="dateRef"
-              v-if="editEventId"
-              type="text"
-              v-model="date"
-              @input="updateOnInput"
-              @focus="isAnyInputFocused = true"
-              @blur="isAnyInputFocused = false"
-              class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
-            />
-          </div>
-          <!-- paper -->
-          <Paper
-            v-model="paper"
+        <!-- edit menu top -->
+        <div class="w-full flex min-h-11 rounded-t-lg overflow-hidden">
+          <input
+            ref="nameRef"
+            type="text"
+            v-model="name"
             @input="updateOnInput"
             @focus="isAnyInputFocused = true"
             @blur="isAnyInputFocused = false"
-            :isAnyInputFocused="isAnyInputFocused"
-            :update="`${editEventMod}${editEventId}${editTopicId}`"
-            :theme="
-              editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
-                ? 'dark'
-                : 'light'
-            "
+            class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+          />
+          <input
+            ref="dateRef"
+            v-if="editEventId"
+            type="text"
+            v-model="date"
+            @input="updateOnInput"
+            @focus="isAnyInputFocused = true"
+            @blur="isAnyInputFocused = false"
+            class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-stone-300 truncate hover:bg-stone-800"
           />
         </div>
-        <!-- edit buttons -->
+        <!-- paper -->
+        <Paper
+          v-model="paper"
+          @input="updateOnInput"
+          @focus="isAnyInputFocused = true"
+          @blur="isAnyInputFocused = false"
+          :isAnyInputFocused="isAnyInputFocused"
+          :update="`${editEventMod}${editEventId}${editTopicId}`"
+          :theme="
+            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
+              ? 'dark'
+              : 'light'
+          "
+        />
+        <!-- edit menu bot -->
         <div
           class="flex w-full p-3 bg-stone-700"
           :class="editEventId ? 'justify-between' : 'justify-end'"
         >
-          <!-- paper mod buttons -->
           <Switch
             v-if="editEventId"
             v-model="editEventMod"

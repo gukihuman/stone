@@ -39,7 +39,6 @@
             >
               <span class="truncate">{{ name }}</span>
               <Binary
-                class="w-10"
                 v-if="memoryIds.length"
                 :groups="toBinaryGroups(memoryIds.length)"
                 :theme="selected ? 'light' : 'dark'"

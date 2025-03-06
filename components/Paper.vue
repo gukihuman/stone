@@ -1,6 +1,9 @@
 <!-- wrapper to textarea that encapsulates additional logic: scroll up / down and updating background position, so this paper-like lines are scrolling along the text -->
 <template>
-  <div class="relative h-full p-3" :class="[isFocused ? 'bg-stone-700' : '']">
+  <div
+    class="w-full relative h-full p-3"
+    :class="[isFocused ? 'bg-stone-700' : '']"
+  >
     <div class="relative overflow-hidden rounded-xl h-full">
       <textarea
         ref="paperRef"
