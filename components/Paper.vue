@@ -60,9 +60,7 @@ const clientHeight = ref(0)
 
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
-  scrollTop.value = screenRef.value.scrollTop
-  scrollHeight.value = screenRef.value.scrollHeight
-  clientHeight.value = screenRef.value.clientHeight
+  updateScrollDimensions()
 })
 onUnmounted(() => removeEventListener("keydown", onKeyDown))
 watch(
@@ -118,10 +116,7 @@ function onScroll(event) {
     return
   }
   backgroundPositionY.value = `-${event.target.scrollTop - PAPER_BG_OFFSET}px`
-
-  scrollTop.value = screenRef.value.scrollTop
-  scrollHeight.value = screenRef.value.scrollHeight
-  clientHeight.value = screenRef.value.clientHeight
+  updateScrollDimensions()
 }
 function adjustPaperScroll() {
   const el = screenRef.value
@@ -138,5 +133,11 @@ function adjustPaperScroll() {
       )
     }
   })
+}
+function updateScrollDimensions() {
+  scrollTop.value = screenRef.value.scrollTop
+  scrollHeight.value = screenRef.value.scrollHeight
+  clientHeight.value = screenRef.value.clientHeight
+  updateScrollButtons.value++
 }
 </script>

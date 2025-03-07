@@ -149,11 +149,10 @@
 const APP_LOCAL_STORAGE_KEY = "stone"
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_JSON: 1, MEMORY: 2 }
 
-// 📜 when switch between text and memory mod, scroll arrows not updated
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
 const editEventModLabels = {
   text: EDIT_EVENT_MODS.TEXT,
-  "memory json": EDIT_EVENT_MODS.MEMORY_JSON,
+  "memory raw": EDIT_EVENT_MODS.MEMORY_JSON,
   memory: EDIT_EVENT_MODS.MEMORY,
 }
 

@@ -26,7 +26,7 @@
         v-if="
           screenRef &&
           updateScrollButtons &&
-          screenRef.scrollHeight >= screenRef.clientHeight
+          screenRef.scrollHeight > screenRef.clientHeight
         "
         :targetRef="screenRef"
         :is-any-input-focused="isAnyInputFocused"
@@ -84,16 +84,17 @@ watch(
 onMounted(() => {
   loadMemoryRecordsIntoFields()
   addEventListener("keydown", onKeyDown)
-  scrollTop.value = screenRef.value.scrollTop
-  scrollHeight.value = screenRef.value.scrollHeight
-  clientHeight.value = screenRef.value.clientHeight
+  updateScrollDimensions()
 })
 onUnmounted(() => removeEventListener("keydown", onKeyDown))
 
 function loadMemoryRecordsIntoFields() {
   try {
     const memoryRecords = JSON.parse(props.editEvent.memoryRecordsRaw)
-    if (Array.isArray(memoryRecords)) editMemoryRecords.value = memoryRecords
+    if (Array.isArray(memoryRecords)) {
+      editMemoryRecords.value = memoryRecords
+      nextTick(updateScrollDimensions)
+    }
   } catch (e) {}
 }
 function updateMemoryRecordsRaw() {
@@ -107,10 +108,7 @@ function onScroll(event) {
     return
   }
   backgroundPositionY.value = `-${event.target.scrollTop - PAPER_BG_OFFSET}px`
-
-  scrollTop.value = screenRef.value.scrollTop
-  scrollHeight.value = screenRef.value.scrollHeight
-  clientHeight.value = screenRef.value.clientHeight
+  updateScrollDimensions()
 }
 function onFocus(index) {
   focusedIndex.value = index
@@ -150,5 +148,11 @@ function adjustPaperScroll() {
       )
     }
   })
+}
+function updateScrollDimensions() {
+  scrollTop.value = screenRef.value.scrollTop
+  scrollHeight.value = screenRef.value.scrollHeight
+  clientHeight.value = screenRef.value.clientHeight
+  updateScrollButtons.value++
 }
 </script>
