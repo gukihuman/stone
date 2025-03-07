@@ -47,7 +47,7 @@
           @input="updateOnInput"
           @focus="isAnyInputFocused = true"
           @blur="isAnyInputFocused = false"
-          :isAnyInputFocused="isAnyInputFocused"
+          :is-any-input-focused="isAnyInputFocused"
           :update="`${editEventMod}${editEventId}${editTopicId}`"
           :theme="
             editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
@@ -99,8 +99,8 @@
               :labels="editEventModLabels"
               @change="onPaperModChange"
             />
-            <ButtonLight @click="editEventId ? removeEvent() : removeTopic()"
-              >remove
+            <ButtonLight @click="editEventId ? removeEvent() : removeTopic()">
+              remove
             </ButtonLight>
           </div>
         </div>
@@ -111,6 +111,8 @@
         :topics-sorted="topicsSorted"
         :edit-topic-id="editTopicId"
         :total-topic-memories="totalTopicMemories"
+        :is-any-input-focused="isAnyInputFocused"
+        :memory-strings-by-id="memoryStringsById"
         @toggle-topic-edit="toggleTopicEdit"
         @local-storage-save="debouncedLocalStorageSave"
       />
@@ -133,8 +135,6 @@
 </template>
 <script setup>
 const APP_LOCAL_STORAGE_KEY = "stone"
-const AVERAGE_JSON_TOKENS = 60
-const BASE_PROMPT_TOKENS = 5700
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
@@ -171,14 +171,8 @@ const tokensForMakeMemory = ref(0)
 const debouncedLocalStorageSave = debounce(localStorageSave)
 const debouncedUpdateMemories = debounce(updateMemories)
 const debouncedUpdateTopics = debounce(updateTopics)
-const debouncedUpdateTokensForNow = debounce(async () => {
-  if (!editEventId.value) return
-  tokensForNow.value = getTokens(await getPromptCopyNow())
-})
-const debouncedUpdateTokensForMakeMemory = debounce(async () => {
-  if (!editEventId.value) return
-  tokensForMakeMemory.value = getTokens(await getPromptMakeMemory())
-})
+const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
+const debouncedUpdateTokensForMakeMemory = debounce(updateTokensForMakeMemory)
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -210,19 +204,39 @@ const totalRecentMemories = computed(() => {
   }, 0)
 })
 watch(
-  [editEventId, eventsById, recentEventLimit, memoryStringsById, topicsById],
-  () => debouncedUpdateTokensForNow(),
+  () => eventsById, // on input
+  () => {
+    debouncedUpdateTokensForNow()
+    debouncedUpdateTokensForMakeMemory()
+  },
+  {
+    deep: true,
+  }
+)
+watch(
+  () => [editEventId, recentEventLimit, topicsById],
+  () => updateTokensForNow(),
   { deep: true }
 )
 watch(
-  [editEventId, memoryStringsById],
-  () => debouncedUpdateTokensForMakeMemory(),
+  () => editEventId,
+  () => updateTokensForMakeMemory(),
   { deep: true }
 )
 onMounted(() => {
   addEventListener("keydown", onKeyDown)
   localStorageLoad()
+  updateTokensForNow()
+  updateTokensForMakeMemory()
 })
+async function updateTokensForNow() {
+  if (!editEventId.value) return
+  tokensForNow.value = getTokens(await getPromptCopyNow())
+}
+async function updateTokensForMakeMemory() {
+  if (!editEventId.value) return
+  tokensForMakeMemory.value = getTokens(await getPromptMakeMemory())
+}
 function localStorageLoad() {
   const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
   if (storageRaw) injectStorage(JSON.parse(storageRaw))
@@ -449,7 +463,8 @@ async function getPromptCopyNow() {
     memoryStringsById.value,
     topicsSorted.value,
     eventsSorted.value,
-    eventsById.value[editEventId.value]
+    eventsById.value[editEventId.value],
+    recentEventLimit.value
   )
 }
 async function onCopyNow() {
