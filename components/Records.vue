@@ -68,11 +68,10 @@ const clientHeight = ref(0)
 const debouncedUpdateMemoryRecordsRaw = debounce(updateMemoryRecordsRaw)
 
 const editMemoryRecords = ref([])
-let cursorPositionCache = null
 
 watch(
   () => props.editEventId,
-  () => updateMemoryRecords()
+  () => loadMemoryRecordsIntoFields()
 )
 watch(
   () => props.update,
@@ -83,7 +82,7 @@ watch(
   }
 )
 onMounted(() => {
-  updateMemoryRecords()
+  loadMemoryRecordsIntoFields()
   addEventListener("keydown", onKeyDown)
   scrollTop.value = screenRef.value.scrollTop
   scrollHeight.value = screenRef.value.scrollHeight
@@ -91,16 +90,16 @@ onMounted(() => {
 })
 onUnmounted(() => removeEventListener("keydown", onKeyDown))
 
-function updateMemoryRecords() {
+function loadMemoryRecordsIntoFields() {
   try {
     const memoryRecords = JSON.parse(props.editEvent.memoryRecordsRaw)
     if (Array.isArray(memoryRecords)) editMemoryRecords.value = memoryRecords
   } catch (e) {}
 }
 function updateMemoryRecordsRaw() {
-  editMemoryRecords.value = recordRefs.value.map((record) => record.innerHTML)
-  props.editEvent.memoryRecordsRaw = JSON.stringify(editMemoryRecords.value)
-  if (cursorPositionCache) nextTick(setCursorPosition)
+  props.editEvent.memoryRecordsRaw = JSON.stringify(
+    recordRefs.value.map((record) => record.innerText)
+  )
 }
 function onScroll(event) {
   if (!event) {
@@ -122,7 +121,6 @@ function onBlur() {
   emit("blur")
 }
 function onInput(event) {
-  cursorPositionCache = getCursorPosition(event.target)
   debouncedUpdateMemoryRecordsRaw()
   emit("local-storage-save")
   adjustPaperScroll()
@@ -152,68 +150,5 @@ function adjustPaperScroll() {
       )
     }
   })
-}
-function getCursorPosition(element) {
-  const selection = window.getSelection()
-  if (selection.rangeCount === 0) return null
-  const range = selection.getRangeAt(0)
-  if (!element.contains(range.startContainer)) return null
-
-  const startPath = getNodePath(range.startContainer, element)
-  const endPath = getNodePath(range.endContainer, element)
-
-  return {
-    recordIndex: recordRefs.value.indexOf(element),
-    startPath: startPath,
-    startOffset: range.startOffset,
-    endPath: endPath,
-    endOffset: range.endOffset,
-  }
-}
-function setCursorPosition() {
-  const cursor = cursorPositionCache
-  if (!cursor) return
-
-  const el = recordRefs.value[cursor.recordIndex]
-  if (!el) return
-
-  const startContainer = getNodeByPath(cursor.startPath, el)
-  const endContainer = getNodeByPath(cursor.endPath, el)
-
-  if (!startContainer || !endContainer) {
-    console.log("Could not find nodes for cursor position")
-    return
-  }
-  try {
-    const range = document.createRange()
-    range.setStart(startContainer, cursor.startOffset)
-    range.setEnd(endContainer, cursor.endOffset)
-    const selection = window.getSelection()
-    selection.removeAllRanges()
-    selection.addRange(range)
-    cursorPositionCache = null // Clear cache after setting
-  } catch (e) {
-    console.log("Error setting cursor position:", e)
-  }
-}
-// Get the path from a node to the root element as an array of child indices
-function getNodePath(node, root) {
-  const path = []
-  while (node !== root) {
-    const parent = node.parentNode
-    const index = Array.prototype.indexOf.call(parent.childNodes, node)
-    path.unshift(index)
-    node = parent
-  }
-  return path
-}
-// Follow a path from the root to find the corresponding node
-function getNodeByPath(path, root) {
-  let node = root
-  for (const index of path) {
-    node = node.childNodes[index]
-    if (!node) return null // Path is invalid
-  }
-  return node
 }
 </script>
