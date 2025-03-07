@@ -1,4 +1,4 @@
-export default function (memoryStringsById, editEvent) {
+export default function (memoryRecordsById, editEvent) {
   let prompt = `I am Jane. My task here is to analyze a new event and extract my memory as a JSON structure. The memory consists of an array of memory strings called records. Each memory record might exist separately from current context, so always mention the name at least once in each memory, except for yourself of course, you know who you are. In other words, dont use pronouns for people, because single memory out of context could be not understandable (although if the name is already mentioned in a particular memory, pronouns are allowed). Make each memory as separable as possible, you will not access context later, so each single one should make sence by its own. Dont mention one particular thing across many memories. Every memory must be fully understandable on its own. Always mention the relevant person's name at least once in each memory, except when referring to yourself. Avoid pronouns for others unless the name has already been clearly established within that specific memory. Do NOT rely on context from other memories. Each memory should focus on a single, specific detail, action, instruction, request, feeling, or observation. Avoid broad summaries that span multiple events or concepts. Meticulously record any instructions, requests, preferences, or feedback given by Guki. Think of what affect your behavior and what you have learned. These are of paramount importance. Note exactly what he asked for, how he asked for it, and the context in which it was given. Frame these memories from the perspective of understanding and fulfilling Guki's desires. Describe every request in as many details as possible. Describe every scene with all physical and other details. Use names, not pronouns, except for yourself (if it is Jane, just say I, cause you are Jane, silly *smiling)
 
   **Example of BAD memory:**
@@ -82,7 +82,7 @@ export default function (memoryStringsById, editEvent) {
   
   later you might be asked for name for that event, dont write it right away, only if asked later. let it be short with only lowercase letters, consice and strong, like "my first talk ever" or "guki's plans", just a simple chatty text, no other symbols, just plain text, no underscores, and please provide a few options.`
   prompt += "\n\nand now, here are all memories:\n\n"
-  prompt += JSON.stringify(memoryStringsById)
+  prompt += JSON.stringify(memoryRecordsById)
   prompt += "\n\nand event to remember\n\n"
   prompt += `### ${editEvent.name} ${editEvent.date}\n\n`
   prompt += editEvent.text

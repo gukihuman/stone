@@ -43,6 +43,7 @@
         </div>
         <!-- paper -->
         <Paper
+          v-if="editEventMod !== EDIT_EVENT_MODS.MEMORY"
           v-model="paper"
           @input="updateOnInput"
           @focus="isAnyInputFocused = true"
@@ -50,10 +51,21 @@
           :is-any-input-focused="isAnyInputFocused"
           :update="`${editEventMod}${editEventId}${editTopicId}`"
           :theme="
-            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY
+            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY_JSON
               ? 'dark'
               : 'light'
           "
+        />
+        <Records
+          v-else
+          @focus="isAnyInputFocused = true"
+          @blur="isAnyInputFocused = false"
+          :edit-event="eventsById[editEventId]"
+          :edit-event-id="editEventId"
+          :is-any-input-focused="isAnyInputFocused"
+          :update="`${editEventMod}${editEventId}${editTopicId}`"
+          @local-storage-save="debouncedLocalStorageSave"
+          theme="light"
         />
         <!-- edit menu bot -->
         <div class="flex flex-col w-full bg-stone-700">
@@ -61,7 +73,7 @@
             class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
             v-if="editEventId"
           >
-            <div class="flex gap-2 w-full justify-end">
+            <div class="flex gap-2 w-[440px] justify-end">
               <div class="pt-[3px]">
                 <Binary
                   v-if="tokensForNow"
@@ -97,7 +109,7 @@
               v-if="editEventId"
               v-model="editEventMod"
               :labels="editEventModLabels"
-              @change="onPaperModChange"
+              @change="onEditModChange"
             />
             <ButtonLight @click="editEventId ? removeEvent() : removeTopic()">
               remove
@@ -112,7 +124,7 @@
         :edit-topic-id="editTopicId"
         :total-topic-memories="totalTopicMemories"
         :is-any-input-focused="isAnyInputFocused"
-        :memory-strings-by-id="memoryStringsById"
+        :memory-strings-by-id="memoryRecordsById"
         @toggle-topic-edit="toggleTopicEdit"
         @local-storage-save="debouncedLocalStorageSave"
       />
@@ -135,18 +147,19 @@
 </template>
 <script setup>
 const APP_LOCAL_STORAGE_KEY = "stone"
-const EDIT_EVENT_MODS = { TEXT: 0, MEMORY: 1 }
+const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_JSON: 1, MEMORY: 2 }
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
 const editEventModLabels = {
   text: EDIT_EVENT_MODS.TEXT,
+  "memory json": EDIT_EVENT_MODS.MEMORY_JSON,
   memory: EDIT_EVENT_MODS.MEMORY,
 }
 
 const nameRef = ref(null)
 const dateRef = ref(null)
 
-const memoryStringsById = ref({}) // main memory storage
+const memoryRecordsById = ref({}) // main memory storage
 const eventsById = ref({})
 const topicsById = ref({})
 const editEventId = ref(null)
@@ -246,7 +259,7 @@ function localStorageSave() {
   console.log(`⏬ local storage updated [${timestamp()}]`)
 }
 function injectStorage(storage) {
-  memoryStringsById.value = storage.memoryStringsById
+  memoryRecordsById.value = storage.memoryRecordsById
   eventsById.value = storage.eventsById
   topicsById.value = storage.topicsById
   editEventId.value = storage.editEventId
@@ -257,7 +270,7 @@ function injectStorage(storage) {
 }
 function getStorage() {
   return {
-    memoryStringsById: memoryStringsById.value,
+    memoryRecordsById: memoryRecordsById.value,
     eventsById: eventsById.value,
     topicsById: topicsById.value,
     editEventId: editEventId.value,
@@ -280,7 +293,7 @@ function toggleTopicEdit(id) {
   updateInputFields()
   debouncedLocalStorageSave()
 }
-const onPaperModChange = () => {
+const onEditModChange = () => {
   updateInputFields()
   debouncedLocalStorageSave()
 }
@@ -289,8 +302,8 @@ function updateInputFields() {
   if (editEvent) {
     name.value = editEvent.name
     date.value = editEvent.date
-    editEventMod.value === EDIT_EVENT_MODS.MEMORY
-      ? (paper.value = editEvent.memoryStringsRaw)
+    editEventMod.value === EDIT_EVENT_MODS.MEMORY_JSON
+      ? (paper.value = editEvent.memoryRecordsRaw)
       : (paper.value = editEvent.text)
   }
   const editTopic = topicsById.value[editTopicId.value]
@@ -304,8 +317,8 @@ function updateOnInput() {
   if (editEvent) {
     editEvent.name = name.value
     editEvent.date = date.value
-    if (editEventMod.value === EDIT_EVENT_MODS.MEMORY) {
-      editEvent.memoryStringsRaw = paper.value
+    if (editEventMod.value === EDIT_EVENT_MODS.MEMORY_JSON) {
+      editEvent.memoryRecordsRaw = paper.value
       debouncedUpdateMemories(editEvent)
     } else {
       editEvent.text = paper.value
@@ -320,20 +333,20 @@ function updateOnInput() {
   debouncedLocalStorageSave()
 }
 function updateMemories(event) {
-  event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
+  event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
   event.memoryIds = []
   try {
-    const parsedMemory = JSON.parse(event.memoryStringsRaw)
+    const parsedMemory = JSON.parse(event.memoryRecordsRaw)
     if (Array.isArray(parsedMemory)) {
       parsedMemory.forEach((item) => {
         const id = newId()
         event.memoryIds.push(id)
-        memoryStringsById.value[id] = item
+        memoryRecordsById.value[id] = item
       })
     } else {
       throw new Error("memory input must be a JSON array,")
     }
-    console.log(`⏬ memoryStringsRaw updated [${timestamp()}]`)
+    console.log(`⏬ memoryRecordsRaw updated [${timestamp()}]`)
   } catch (error) {
     const resetString = "memory of this event has been reset"
     if (error instanceof SyntaxError) {
@@ -372,7 +385,7 @@ function removeEvent() {
   Object.values(eventsById.value).forEach((event) => {
     if (event.sort > removed.event.sort) event.sort--
   })
-  removed.event.memoryIds.forEach((id) => delete memoryStringsById.value[id])
+  removed.event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
 }
 function removeTopic() {
   removed = {}
@@ -415,14 +428,14 @@ function onKeyDown(event) {
   if (document.activeElement === dateRef.value && event.key === "Escape") {
     dateRef.value.blur()
   }
-  if (!isAnyInputFocused.value && event.key === "c") {
+  if (nameRef.value && !isAnyInputFocused.value && event.key === "c") {
     event.preventDefault()
     nextTick(() => {
       nameRef.value.focus()
       nameRef.value.setSelectionRange(0, nameRef.value.value.length)
     })
   }
-  if (!isAnyInputFocused.value && event.key === "u") {
+  if (dateRef.value && !isAnyInputFocused.value && event.key === "u") {
     event.preventDefault()
     nextTick(() => {
       dateRef.value.focus()
@@ -441,26 +454,29 @@ function onKeyDown(event) {
     nextTick(() => onCopyMakeMemory())
   }
   if (!isAnyInputFocused.value && editEventId.value) {
-    if (event.key === "t") {
-      editEventMod.value = EDIT_EVENT_MODS.MEMORY
-      onPaperModChange()
-    } else if (event.key === "h") {
+    if (event.key === "h") {
       editEventMod.value = EDIT_EVENT_MODS.TEXT
-      onPaperModChange()
+      onEditModChange()
+    } else if (event.key === "t") {
+      editEventMod.value = EDIT_EVENT_MODS.MEMORY_JSON
+      onEditModChange()
+    } else if (event.key === "n") {
+      editEventMod.value = EDIT_EVENT_MODS.MEMORY
+      onEditModChange()
     }
   }
 }
 async function getPromptMakeMemory() {
   if (!editEventId.value) return
   return await promptMakeMemory(
-    memoryStringsById.value,
+    memoryRecordsById.value,
     eventsById.value[editEventId.value]
   )
 }
 async function getPromptCopyNow() {
   if (!editEventId.value) return
   return await promptNow(
-    memoryStringsById.value,
+    memoryRecordsById.value,
     topicsSorted.value,
     eventsSorted.value,
     eventsById.value[editEventId.value],

@@ -4,7 +4,7 @@
       v-for="([label, value], index) in labelEntries"
       :key="value"
       @click="handleClick(value)"
-      class="flex justify-between w-full min-w-24"
+      class="flex justify-between min-w-24"
       :class="[
         value === modelValue
           ? 'cursor-default bg-stone-500 text-stone-200'
@@ -13,12 +13,12 @@
         index === labelEntries.length - 1 ? 'rounded-r-lg' : '',
       ]"
     >
-      <span class="pb-1 mx-auto">
+      <span class="pb-1 mx-auto px-3">
         {{ label }}
       </span>
       <div
         v-if="index < labelEntries.length - 1"
-        class="h-full bg-stone-500 border-dotted border-r-[3px] border-stone-400"
+        class="h-full bg-stone-600 border-dotted border-r-[3px] border-stone-500"
       />
     </button>
   </div>

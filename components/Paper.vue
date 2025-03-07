@@ -6,7 +6,7 @@
   >
     <div class="relative overflow-hidden rounded-xl h-full">
       <textarea
-        ref="paperRef"
+        ref="screenRef"
         :value="modelValue"
         @input="onInput"
         @scroll="onScroll"
@@ -19,80 +19,26 @@
             theme === 'dark',
         }"
         :style="{ backgroundPositionY }"
-      ></textarea>
-      <!-- scroll buttons -->
-      <div
+      />
+      <ScrollArrows
         v-if="
+          screenRef &&
           updateScrollButtons &&
-          paperRef &&
-          paperRef.scrollHeight > paperRef.clientHeight
+          screenRef.scrollHeight > screenRef.clientHeight
         "
-        class="flex flex-col absolute bottom-4 right-4"
-      >
-        <div
-          @click="onScrollTop"
-          class="group pb-[3px] p-1"
-          :class="[
-            !disabledAfterClickTop && paperRef.scrollTop !== 0
-              ? 'cursor-pointer opacity-60'
-              : 'opacity-25',
-          ]"
-        >
-          <button
-            class="size-8 pb-1 rounded-full bg-stone-500 text-stone-400 cursor-default"
-            :class="{
-              'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
-                theme === 'light' &&
-                !disabledAfterClickTop &&
-                paperRef.scrollTop !== 0,
-              'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
-                theme === 'dark' &&
-                !disabledAfterClickTop &&
-                paperRef.scrollTop !== 0,
-            }"
-          >
-            <IconArrow class="w-3 -rotate-90 inline-block" />
-          </button>
-        </div>
-        <div
-          @click="onScrollBot"
-          class="group pt-[3px] p-1"
-          :class="[
-            !disabledAfterClickBot &&
-            paperRef.scrollTop + paperRef.clientHeight !== paperRef.scrollHeight
-              ? 'cursor-pointer opacity-60'
-              : 'opacity-25',
-          ]"
-        >
-          <button
-            class="size-8 pb-1 rounded-full bg-stone-500 text-stone-400 cursor-default"
-            :class="{
-              'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
-                theme === 'light' &&
-                !disabledAfterClickBot &&
-                paperRef.scrollTop + paperRef.clientHeight !==
-                  paperRef.scrollHeight,
-              'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
-                theme === 'dark' &&
-                !disabledAfterClickBot &&
-                paperRef.scrollTop + paperRef.clientHeight !==
-                  paperRef.scrollHeight,
-            }"
-          >
-            <IconArrow class="w-3 rotate-90 inline-block" />
-          </button>
-        </div>
-      </div>
+        :targetRef="screenRef"
+        :is-any-input-focused="isAnyInputFocused"
+        :theme="theme"
+        :scroll-top="scrollTop"
+        :scroll-height="scrollHeight"
+        :client-height="clientHeight"
+      />
     </div>
   </div>
 </template>
 <script setup>
-import scrollToTop from "./utils/scrollToTop"
-import scrollToBot from "./utils/scrollToBot"
-
 const PAPER_EXTRA_SCROLL = 24
 const PAPER_BG_OFFSET = -8
-const DISABLED_AFTER_CLICK_DELAY = 1000
 
 const props = defineProps([
   "modelValue",
@@ -102,18 +48,27 @@ const props = defineProps([
 ])
 const emit = defineEmits(["input", "update:modelValue", "focus", "blur"])
 
-const paperRef = ref(null)
+const screenRef = ref(null)
+
 const isFocused = ref(false)
 const backgroundPositionY = ref(`${PAPER_BG_OFFSET}px`)
-const disabledAfterClickTop = ref(false)
-const disabledAfterClickBot = ref(false)
 const updateScrollButtons = ref(1)
 
-onMounted(() => addEventListener("keydown", onKeyDown))
+const scrollTop = ref(0)
+const scrollHeight = ref(0)
+const clientHeight = ref(0)
+
+onMounted(() => {
+  addEventListener("keydown", onKeyDown)
+  scrollTop.value = screenRef.value.scrollTop
+  scrollHeight.value = screenRef.value.scrollHeight
+  clientHeight.value = screenRef.value.clientHeight
+})
+onUnmounted(() => removeEventListener("keydown", onKeyDown))
 watch(
   () => props.update,
   () => {
-    paperRef.value.scrollTop = 0
+    screenRef.value.scrollTop = 0
     backgroundPositionY.value = `${PAPER_BG_OFFSET}px`
     nextTick(() => updateScrollButtons.value++)
   }
@@ -127,48 +82,30 @@ function onBlur() {
   emit("blur")
 }
 function onKeyDown(event) {
-  if (document.activeElement === paperRef.value) {
+  if (document.activeElement === screenRef.value) {
     const navigationKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
     if (navigationKeys.includes(event.key)) adjustPaperScroll()
-    if (event.key === "Escape") paperRef.value.blur()
-  } else if (!props.isAnyInputFocused) {
-    if (event.key === "i") onScrollTop()
-    else if (event.key === "g") onScrollBot()
+    if (event.key === "Escape") screenRef.value.blur()
+  } else if (screenRef.value && !props.isAnyInputFocused) {
     if (event.key === "o") {
       event.preventDefault()
       nextTick(() => {
-        paperRef.value.focus()
-        scrollToBot(paperRef.value, "auto")
-        paperRef.value.setSelectionRange(
-          paperRef.value.value.length,
-          paperRef.value.value.length
+        screenRef.value.focus()
+        scrollToBot(screenRef.value, "auto")
+        screenRef.value.setSelectionRange(
+          screenRef.value.value.length,
+          screenRef.value.value.length
         )
       })
     } else if (event.key === "e") {
       event.preventDefault()
       nextTick(() => {
-        paperRef.value.focus()
-        scrollToTop(paperRef.value, "auto")
-        paperRef.value.setSelectionRange(0, 0)
+        screenRef.value.focus()
+        scrollToTop(screenRef.value, "auto")
+        screenRef.value.setSelectionRange(0, 0)
       })
     }
   }
-}
-function onScrollTop() {
-  scrollToTop(paperRef.value)
-  disabledAfterClickTop.value = true
-  setTimeout(
-    () => (disabledAfterClickTop.value = false),
-    DISABLED_AFTER_CLICK_DELAY
-  )
-}
-function onScrollBot() {
-  scrollToBot(paperRef.value)
-  disabledAfterClickBot.value = true
-  setTimeout(
-    () => (disabledAfterClickBot.value = false),
-    DISABLED_AFTER_CLICK_DELAY
-  )
 }
 function onInput(event) {
   emit("update:modelValue", event.target.value)
@@ -181,9 +118,13 @@ function onScroll(event) {
     return
   }
   backgroundPositionY.value = `-${event.target.scrollTop - PAPER_BG_OFFSET}px`
+
+  scrollTop.value = screenRef.value.scrollTop
+  scrollHeight.value = screenRef.value.scrollHeight
+  clientHeight.value = screenRef.value.clientHeight
 }
 function adjustPaperScroll() {
-  const el = paperRef.value
+  const el = screenRef.value
   if (!el) return
   const initialScrollTop = el.scrollTop
   requestAnimationFrame(() => {
@@ -199,21 +140,3 @@ function adjustPaperScroll() {
   })
 }
 </script>
-<style>
-.bg-lines {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.04) 3px,
-    transparent 4px
-  );
-  background-size: 100% 28px;
-}
-.bg-lines-light {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.04) 3px,
-    transparent 4px
-  );
-  background-size: 100% 28px;
-}
-</style>

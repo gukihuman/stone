@@ -117,7 +117,7 @@ const props = defineProps([
   "topicsSorted",
   "totalTopicMemories",
   "isAnyInputFocused",
-  "memoryStringsById",
+  "memoryRecordsById",
 ])
 const emit = defineEmits(["toggle-topic-edit", "local-storage-save"])
 
@@ -140,7 +140,7 @@ const debouncedUpdateTokensForSelectTopicRecords = debounce(
   updateTokensForSelectTopicRecords
 )
 watch(
-  () => props.memoryStringsById,
+  () => props.memoryRecordsById,
   () => debouncedUpdateTokensForSelectTopicRecords(),
   {
     deep: true,
@@ -199,6 +199,6 @@ async function onCopySelectTopicRecords() {
   )
 }
 async function getPromptSelectTopicRecords() {
-  return await promptSelectTopicRecords(props.memoryStringsById)
+  return await promptSelectTopicRecords(props.memoryRecordsById)
 }
 </script>

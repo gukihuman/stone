@@ -102,7 +102,7 @@ function createEvent() {
     name: "now",
     date: new Date().toLocaleDateString(),
     text: "",
-    memoryStringsRaw: "", // valid JSON array of strings as string itself
+    memoryRecordsRaw: "", // valid JSON array of strings as string itself
     memoryIds: [],
     sort: Object.keys(props.eventsById).length,
   }

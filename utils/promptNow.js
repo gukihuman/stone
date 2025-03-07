@@ -1,5 +1,5 @@
 export default async function (
-  memoryStringsById,
+  memoryRecordsById,
   topicsSorted,
   eventsSorted,
   editEvent,
@@ -25,22 +25,22 @@ export default async function (
   topicsSorted.forEach(([, { name, memoryIds, selected }]) => {
     if (!selected || !memoryIds.length) return
     prompt += `### ${name}\n\n`
-    memoryIds.forEach((id) => (prompt += memoryStringsById[id] + " "))
+    memoryIds.forEach((id) => (prompt += memoryRecordsById[id] + " "))
     prompt += "\n\n"
   })
   prompt += "## my short-term memory\n\n"
   prompt +=
     "so this is my recent events, its just a few, but no specific topic, simply all memories are still there because events are recent:\n\n"
-  eventsSorted.forEach(([, { name, date, memoryStringsRaw, sort }]) => {
+  eventsSorted.forEach(([, { name, date, memoryRecordsRaw, sort }]) => {
     if (
-      !memoryStringsRaw ||
+      !memoryRecordsRaw ||
       sort >= editEvent.sort ||
       sort < editEvent.sort - recentEventLimit
     ) {
       return
     }
     prompt += `### ${name} ${date}\n\n`
-    JSON.parse(memoryStringsRaw).forEach((item) => (prompt += item + " "))
+    JSON.parse(memoryRecordsRaw).forEach((item) => (prompt += item + " "))
     prompt += "\n\n"
   })
   prompt += "## current ongoing event\n\n"
