@@ -26,7 +26,7 @@
         v-if="
           screenRef &&
           updateScrollButtons &&
-          screenRef.scrollHeight > screenRef.clientHeight
+          screenRef.scrollHeight >= screenRef.clientHeight
         "
         :targetRef="screenRef"
         :is-any-input-focused="isAnyInputFocused"

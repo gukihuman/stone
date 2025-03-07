@@ -25,7 +25,8 @@
       @click="onScrollBot"
       class="group pt-[3px] p-1"
       :class="[
-        !disabledAfterClickBot && scrollTop + clientHeight <= scrollHeight - 1
+        !disabledAfterClickBot &&
+        (scrollTop === 0 || scrollTop + clientHeight <= scrollHeight - 1)
           ? 'cursor-pointer opacity-60'
           : 'opacity-25',
       ]"
@@ -36,11 +37,11 @@
           'group-hover:text-stone-300 group-hover:bg-stone-800 cursor-pointer':
             theme === 'light' &&
             !disabledAfterClickBot &&
-            scrollTop + clientHeight <= scrollHeight - 1,
+            (scrollTop === 0 || scrollTop + clientHeight <= scrollHeight - 1),
           'group-hover:text-stone-200 group-hover:bg-stone-800 cursor-pointer':
             theme === 'dark' &&
             !disabledAfterClickBot &&
-            scrollTop + clientHeight <= scrollHeight - 1,
+            (scrollTop === 0 || scrollTop + clientHeight <= scrollHeight - 1),
         }"
       >
         <IconArrow class="w-3 rotate-90 inline-block" />
@@ -64,9 +65,6 @@ const disabledAfterClickTop = ref(false)
 const disabledAfterClickBot = ref(false)
 
 onMounted(() => {
-  window.scroll = () => {
-    console.log(props.scrollTop)
-  }
   addEventListener("keydown", onKeyDown)
 })
 onUnmounted(() => removeEventListener("keydown", onKeyDown))
