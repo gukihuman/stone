@@ -43,7 +43,11 @@
         </div>
         <!-- paper -->
         <Paper
-          v-if="editEventMod !== EDIT_EVENT_MODS.MEMORY"
+          v-if="
+            editEventMod === EDIT_EVENT_MODS.TEXT ||
+            editEventMod === EDIT_EVENT_MODS.MEMORY_RAW ||
+            editTopicMod === EDIT_TOPIC_MODS.MEMORY_IDS_RAW
+          "
           v-model="paper"
           @input="updateOnInput"
           @focus="isAnyInputFocused = true"
@@ -51,7 +55,7 @@
           :is-any-input-focused="isAnyInputFocused"
           :update="`${editEventMod}${editEventId}${editTopicId}`"
           :theme="
-            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY_JSON
+            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY_RAW
               ? 'dark'
               : 'light'
           "
@@ -60,12 +64,15 @@
           v-else
           @focus="isAnyInputFocused = true"
           @blur="isAnyInputFocused = false"
-          :edit-event="eventsById[editEventId]"
+          :memory-records-by-id="memoryRecordsById"
+          :events-by-id="eventsById"
+          :topics-by-id="topicsById"
           :edit-event-id="editEventId"
+          :edit-topic-id="editTopicId"
           :is-any-input-focused="isAnyInputFocused"
           :update="`${editEventMod}${editEventId}${editTopicId}`"
-          @local-storage-save="debouncedLocalStorageSave"
           theme="light"
+          @local-storage-save="debouncedLocalStorageSave"
         />
         <!-- edit menu bot -->
         <div class="flex flex-col w-full bg-stone-700">
@@ -101,14 +108,17 @@
               </ButtonLight>
             </div>
           </div>
-          <div
-            class="flex p-3"
-            :class="editEventId ? 'justify-between' : 'justify-end'"
-          >
+          <div class="flex p-3 justify-between">
             <Switch
               v-if="editEventId"
               v-model="editEventMod"
               :labels="editEventModLabels"
+              @change="onEditModChange"
+            />
+            <Switch
+              v-else
+              v-model="editTopicMod"
+              :labels="editTopicModLabels"
               @change="onEditModChange"
             />
             <ButtonLight @click="editEventId ? removeEvent() : removeTopic()">
@@ -124,7 +134,7 @@
         :edit-topic-id="editTopicId"
         :total-topic-memories="totalTopicMemories"
         :is-any-input-focused="isAnyInputFocused"
-        :memory-strings-by-id="memoryRecordsById"
+        :memory-records-by-id="memoryRecordsById"
         @toggle-topic-edit="toggleTopicEdit"
         @local-storage-save="debouncedLocalStorageSave"
       />
@@ -147,13 +157,19 @@
 </template>
 <script setup>
 const APP_LOCAL_STORAGE_KEY = "stone"
-const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_JSON: 1, MEMORY: 2 }
+const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
+const EDIT_TOPIC_MODS = { MEMORY_IDS_RAW: 0, MEMORY: 1 }
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
 const editEventModLabels = {
   text: EDIT_EVENT_MODS.TEXT,
-  "memory raw": EDIT_EVENT_MODS.MEMORY_JSON,
+  "memory raw": EDIT_EVENT_MODS.MEMORY_RAW,
   memory: EDIT_EVENT_MODS.MEMORY,
+}
+const editTopicMod = ref(EDIT_EVENT_MODS.MEMORY_IDS_RAW)
+const editTopicModLabels = {
+  "memory ids raw": EDIT_TOPIC_MODS.MEMORY_IDS_RAW,
+  memory: EDIT_TOPIC_MODS.MEMORY,
 }
 
 const nameRef = ref(null)
@@ -182,7 +198,7 @@ const tokensForNow = ref(0)
 const tokensForMakeMemory = ref(0)
 
 const debouncedLocalStorageSave = debounce(localStorageSave)
-const debouncedUpdateMemories = debounce(updateMemories)
+const debouncedUpdateMemories = debounce(updateMemoriesWithNewIds)
 const debouncedUpdateTopics = debounce(updateTopics)
 const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
 const debouncedUpdateTokensForMakeMemory = debounce(updateTokensForMakeMemory)
@@ -265,6 +281,7 @@ function injectStorage(storage) {
   editEventId.value = storage.editEventId
   editTopicId.value = storage.editTopicId
   editEventMod.value = storage.editEventMod
+  editTopicMod.value = storage.editTopicMod
   recentEventLimit.value = storage.recentEventLimit
   updateInputFields()
 }
@@ -276,6 +293,7 @@ function getStorage() {
     editEventId: editEventId.value,
     editTopicId: editTopicId.value,
     editEventMod: editEventMod.value,
+    editTopicMod: editTopicMod.value,
     recentEventLimit: recentEventLimit.value,
   }
 }
@@ -302,7 +320,7 @@ function updateInputFields() {
   if (editEvent) {
     name.value = editEvent.name
     date.value = editEvent.date
-    editEventMod.value === EDIT_EVENT_MODS.MEMORY_JSON
+    editEventMod.value === EDIT_EVENT_MODS.MEMORY_RAW
       ? (paper.value = editEvent.memoryRecordsRaw)
       : (paper.value = editEvent.text)
   }
@@ -317,7 +335,7 @@ function updateOnInput() {
   if (editEvent) {
     editEvent.name = name.value
     editEvent.date = date.value
-    if (editEventMod.value === EDIT_EVENT_MODS.MEMORY_JSON) {
+    if (editEventMod.value === EDIT_EVENT_MODS.MEMORY_RAW) {
       editEvent.memoryRecordsRaw = paper.value
       debouncedUpdateMemories(editEvent)
     } else {
@@ -332,7 +350,7 @@ function updateOnInput() {
   }
   debouncedLocalStorageSave()
 }
-function updateMemories(event) {
+function updateMemoriesWithNewIds(event) {
   event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
   event.memoryIds = []
   try {
@@ -406,7 +424,7 @@ function restore() {
       sort: Object.keys(eventsById.value).length,
     }
     toggleEventEdit(removed.editEventId)
-    updateMemories(eventsById.value[removed.editEventId])
+    updateMemoriesWithNewIds(eventsById.value[removed.editEventId])
   } else {
     topicsById.value[removed.editTopicId] = {
       ...removed.topic,
@@ -458,10 +476,19 @@ function onKeyDown(event) {
       editEventMod.value = EDIT_EVENT_MODS.TEXT
       onEditModChange()
     } else if (event.key === "t") {
-      editEventMod.value = EDIT_EVENT_MODS.MEMORY_JSON
+      editEventMod.value = EDIT_EVENT_MODS.MEMORY_RAW
       onEditModChange()
     } else if (event.key === "n") {
       editEventMod.value = EDIT_EVENT_MODS.MEMORY
+      onEditModChange()
+    }
+  }
+  if (!isAnyInputFocused.value && editTopicId.value) {
+    if (event.key === "t") {
+      editTopicMod.value = EDIT_TOPIC_MODS.MEMORY_IDS_RAW
+      onEditModChange()
+    } else if (event.key === "n") {
+      editTopicMod.value = EDIT_TOPIC_MODS.MEMORY
       onEditModChange()
     }
   }

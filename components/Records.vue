@@ -44,10 +44,13 @@ const RECORD_BG_OFFSET = -8
 const PAPER_BG_OFFSET = -28
 
 const props = defineProps([
-  "editEvent",
+  "memoryRecordsById",
+  "eventsById",
+  "topicsById",
   "editEventId",
-  "update",
+  "editTopicId",
   "isAnyInputFocused",
+  "update",
   "theme",
 ])
 
@@ -70,7 +73,7 @@ const debouncedUpdateMemoryRecordsRaw = debounce(updateMemoryRecordsRaw)
 const editMemoryRecords = ref([])
 
 watch(
-  () => props.editEventId,
+  () => [props.editEventId, props.editTopicId],
   () => loadMemoryRecordsIntoFields()
 )
 watch(
@@ -89,18 +92,46 @@ onMounted(() => {
 onUnmounted(() => removeEventListener("keydown", onKeyDown))
 
 function loadMemoryRecordsIntoFields() {
+  const editEvent = props.eventsById[props.editEventId]
+  const editTopic = props.topicsById[props.editTopicId]
   try {
-    const memoryRecords = JSON.parse(props.editEvent.memoryRecordsRaw)
-    if (Array.isArray(memoryRecords)) {
+    if (props.editEventId) {
+      const memoryRecords = JSON.parse(editEvent.memoryRecordsRaw)
+      if (Array.isArray(memoryRecords)) {
+        editMemoryRecords.value = memoryRecords
+        nextTick(updateScrollDimensions)
+      }
+    } else {
+      const memoryRecords = editTopic.memoryIds.map((memoryId) => {
+        return props.memoryRecordsById[memoryId]
+      })
       editMemoryRecords.value = memoryRecords
       nextTick(updateScrollDimensions)
     }
   } catch (e) {}
 }
 function updateMemoryRecordsRaw() {
-  props.editEvent.memoryRecordsRaw = JSON.stringify(
-    recordRefs.value.map((record) => record.innerText)
-  )
+  if (props.editEventId) {
+    const editEvent = props.eventsById[props.editEventId]
+    const newMemoryRecords = recordRefs.value.map((record) => record.innerText)
+    editEvent.memoryRecordsRaw = JSON.stringify(newMemoryRecords)
+    editEvent.memoryIds.forEach((memoryId, index) => {
+      props.memoryRecordsById[memoryId] = newMemoryRecords[index]
+    })
+  } else {
+    const editTopic = props.topicsById[props.editTopicId]
+    recordRefs.value.forEach((recordRef, i) => {
+      const memoryId = editTopic.memoryIds[i]
+      const eventToUpdate = findEventWithMemoryId(memoryId)
+      const memoryRecordIndex = eventToUpdate.memoryIds.indexOf(memoryId)
+      try {
+        let memoryRecords = JSON.parse(eventToUpdate.memoryRecordsRaw)
+        memoryRecords[memoryRecordIndex] = recordRef.innerText
+        eventToUpdate.memoryRecordsRaw = JSON.stringify(memoryRecords)
+        props.memoryRecordsById[memoryId] = recordRef.innerText
+      } catch (e) {}
+    })
+  }
 }
 function onScroll(event) {
   if (!event) {
@@ -118,7 +149,7 @@ function onBlur() {
   focusedIndex.value = null
   emit("blur")
 }
-function onInput(event) {
+function onInput() {
   debouncedUpdateMemoryRecordsRaw()
   emit("local-storage-save")
   adjustPaperScroll()
@@ -154,5 +185,14 @@ function updateScrollDimensions() {
   scrollHeight.value = screenRef.value.scrollHeight
   clientHeight.value = screenRef.value.clientHeight
   updateScrollButtons.value++
+}
+function findEventWithMemoryId(memoryId) {
+  for (const eventId in props.eventsById) {
+    const event = props.eventsById[eventId]
+    if (event.memoryIds.includes(memoryId)) {
+      return event
+    }
+  }
+  return null
 }
 </script>
