@@ -1,26 +1,58 @@
 <template>
   <div
     class="w-full p-3 relative h-full overflow-hidden"
-    :class="[focusedIndex ? 'bg-stone-700' : '']"
+    :class="[focusedIndex !== null ? 'bg-stone-700' : '']"
   >
     <div class="overflow-hidden rounded-xl h-full relative">
       <div
         ref="screenRef"
-        class="h-full bg-stone-450 flex flex-col gap-2 scroll-light overflow-auto p-2 bg-lines"
+        class="h-full bg-stone-450 flex flex-col gap-2 scroll-light overflow-auto p-2 bg-lines items-center pb-4"
         @scroll="onScroll"
         :style="{ backgroundPositionY }"
       >
         <div
-          ref="recordRefs"
-          v-for="record in editMemoryRecords"
-          v-html="record"
-          @input="onInput"
-          @focus="onFocus"
-          @blur="onBlur"
-          contenteditable="true"
-          class="w-full min-h-[76px] flex-shrink-0 rounded-lg py-5 px-8 scroll-light bg-lines text-xl bg-stone-400 text-stone-800"
-          :style="{ backgroundPositionY: `${RECORD_BG_OFFSET}px` }"
-        />
+          v-for="(record, i) in editMemoryRecords"
+          :key="i"
+          class="relative w-full overflow-hidden"
+          :class="
+            focusedIndex !== null && focusedIndex !== i ? 'opacity-40' : ''
+          "
+        >
+          <div
+            ref="recordRefs"
+            v-html="record !== undefined ? record : 'id not found'"
+            @input="onInput"
+            @focus="onFocus(i)"
+            @blur="onBlur"
+            :contenteditable="record !== undefined"
+            class="w-full min-h-[76px] flex-shrink-0 rounded-lg py-5 px-8 scroll-light bg-lines text-xl"
+            :class="
+              record !== undefined
+                ? 'bg-stone-400 text-stone-800'
+                : 'bg-stone-600 text-stone-300 cursor-default'
+            "
+            :style="{ backgroundPositionY: `${RECORD_BG_OFFSET}px` }"
+          />
+          <button
+            v-if="focusedIndex !== null && focusedIndex === i"
+            class="remove-button absolute bottom-3 right-14 px-4 pb-1 rounded-lg bg-stone-500 text-stone-300 hover:text-stone-200 opacity-50 hover:opacity-100 w-24"
+            :class="
+              record !== undefined ? 'hover:bg-stone-700' : 'hover:bg-stone-500'
+            "
+            @click="
+              editEventId ? removeRecordFromEvent(i) : removeRecordFromTopic(i)
+            "
+          >
+            remove
+          </button>
+        </div>
+        <button
+          v-if="editEventId"
+          class="w-24 px-4 pb-1 rounded-lg bg-stone-500 text-stone-300 hover:bg-stone-600 hover:text-stone-200"
+          @click="createRecord"
+        >
+          new
+        </button>
       </div>
       <ScrollArrows
         v-if="
@@ -70,7 +102,7 @@ const clientHeight = ref(0)
 
 const debouncedUpdateMemoryRecordsRaw = debounce(updateMemoryRecordsRaw)
 
-const editMemoryRecords = ref([])
+const editMemoryRecords = ref([]) // copy for edit
 
 watch(
   () => [props.editEventId, props.editTopicId],
@@ -102,10 +134,9 @@ function loadMemoryRecordsIntoFields() {
         nextTick(updateScrollDimensions)
       }
     } else {
-      const memoryRecords = editTopic.memoryIds.map((memoryId) => {
+      editMemoryRecords.value = editTopic.memoryIds.map((memoryId) => {
         return props.memoryRecordsById[memoryId]
       })
-      editMemoryRecords.value = memoryRecords
       nextTick(updateScrollDimensions)
     }
   } catch (e) {}
@@ -145,7 +176,17 @@ function onFocus(index) {
   focusedIndex.value = index
   emit("focus")
 }
-function onBlur() {
+function onBlur(event) {
+  if (
+    event.relatedTarget &&
+    event.relatedTarget.classList.contains("remove-button")
+  ) {
+    setTimeout(() => {
+      focusedIndex.value = null
+      emit("blur")
+    }, 300)
+    return
+  }
   focusedIndex.value = null
   emit("blur")
 }
@@ -160,7 +201,11 @@ function onKeyDown(event) {
     if (navigationKeys.includes(event.key)) adjustPaperScroll()
   }
   if (event.key === "Escape") {
-    recordRefs.value.forEach((record) => record.blur())
+    recordRefs.value.forEach((record) => {
+      record.blur()
+      window.getSelection().removeAllRanges()
+    })
+
     updateMemoryRecordsRaw()
   }
 }
@@ -194,5 +239,50 @@ function findEventWithMemoryId(memoryId) {
     }
   }
   return null
+}
+function createRecord() {
+  const id = newId()
+  editMemoryRecords.value.push("")
+  const editEvent = props.eventsById[props.editEventId]
+  editEvent.memoryIds.push(id)
+  props.memoryRecordsById[id] = ""
+  focusedIndex.value = editMemoryRecords.value.length - 1
+  nextTick(() => {
+    recordRefs.value[focusedIndex.value].focus()
+    scrollToBot(screenRef.value)
+    updateMemoryRecordsRaw()
+  })
+}
+function removeRecordFromEvent(index, event) {
+  const editEvent = event || props.eventsById[props.editEventId]
+
+  delete props.memoryRecordsById[editEvent.memoryIds[index]]
+
+  const memoryRecords = JSON.parse(editEvent.memoryRecordsRaw)
+  memoryRecords.splice(index, 1)
+  editEvent.memoryRecordsRaw = JSON.stringify(memoryRecords)
+
+  editEvent.memoryIds.splice(index, 1)
+  editMemoryRecords.value.splice(index, 1)
+
+  focusedIndex.value = null
+}
+function removeRecordFromTopic(index) {
+  const editTopic = props.topicsById[props.editTopicId]
+  const memoryId = editTopic.memoryIds[index]
+
+  delete props.memoryRecordsById[memoryId]
+
+  const memoryIds = JSON.parse(editTopic.memoryIdsRaw)
+  memoryIds.splice(index, 1)
+  editTopic.memoryIdsRaw = JSON.stringify(memoryIds)
+
+  editTopic.memoryIds.splice(index, 1)
+  editMemoryRecords.value.splice(index, 1)
+
+  const eventToUpdate = findEventWithMemoryId(memoryId)
+  if (!eventToUpdate) return // id not found
+  const memoryRecordIndex = eventToUpdate.memoryIds.indexOf(memoryId)
+  removeRecordFromEvent(memoryRecordIndex, eventToUpdate)
 }
 </script>
