@@ -13,7 +13,7 @@
         <div
           v-for="(record, i) in editMemoryRecords"
           :key="i"
-          class="relative w-full overflow-hidden"
+          class="relative w-full"
           :class="
             focusedIndex !== null && focusedIndex !== i ? 'opacity-40' : ''
           "
