@@ -44,9 +44,10 @@
         <!-- paper -->
         <Paper
           v-if="
-            editEventMod === EDIT_EVENT_MODS.TEXT ||
-            editEventMod === EDIT_EVENT_MODS.MEMORY_RAW ||
-            editTopicMod === EDIT_TOPIC_MODS.MEMORY_IDS_RAW
+            editEventId
+              ? editEventMod === EDIT_EVENT_MODS.TEXT ||
+                editEventMod === EDIT_EVENT_MODS.MEMORY_RAW
+              : editTopicMod === EDIT_TOPIC_MODS.MEMORY_IDS_RAW
           "
           v-model="paper"
           @input="updateOnInput"
@@ -490,6 +491,11 @@ function onKeyDown(event) {
     } else if (event.key === "n") {
       editTopicMod.value = EDIT_TOPIC_MODS.MEMORY
       onEditModChange()
+    }
+  }
+  if (!isAnyInputFocused.value && eventsSorted.value.length) {
+    if (event.key === "w") {
+      toggleEventEdit(eventsSorted.value[eventsSorted.value.length - 1][0])
     }
   }
 }
