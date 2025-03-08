@@ -34,7 +34,10 @@
             :style="{ backgroundPositionY: `${RECORD_BG_OFFSET}px` }"
           />
           <button
-            v-if="focusedIndex !== null && focusedIndex === i"
+            v-if="
+              (focusedIndex !== null && focusedIndex === i) ||
+              record === undefined
+            "
             class="remove-button absolute bottom-3 right-14 px-4 pb-1 rounded-lg bg-stone-500 text-stone-300 hover:text-stone-200 opacity-50 hover:opacity-100 w-24"
             :class="
               record !== undefined ? 'hover:bg-stone-700' : 'hover:bg-stone-500'
