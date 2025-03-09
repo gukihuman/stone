@@ -60,12 +60,12 @@
     <div class="flex justify-between min-h-7 bg-stone-700 pr-2">
       <div>
         <ButtonArrow
-          @click="emit('recent-limit-more')"
+          @click="onRecentLimitMore"
           :disabled="!editEventId"
           direction="down"
         />
         <ButtonArrow
-          @click="emit('recent-limit-less')"
+          @click="onRecentLimitLess"
           :disabled="!editEventId || recentEventLimit <= 0"
           direction="up"
         />
@@ -115,6 +115,14 @@ function sortEventUp() {
 }
 function sortEventDown() {
   swapSort(props.eventsById, props.editEventId, -1)
+  emit("local-storage-save")
+}
+function onRecentLimitMore() {
+  emit("recent-limit-more")
+  emit("local-storage-save")
+}
+function onRecentLimitLess() {
+  emit("recent-limit-less")
   emit("local-storage-save")
 }
 </script>

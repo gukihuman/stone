@@ -79,10 +79,10 @@
         <!-- edit menu bot -->
         <div class="flex flex-col w-full bg-stone-700">
           <div
-            class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
+            class="flex px-3 py-2 border-stone-600 border-b-[3px] border-dashed"
             v-if="editEventId"
           >
-            <div class="flex gap-2 w-[534px] justify-end">
+            <div class="flex gap-2 w-[330px] justify-end">
               <div class="pt-[3px]">
                 <Binary
                   v-if="tokensForNow"
@@ -91,34 +91,10 @@
                 />
               </div>
               <span class="text-stone-400 leading-[19px] self-end"> now </span>
-              <ButtonLight @click="onCopyNow" :disabled="copyNowLocked">
+              <ButtonLight @click="onCopyNow" :disabled="copyLockedNow">
                 copy
               </ButtonLight>
               <ButtonLight @click="onGenNow" :disabled="genNowLocked">
-                gen
-              </ButtonLight>
-            </div>
-            <div class="flex gap-2 w-full justify-end">
-              <div class="pt-[3px]">
-                <Binary
-                  v-if="tokensForMakeMemory"
-                  :groups="toBinaryGroups(tokensForMakeMemory)"
-                  theme="light"
-                />
-              </div>
-              <span class="text-stone-400 leading-[19px] self-end">
-                make memory
-              </span>
-              <ButtonLight
-                @click="onCopyMakeMemory"
-                :disabled="copyMakeMemoryLocked"
-              >
-                copy
-              </ButtonLight>
-              <ButtonLight
-                @click="onGenMakeMemory"
-                :disabled="genMakeMemoryLocked"
-              >
                 gen
               </ButtonLight>
             </div>
@@ -136,6 +112,53 @@
               :labels="editTopicModLabels"
               @change="onEditModChange"
             />
+            <div
+              v-if="editEventId"
+              class="flex gap-2 flex-grow pr-10 justify-end"
+            >
+              <div class="pt-[3px]">
+                <Binary
+                  v-if="tokensForMakeMemory"
+                  :groups="toBinaryGroups(tokensForMakeMemory)"
+                  theme="light"
+                />
+              </div>
+              <span class="text-stone-400 leading-[19px] self-end"> make </span>
+              <ButtonLight
+                @click="onCopyMakeMemory"
+                :disabled="copyLockedMakeMemory"
+              >
+                copy
+              </ButtonLight>
+              <ButtonLight
+                @click="onGenMakeMemory"
+                :disabled="genMakeMemoryLocked"
+              >
+                gen
+              </ButtonLight>
+            </div>
+            <div v-else class="flex gap-2 flex-grow pr-10 justify-end">
+              <div class="pt-[3px]">
+                <Binary
+                  v-if="tokensForMakeTopicIds"
+                  :groups="toBinaryGroups(tokensForMakeTopicIds)"
+                  theme="light"
+                />
+              </div>
+              <span class="text-stone-400 leading-[19px] self-end"> make </span>
+              <ButtonLight
+                @click="onCopyMakeTopicIds"
+                :disabled="copyLockedMakeTopicIds"
+              >
+                copy
+              </ButtonLight>
+              <ButtonLight
+                @click="onGenMakeTopicIds"
+                :disabled="genMakeTopicIdsLocked"
+              >
+                gen
+              </ButtonLight>
+            </div>
             <ButtonLight @click="editEventId ? removeEvent() : removeTopic()">
               remove
             </ButtonLight>
@@ -159,9 +182,7 @@
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
       <div class="rounded-lg overflow-hidden">
-        <ButtonDark @click="fileSave('stone.json', getStorage())">
-          save
-        </ButtonDark>
+        <ButtonDark @click="onFileSave"> save </ButtonDark>
         <ButtonDark @click="onFileLoad" theme="dark"> load </ButtonDark>
         <ButtonDark @click="restore" theme="dark" :disabled="!removed">
           restore
@@ -181,12 +202,12 @@ const STICK_GEN_HEIGHT = 120
 const editEventMod = ref(EVENT_MODS.TEXT)
 const editEventModLabels = {
   text: EVENT_MODS.TEXT,
-  "memory raw": EVENT_MODS.MEMORY_RAW,
+  raw: EVENT_MODS.MEMORY_RAW,
   memory: EVENT_MODS.MEMORY,
 }
 const editTopicMod = ref(TOPIC_MODS.MEMORY_IDS_RAW)
 const editTopicModLabels = {
-  "memory ids raw": TOPIC_MODS.MEMORY_IDS_RAW,
+  raw: TOPIC_MODS.MEMORY_IDS_RAW,
   memory: TOPIC_MODS.MEMORY,
 }
 
@@ -198,6 +219,8 @@ const editTopicId = ref(null)
 const recentEventLimit = ref(5)
 let genEventId = null
 let genEventMod = null
+let genTopicId = null
+let genTopicMod = null
 
 // dom elements
 const nameRef = ref(null)
@@ -211,22 +234,31 @@ const paper = ref("")
 
 let removed = null
 
-const copyNowLocked = ref(false)
-const copyMakeMemoryLocked = ref(false)
+const copyLockedNow = ref(false)
+const copyLockedMakeMemory = ref(false)
+const copyLockedMakeTopicIds = ref(false)
 const genNowLocked = ref(false)
 const genMakeMemoryLocked = ref(false)
+const genMakeTopicIdsLocked = ref(false)
+
 const isAnyInputFocused = ref(false)
 
 // nicely debounced
 const tokensForNow = ref(0)
 const tokensForMakeMemory = ref(0)
+const tokensForMakeTopicIds = ref(0)
 
 const debouncedLocalStorageSave = debounce(localStorageSave)
-const throttledLocalStorageSave = throttle(localStorageSave)
 const debouncedUpdateMemories = debounce(updateMemoriesWithNewIds)
 const debouncedUpdateTopics = debounce(updateTopics)
 const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
 const debouncedUpdateTokensForMakeMemory = debounce(updateTokensForMakeMemory)
+const debouncedUpdateTokensForMakeTopicIds = debounce(
+  updateTokensForMakeTopicIds
+)
+const throttledLocalStorageSave = throttle(localStorageSave)
+const throttledUpdateMemories = throttle(updateMemoriesWithNewIds)
+const throttledUpdateTopics = throttle(updateTopics)
 
 const eventsSorted = computed(() => {
   return Object.entries(eventsById.value).sort(
@@ -263,9 +295,14 @@ watch(
     debouncedUpdateTokensForNow()
     debouncedUpdateTokensForMakeMemory()
   },
-  {
-    deep: true,
-  }
+  { deep: true }
+)
+watch(
+  () => memoryRecordsById, // on input
+  () => {
+    debouncedUpdateTokensForMakeTopicIds()
+  },
+  { deep: true }
 )
 watch(
   () => [editEventId, recentEventLimit, topicsById],
@@ -273,8 +310,13 @@ watch(
   { deep: true }
 )
 watch(
-  () => editEventId,
+  () => editEventId, // on change event
   () => updateTokensForMakeMemory(),
+  { deep: true }
+)
+watch(
+  () => [topicsById], // on change topic
+  () => updateTokensForMakeTopicIds(),
   { deep: true }
 )
 onMounted(() => {
@@ -282,6 +324,7 @@ onMounted(() => {
   localStorageLoad()
   updateTokensForNow()
   updateTokensForMakeMemory()
+  updateTokensForMakeTopicIds()
 })
 async function updateTokensForNow() {
   if (!editEventId.value) return
@@ -290,6 +333,10 @@ async function updateTokensForNow() {
 async function updateTokensForMakeMemory() {
   if (!editEventId.value) return
   tokensForMakeMemory.value = getTokens(await getPromptMakeMemory())
+}
+async function updateTokensForMakeTopicIds() {
+  if (!editTopicId.value) return
+  tokensForMakeTopicIds.value = getTokens(await getPromptMakeTopicIds())
 }
 function localStorageLoad() {
   const storageRaw = localStorage.getItem(APP_LOCAL_STORAGE_KEY)
@@ -460,6 +507,10 @@ function restore() {
   removed = null
   debouncedLocalStorageSave()
 }
+async function onFileSave() {
+  const mostRecentEvent = eventsSorted.value[eventsSorted.value.length - 1][1]
+  fileSave(`stone ${mostRecentEvent.name}.json`, getStorage())
+}
 async function onFileLoad() {
   await fileLoad(injectStorage)
   debouncedLocalStorageSave()
@@ -496,6 +547,10 @@ function onKeyDown(event) {
     event.preventDefault()
     nextTick(() => onCopyMakeMemory())
   }
+  if (editTopicId.value && !isAnyInputFocused.value && event.key === "m") {
+    event.preventDefault()
+    nextTick(() => onCopyMakeTopicIds())
+  }
   if (!isAnyInputFocused.value && editEventId.value) {
     if (event.key === "h") {
       editEventMod.value = EVENT_MODS.TEXT
@@ -523,13 +578,6 @@ function onKeyDown(event) {
     }
   }
 }
-async function getPromptMakeMemory() {
-  if (!editEventId.value) return
-  return await promptMakeMemory(
-    memoryRecordsById.value,
-    eventsById.value[editEventId.value]
-  )
-}
 async function getPromptCopyNow() {
   if (!editEventId.value) return
   return await promptNow(
@@ -538,6 +586,20 @@ async function getPromptCopyNow() {
     eventsSorted.value,
     eventsById.value[editEventId.value],
     recentEventLimit.value
+  )
+}
+async function getPromptMakeMemory() {
+  if (!editEventId.value) return
+  return await promptMakeMemory(
+    memoryRecordsById.value,
+    eventsById.value[editEventId.value]
+  )
+}
+async function getPromptMakeTopicIds() {
+  if (!editTopicId.value) return
+  return await promptMakeTopicIds(
+    memoryRecordsById.value,
+    topicsById.value[editTopicId.value].name
   )
 }
 async function onGenNow() {
@@ -559,7 +621,7 @@ async function onGenNow() {
 async function onGenMakeMemory() {
   genMakeMemoryLocked.value = true
   genEventId = editEventId.value
-  genEventMod = EVENT_MODS.MEMORY
+  genEventMod = EVENT_MODS.MEMORY_RAW
 
   const editEvent = eventsById.value[editEventId.value]
   editEvent.memoryRecordsRaw = ""
@@ -572,14 +634,41 @@ async function onGenMakeMemory() {
     RESPONSE_TYPE.JSON
   )
 
-  genEventMod = EVENT_MODS.MEMORY
+  genEventMod = null
   genEventId = null
   genMakeMemoryLocked.value = false
 }
+async function onGenMakeTopicIds() {
+  genMakeTopicIdsLocked.value = true
+  genTopicId = editTopicId.value
+  genTopicMod = TOPIC_MODS.MEMORY_IDS_RAW
+
+  const editTopic = topicsById.value[editTopicId.value]
+  editTopic.memoryIdsRaw = ""
+  onNextChunk() // to see clearing ids immideately
+  await genWithMistral(
+    await getPromptMakeTopicIds(),
+    editTopic,
+    "memoryIdsRaw",
+    onNextChunk,
+    RESPONSE_TYPE.JSON
+  )
+
+  genTopicMod = null
+  genTopicId = null
+  genMakeTopicIdsLocked.value = false
+}
 function onNextChunk() {
+  const editEvent = eventsById.value[editEventId.value]
+  const editTopic = topicsById.value[editTopicId.value]
   throttledLocalStorageSave()
   if (genEventId === editEventId.value && genEventMod === editEventMod.value) {
     updatePaperOnNextChunk()
+    throttledUpdateMemories(editEvent)
+  }
+  if (genTopicId === editTopicId.value && genTopicMod === editTopicMod.value) {
+    updatePaperOnNextChunk()
+    throttledUpdateTopics(editTopic)
   }
 }
 function updatePaperOnNextChunk() {
@@ -592,9 +681,12 @@ function updatePaperOnNextChunk() {
   })
 }
 async function onCopyNow() {
-  copyToClipboard(await getPromptCopyNow(), copyNowLocked)
+  copyToClipboard(await getPromptCopyNow(), copyLockedNow)
 }
 async function onCopyMakeMemory() {
-  copyToClipboard(await getPromptMakeMemory(), copyMakeMemoryLocked)
+  copyToClipboard(await getPromptMakeMemory(), copyLockedMakeMemory)
+}
+async function onCopyMakeTopicIds() {
+  copyToClipboard(await getPromptMakeTopicIds(), copyLockedMakeTopicIds)
 }
 </script>

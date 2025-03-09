@@ -61,44 +61,24 @@
         </div>
       </div>
       <!-- topics menu bot -->
-      <div class="flex flex-col bg-stone-700">
-        <!-- row top -->
-        <div
-          class="h-10 pt-1 pr-2 gap-2 flex justify-end cursor-default min-h-7 bg-stone-700 border-stone-600 border-b-[3px] border-dashed"
-        >
+      <div class="flex justify-end min-h-7 bg-stone-700 pr-2">
+        <div class="pr-2 pt-[1px] cursor-default">
           <Binary
             v-if="totalTopicMemories"
             :groups="toBinaryGroups(totalTopicMemories)"
             theme="light"
           />
+        </div>
+        <div
+          class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1"
+          @click="toggleAll()"
+        >
           <div
-            class="flex-shrink-0 flex items-center justify-center cursor-pointer px-1 pb-1"
-            @click="toggleAll()"
+            class="flex items-center justify-center rounded-full size-5 bg-stone-600"
           >
             <div
-              class="flex items-center justify-center rounded-full size-5 bg-stone-600"
-            >
-              <div
-                class="rounded-full size-3"
-                :class="{ 'bg-stone-300/80': isAllSelected }"
-              />
-            </div>
-          </div>
-        </div>
-        <!-- row bot -->
-        <div class="flex flex-col gap-1 items-end p-3">
-          <ButtonLight
-            class="w-fit"
-            @click="onCopySelectTopicRecords"
-            :disabled="copySelectTopicRecordsLocked"
-          >
-            copy select topic records
-          </ButtonLight>
-          <div class="h-6 pt-[3px]">
-            <Binary
-              v-if="tokensForSelectTopicRecords"
-              :groups="toBinaryGroups(tokensForSelectTopicRecords)"
-              theme="light"
+              class="rounded-full size-3"
+              :class="{ 'bg-stone-300/80': isAllSelected }"
             />
           </div>
         </div>
@@ -123,8 +103,6 @@ const emit = defineEmits(["toggle-topic-edit", "local-storage-save"])
 
 const topicListRef = ref(null)
 
-const copySelectTopicRecordsLocked = ref(false)
-
 const isAllSelected = computed(() => {
   if (!props.topicsSorted.length) return false
   let result = true
@@ -133,30 +111,6 @@ const isAllSelected = computed(() => {
   })
   return result
 })
-// nicely debounced
-const tokensForSelectTopicRecords = ref(0)
-
-const debouncedUpdateTokensForSelectTopicRecords = debounce(
-  updateTokensForSelectTopicRecords
-)
-watch(
-  () => props.memoryRecordsById,
-  () => debouncedUpdateTokensForSelectTopicRecords(),
-  {
-    deep: true,
-  }
-)
-onMounted(() => {
-  addEventListener("keydown", onKeyDown)
-  nextTick(() => updateTokensForSelectTopicRecords())
-})
-onUnmounted(() => removeEventListener("keydown", onKeyDown))
-
-async function updateTokensForSelectTopicRecords() {
-  tokensForSelectTopicRecords.value = getTokens(
-    await getPromptSelectTopicRecords()
-  )
-}
 function toggleAll() {
   let state = true
   if (isAllSelected.value) state = false
@@ -185,20 +139,5 @@ function sortTopicUp() {
 function sortTopicDown() {
   swapSort(props.topicsById, props.editTopicId, -1)
   emit("local-storage-save")
-}
-function onKeyDown(event) {
-  if (!props.isAnyInputFocused && event.key === "l") {
-    event.preventDefault()
-    nextTick(() => onCopySelectTopicRecords())
-  }
-}
-async function onCopySelectTopicRecords() {
-  copyToClipboard(
-    await getPromptSelectTopicRecords(),
-    copySelectTopicRecordsLocked
-  )
-}
-async function getPromptSelectTopicRecords() {
-  return await promptSelectTopicRecords(props.memoryRecordsById)
 }
 </script>

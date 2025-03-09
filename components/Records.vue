@@ -140,9 +140,12 @@ function loadMemoryRecordsIntoFields() {
       editMemoryRecords.value = editTopic.memoryIds.map((memoryId) => {
         return props.memoryRecordsById[memoryId]
       })
+      console.log(editMemoryRecords.value)
       nextTick(updateScrollDimensions)
     }
-  } catch (e) {}
+  } catch (e) {
+    editMemoryRecords.value = []
+  }
 }
 function updateMemoryRecordsRaw() {
   if (props.editEventId) {

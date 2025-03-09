@@ -24,15 +24,15 @@ export default async function (
       buffer = buffer.substring(buffer.indexOf("["))
       capturing = true
     }
+    if (responseType && capturing && buffer.includes("]")) {
+      const endIndex = buffer.indexOf("]")
+      target[field] += buffer.substring(0, endIndex + 1)
+      onNextChunk()
+      break // stop processing further chunks
+    }
     if (capturing) {
       target[field] += buffer
       onNextChunk()
-    }
-    if (responseType && capturing && buffer.includes("]")) {
-      const endIndex = buffer.indexOf("]")
-      target[field] += buffer.substring(0, endIndex)
-      onNextChunk()
-      break // stop processing further chunks
     }
   }
 }
