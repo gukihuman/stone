@@ -57,6 +57,7 @@ const updateScrollButtons = ref(1)
 const scrollTop = ref(0)
 const scrollHeight = ref(0)
 const clientHeight = ref(0)
+defineExpose({ screenRef })
 
 onMounted(() => {
   addEventListener("keydown", onKeyDown)

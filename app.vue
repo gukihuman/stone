@@ -19,7 +19,6 @@
         class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
         v-if="editEventId || editTopicId"
       >
-        <div class="py-2 text-stone-300">{{ test }}</div>
         <!-- edit menu top -->
         <div class="w-full flex min-h-11 rounded-t-lg overflow-hidden">
           <input
@@ -44,6 +43,7 @@
         </div>
         <!-- paper -->
         <Paper
+          ref="paperRef"
           v-if="
             editEventId
               ? editEventMod === EDIT_EVENT_MODS.TEXT ||
@@ -78,6 +78,24 @@
         />
         <!-- edit menu bot -->
         <div class="flex flex-col w-full bg-stone-700">
+          <div
+            class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
+            v-if="editEventId"
+          >
+            <div class="flex gap-2 w-[440px] justify-end">
+              <ButtonLight @click="onGenNow" :disabled="genNowLocked">
+                gen now
+              </ButtonLight>
+            </div>
+            <div class="flex gap-2 w-full justify-end">
+              <ButtonLight
+                @click="onGenMakeMemory"
+                :disabled="genMakeMemoryLocked"
+              >
+                gen make memory
+              </ButtonLight>
+            </div>
+          </div>
           <div
             class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
             v-if="editEventId"
@@ -158,9 +176,12 @@
   </div>
 </template>
 <script setup>
+import { nextTick } from "vue"
+
 const APP_LOCAL_STORAGE_KEY = "stone"
 const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
 const EDIT_TOPIC_MODS = { MEMORY_IDS_RAW: 0, MEMORY: 1 }
+const STICK_GEN_PAPER_HEIGHT = 100
 
 const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
 const editEventModLabels = {
@@ -174,15 +195,18 @@ const editTopicModLabels = {
   memory: EDIT_TOPIC_MODS.MEMORY,
 }
 
-const nameRef = ref(null)
-const dateRef = ref(null)
-
 const memoryRecordsById = ref({}) // main memory storage
 const eventsById = ref({})
 const topicsById = ref({})
 const editEventId = ref(null)
 const editTopicId = ref(null)
 const recentEventLimit = ref(5)
+let generatingEventId = null
+
+// dom elements
+const nameRef = ref(null)
+const dateRef = ref(null)
+const paperRef = ref(null)
 
 // handle v-model fields to edit
 const name = ref("")
@@ -193,6 +217,8 @@ let removed = null
 
 const copyNowLocked = ref(false)
 const copyMakeMemoryLocked = ref(false)
+const genNowLocked = ref(false)
+const genMakeMemoryLocked = ref(false)
 const isAnyInputFocused = ref(false)
 
 // nicely debounced
@@ -259,18 +285,7 @@ onMounted(() => {
   localStorageLoad()
   updateTokensForNow()
   updateTokensForMakeMemory()
-  callMistral()
 })
-const test = ref("")
-async function callMistral() {
-  const { message, usageMetadata, status } = await $fetch("/api/mistral", {
-    method: "POST",
-    body: { input: "Hello, Mistral!" },
-  })
-  test.value = message
-  console.log("Mistral message:", message)
-  console.log("Mistral tokens:", usageMetadata)
-}
 async function updateTokensForNow() {
   if (!editEventId.value) return
   tokensForNow.value = getTokens(await getPromptCopyNow())
@@ -528,10 +543,64 @@ async function getPromptCopyNow() {
     recentEventLimit.value
   )
 }
+async function onGenNow() {
+  genNowLocked.value = true
+  generatingEventId = editEventId.value
+  const editEvent = eventsById.value[editEventId.value]
+  editEvent.text += "\n\nJane\n"
+  updateInputFieldsOnNextChunk() // to see Jane addition immideately
+  await callMistral(
+    await getPromptCopyNow(),
+    editEvent,
+    "text",
+    updateInputFieldsOnNextChunk,
+    localStorageSave
+  )
+  editEvent.text += "\n\nGuki\n"
+
+  // one last time to update Guki addition
+  updateInputFieldsOnNextChunk()
+  localStorageSave()
+
+  nextTick(() => {
+    if (editEventMod === EDIT_EVENT_MODS.TEXT) paperRef.value.screenRef.focus()
+  })
+  genNowLocked.value = false
+  generatingEventId = null
+}
+async function onGenMakeMemory() {
+  genMakeMemoryLocked.value = true
+  const editEvent = eventsById.value[editEventId.value]
+  generatingEventId = editEventId.value
+  editEvent.memoryRecordsRaw = ""
+  updateInputFieldsOnNextChunk() // to see clearing records immideately
+  await callMistral(
+    await getPromptMakeMemory(),
+    editEvent,
+    "memoryRecordsRaw",
+    updateInputFieldsOnNextChunk,
+    localStorageSave
+  )
+  genMakeMemoryLocked.value = false
+  generatingEventId = null
+}
 async function onCopyNow() {
-  copyToClipboard(await getPromptCopyNow(), copyNowLocked)
+  copyToClipboard(await getPromptCopyNow())
 }
 async function onCopyMakeMemory() {
   copyToClipboard(await getPromptMakeMemory(), copyMakeMemoryLocked)
+}
+function updateInputFieldsOnNextChunk() {
+  if (generatingEventId !== editEventId.value) return
+  updateInputFields()
+  nextTick(() => {
+    const screenRef = paperRef.value.screenRef
+    if (
+      screenRef.scrollTop + screenRef.clientHeight >
+      screenRef.scrollHeight - STICK_GEN_PAPER_HEIGHT
+    ) {
+      scrollToBot(screenRef)
+    }
+  })
 }
 </script>
