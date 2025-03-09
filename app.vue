@@ -46,9 +46,9 @@
           ref="paperRef"
           v-if="
             editEventId
-              ? editEventMod === EDIT_EVENT_MODS.TEXT ||
-                editEventMod === EDIT_EVENT_MODS.MEMORY_RAW
-              : editTopicMod === EDIT_TOPIC_MODS.MEMORY_IDS_RAW
+              ? editEventMod === EVENT_MODS.TEXT ||
+                editEventMod === EVENT_MODS.MEMORY_RAW
+              : editTopicMod === TOPIC_MODS.MEMORY_IDS_RAW
           "
           v-model="paper"
           @input="updateOnInput"
@@ -57,7 +57,7 @@
           :is-any-input-focused="isAnyInputFocused"
           :update="`${editEventMod}${editEventId}${editTopicId}`"
           :theme="
-            editTopicId || editEventMod === EDIT_EVENT_MODS.MEMORY_RAW
+            editTopicId || editEventMod === EVENT_MODS.MEMORY_RAW
               ? 'dark'
               : 'light'
           "
@@ -82,25 +82,7 @@
             class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
             v-if="editEventId"
           >
-            <div class="flex gap-2 w-[440px] justify-end">
-              <ButtonLight @click="onGenNow" :disabled="genNowLocked">
-                gen now
-              </ButtonLight>
-            </div>
-            <div class="flex gap-2 w-full justify-end">
-              <ButtonLight
-                @click="onGenMakeMemory"
-                :disabled="genMakeMemoryLocked"
-              >
-                gen make memory
-              </ButtonLight>
-            </div>
-          </div>
-          <div
-            class="flex px-3 py-2 justify-center border-stone-600 border-b-[3px] border-dashed"
-            v-if="editEventId"
-          >
-            <div class="flex gap-2 w-[440px] justify-end">
+            <div class="flex gap-2 w-[534px] justify-end">
               <div class="pt-[3px]">
                 <Binary
                   v-if="tokensForNow"
@@ -108,8 +90,12 @@
                   theme="light"
                 />
               </div>
+              <span class="text-stone-400 leading-[19px] self-end"> now </span>
               <ButtonLight @click="onCopyNow" :disabled="copyNowLocked">
-                copy now
+                copy
+              </ButtonLight>
+              <ButtonLight @click="onGenNow" :disabled="genNowLocked">
+                gen
               </ButtonLight>
             </div>
             <div class="flex gap-2 w-full justify-end">
@@ -120,11 +106,20 @@
                   theme="light"
                 />
               </div>
+              <span class="text-stone-400 leading-[19px] self-end">
+                make memory
+              </span>
               <ButtonLight
                 @click="onCopyMakeMemory"
                 :disabled="copyMakeMemoryLocked"
               >
-                copy make memory
+                copy
+              </ButtonLight>
+              <ButtonLight
+                @click="onGenMakeMemory"
+                :disabled="genMakeMemoryLocked"
+              >
+                gen
               </ButtonLight>
             </div>
           </div>
@@ -176,23 +171,23 @@
   </div>
 </template>
 <script setup>
-import { nextTick } from "vue"
+import { RESPONSE_TYPE } from "~/utils/genWithMistral.js"
 
 const APP_LOCAL_STORAGE_KEY = "stone"
-const EDIT_EVENT_MODS = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
-const EDIT_TOPIC_MODS = { MEMORY_IDS_RAW: 0, MEMORY: 1 }
-const STICK_GEN_PAPER_HEIGHT = 100
+const EVENT_MODS = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
+const TOPIC_MODS = { MEMORY_IDS_RAW: 0, MEMORY: 1 }
+const STICK_GEN_HEIGHT = 120
 
-const editEventMod = ref(EDIT_EVENT_MODS.TEXT)
+const editEventMod = ref(EVENT_MODS.TEXT)
 const editEventModLabels = {
-  text: EDIT_EVENT_MODS.TEXT,
-  "memory raw": EDIT_EVENT_MODS.MEMORY_RAW,
-  memory: EDIT_EVENT_MODS.MEMORY,
+  text: EVENT_MODS.TEXT,
+  "memory raw": EVENT_MODS.MEMORY_RAW,
+  memory: EVENT_MODS.MEMORY,
 }
-const editTopicMod = ref(EDIT_EVENT_MODS.MEMORY_IDS_RAW)
+const editTopicMod = ref(TOPIC_MODS.MEMORY_IDS_RAW)
 const editTopicModLabels = {
-  "memory ids raw": EDIT_TOPIC_MODS.MEMORY_IDS_RAW,
-  memory: EDIT_TOPIC_MODS.MEMORY,
+  "memory ids raw": TOPIC_MODS.MEMORY_IDS_RAW,
+  memory: TOPIC_MODS.MEMORY,
 }
 
 const memoryRecordsById = ref({}) // main memory storage
@@ -201,7 +196,8 @@ const topicsById = ref({})
 const editEventId = ref(null)
 const editTopicId = ref(null)
 const recentEventLimit = ref(5)
-let generatingEventId = null
+let genEventId = null
+let genEventMod = null
 
 // dom elements
 const nameRef = ref(null)
@@ -226,6 +222,7 @@ const tokensForNow = ref(0)
 const tokensForMakeMemory = ref(0)
 
 const debouncedLocalStorageSave = debounce(localStorageSave)
+const throttledLocalStorageSave = throttle(localStorageSave)
 const debouncedUpdateMemories = debounce(updateMemoriesWithNewIds)
 const debouncedUpdateTopics = debounce(updateTopics)
 const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
@@ -348,7 +345,7 @@ function updateInputFields() {
   if (editEvent) {
     name.value = editEvent.name
     date.value = editEvent.date
-    editEventMod.value === EDIT_EVENT_MODS.MEMORY_RAW
+    editEventMod.value === EVENT_MODS.MEMORY_RAW
       ? (paper.value = editEvent.memoryRecordsRaw)
       : (paper.value = editEvent.text)
   }
@@ -363,7 +360,7 @@ function updateOnInput() {
   if (editEvent) {
     editEvent.name = name.value
     editEvent.date = date.value
-    if (editEventMod.value === EDIT_EVENT_MODS.MEMORY_RAW) {
+    if (editEventMod.value === EVENT_MODS.MEMORY_RAW) {
       editEvent.memoryRecordsRaw = paper.value
       debouncedUpdateMemories(editEvent)
     } else {
@@ -501,22 +498,22 @@ function onKeyDown(event) {
   }
   if (!isAnyInputFocused.value && editEventId.value) {
     if (event.key === "h") {
-      editEventMod.value = EDIT_EVENT_MODS.TEXT
+      editEventMod.value = EVENT_MODS.TEXT
       onEditModChange()
     } else if (event.key === "t") {
-      editEventMod.value = EDIT_EVENT_MODS.MEMORY_RAW
+      editEventMod.value = EVENT_MODS.MEMORY_RAW
       onEditModChange()
     } else if (event.key === "n") {
-      editEventMod.value = EDIT_EVENT_MODS.MEMORY
+      editEventMod.value = EVENT_MODS.MEMORY
       onEditModChange()
     }
   }
   if (!isAnyInputFocused.value && editTopicId.value) {
     if (event.key === "t") {
-      editTopicMod.value = EDIT_TOPIC_MODS.MEMORY_IDS_RAW
+      editTopicMod.value = TOPIC_MODS.MEMORY_IDS_RAW
       onEditModChange()
     } else if (event.key === "n") {
-      editTopicMod.value = EDIT_TOPIC_MODS.MEMORY
+      editTopicMod.value = TOPIC_MODS.MEMORY
       onEditModChange()
     }
   }
@@ -545,62 +542,59 @@ async function getPromptCopyNow() {
 }
 async function onGenNow() {
   genNowLocked.value = true
-  generatingEventId = editEventId.value
+  genEventId = editEventId.value
+  genEventMod = EVENT_MODS.TEXT
+
   const editEvent = eventsById.value[editEventId.value]
   editEvent.text += "\n\nJane\n"
-  updateInputFieldsOnNextChunk() // to see Jane addition immideately
-  await callMistral(
-    await getPromptCopyNow(),
-    editEvent,
-    "text",
-    updateInputFieldsOnNextChunk,
-    localStorageSave
-  )
+  onNextChunk() // to see Jane addition immideately
+  await genWithMistral(await getPromptCopyNow(), editEvent, "text", onNextChunk)
   editEvent.text += "\n\nGuki\n"
+  onNextChunk() // one last time to update Guki addition
 
-  // one last time to update Guki addition
-  updateInputFieldsOnNextChunk()
-  localStorageSave()
-
-  nextTick(() => {
-    if (editEventMod === EDIT_EVENT_MODS.TEXT) paperRef.value.screenRef.focus()
-  })
+  genEventMod = null
+  genEventId = null
   genNowLocked.value = false
-  generatingEventId = null
 }
 async function onGenMakeMemory() {
   genMakeMemoryLocked.value = true
+  genEventId = editEventId.value
+  genEventMod = EVENT_MODS.MEMORY
+
   const editEvent = eventsById.value[editEventId.value]
-  generatingEventId = editEventId.value
   editEvent.memoryRecordsRaw = ""
-  updateInputFieldsOnNextChunk() // to see clearing records immideately
-  await callMistral(
+  onNextChunk() // to see clearing records immideately
+  await genWithMistral(
     await getPromptMakeMemory(),
     editEvent,
     "memoryRecordsRaw",
-    updateInputFieldsOnNextChunk,
-    localStorageSave
+    onNextChunk,
+    RESPONSE_TYPE.JSON
   )
+
+  genEventMod = EVENT_MODS.MEMORY
+  genEventId = null
   genMakeMemoryLocked.value = false
-  generatingEventId = null
+}
+function onNextChunk() {
+  throttledLocalStorageSave()
+  if (genEventId === editEventId.value && genEventMod === editEventMod.value) {
+    updatePaperOnNextChunk()
+  }
+}
+function updatePaperOnNextChunk() {
+  updateInputFields()
+  nextTick(() => {
+    const el = paperRef.value.screenRef
+    if (el.scrollTop + el.clientHeight > el.scrollHeight - STICK_GEN_HEIGHT) {
+      scrollToBot(el)
+    }
+  })
 }
 async function onCopyNow() {
-  copyToClipboard(await getPromptCopyNow())
+  copyToClipboard(await getPromptCopyNow(), copyNowLocked)
 }
 async function onCopyMakeMemory() {
   copyToClipboard(await getPromptMakeMemory(), copyMakeMemoryLocked)
-}
-function updateInputFieldsOnNextChunk() {
-  if (generatingEventId !== editEventId.value) return
-  updateInputFields()
-  nextTick(() => {
-    const screenRef = paperRef.value.screenRef
-    if (
-      screenRef.scrollTop + screenRef.clientHeight >
-      screenRef.scrollHeight - STICK_GEN_PAPER_HEIGHT
-    ) {
-      scrollToBot(screenRef)
-    }
-  })
 }
 </script>

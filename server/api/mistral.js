@@ -1,7 +1,7 @@
 import { ChatMistralAI } from "@langchain/mistralai"
 import { HumanMessage } from "@langchain/core/messages"
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event, json) => {
   const { input } = await readBody(event)
   const llmModel = new ChatMistralAI({
     model: "mistral-large-latest",
@@ -15,11 +15,7 @@ export default defineEventHandler(async (event) => {
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
   })
-
   const stream = await llmModel.stream(messages)
-  for await (const chunk of stream) {
-    const data = chunk.content
-    event.node.res.write(`data: ${data}\n\n`)
-  }
+  for await (const chunk of stream) event.node.res.write(chunk.content)
   event.node.res.end()
 })

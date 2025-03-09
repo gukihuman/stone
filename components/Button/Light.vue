@@ -1,6 +1,6 @@
 <template>
   <button
-    class="min-w-24 px-4 pb-1 rounded-lg"
+    class="px-4 pb-1 rounded-lg"
     :class="
       disabled
         ? 'cursor-default bg-stone-400 text-stone-700'
