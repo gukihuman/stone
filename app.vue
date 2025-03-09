@@ -19,6 +19,7 @@
         class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
         v-if="editEventId || editTopicId"
       >
+        <div class="py-2 text-stone-300">{{ test }}</div>
         <!-- edit menu top -->
         <div class="w-full flex min-h-11 rounded-t-lg overflow-hidden">
           <input
@@ -258,7 +259,18 @@ onMounted(() => {
   localStorageLoad()
   updateTokensForNow()
   updateTokensForMakeMemory()
+  callMistral()
 })
+const test = ref("")
+async function callMistral() {
+  const { message, usageMetadata, status } = await $fetch("/api/mistral", {
+    method: "POST",
+    body: { input: "Hello, Mistral!" },
+  })
+  test.value = message
+  console.log("Mistral message:", message)
+  console.log("Mistral tokens:", usageMetadata)
+}
 async function updateTokensForNow() {
   if (!editEventId.value) return
   tokensForNow.value = getTokens(await getPromptCopyNow())
