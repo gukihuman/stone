@@ -599,6 +599,7 @@ async function getPromptMakeTopicIds() {
   if (!editTopicId.value) return
   return await promptMakeTopicIds(
     memoryRecordsById.value,
+    topicsSorted.value,
     topicsById.value[editTopicId.value].name
   )
 }
