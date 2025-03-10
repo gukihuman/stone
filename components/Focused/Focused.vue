@@ -11,12 +11,14 @@
         type="text"
         v-model="name"
         @input="debouncedEmitUpdateName"
+        @focus="emit('lock-hotkeys')"
+        @blur="emit('unlock-hotkeys')"
         class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
       />
       <p
         class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
       >
-        {{ event.date }}
+        {{ event.date.substring(0, 10) }}
       </p>
     </div>
     <div class="flex-grow"></div>
@@ -31,7 +33,7 @@
       v-model="screen"
       @focus="isAnyInputFocused = true"
       @blur="isAnyInputFocused = false"
-      :is-any-input-focused="isAnyInputFocused"
+      :lock-hotkeys="isAnyInputFocused"
       :update="`${editEventMod}${editEventId}${editTopicId}`"
       :theme="
         editTopicId || editEventMod === EVENT_MODS.MEMORY_RAW ? 'dark' : 'light'
@@ -46,7 +48,7 @@
       :topics-by-id="topicsById"
       :edit-event-id="editEventId"
       :edit-topic-id="editTopicId"
-      :is-any-input-focused="isAnyInputFocused"
+      :lock-hotkeys="isAnyInputFocused"
       :update="`${editEventMod}${editEventId}${editTopicId}`"
       theme="light"
       @local-storage-save="debouncedLocalStorageSave"
@@ -133,9 +135,15 @@
     </div>
   </div>
 </template>
+
 <script setup>
 const props = defineProps(["event"])
-const emit = defineEmits(["update-name", "remove"])
+const emit = defineEmits([
+  "update-name",
+  "remove",
+  "lock-hotkeys",
+  "unlock-hotkeys",
+])
 
 // const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1 }
 // const eventMod = ref(EVENT_MOD.TEXT)
@@ -157,6 +165,12 @@ watch(
   () => props.event.name,
   (newValue) => (name.value = newValue)
 )
+defineExpose({ focusName })
+
+function focusName() {
+  nameEl.value.focus()
+  nameEl.value.setSelectionRange(0, nameEl.value.value.length)
+}
 
 // function updateOnInput() {
 //   const editEvent = eventsById.value[focusedEventIndex.value]

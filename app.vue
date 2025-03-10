@@ -9,10 +9,13 @@
         @toggle-event-focus="toggleEventFocus"
       />
       <Focused
+        ref="focusedRef"
         v-if="focusedEventIndex !== null"
         :event="events[focusedEventIndex]"
         @update-name="updateFocusedEventName"
         @remove="removeEvent"
+        @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+        @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
       <!-- topics -->
       <div class="w-[250px] flex-shrink-0"></div>
@@ -35,16 +38,29 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { openDB } from "idb"
+const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
+
 const DB_NAME = "StoneDB"
 const DB_VERSION = 1
 const STORE_EVENTS_NAME = "events"
-const STORE_STATE_NAME = "state"
+const STORE_APP_STATE_NAME = "appState"
+
+const focusedRef = ref(null)
 
 const events = ref([]) // sorted by date
 const focusedEventIndex = ref(null)
+
 let lastRemovedEvent = null
+
+let cleanupHotkeys
+
+const hotkeys = {
+  w: () => toggleEventFocus(events.value.length - 1),
+  u: () => (focusedRef.value ? focusedRef.value.focusName() : {}),
+}
 
 watch(focusedEventIndex, async () => await saveFocusedIndex())
 
@@ -52,9 +68,9 @@ onMounted(async () => {
   await loadEvents()
   events.value.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
   await loadState()
-  // addEventListener("keydown", onKeyDown)
-  // updateTokensForNow()
+  cleanupHotkeys = setupHotkeys(hotkeys)
 })
+onUnmounted(cleanupHotkeys)
 
 /////////////////////////////////// event //////////////////////////////////////
 function addEvent(event) {
@@ -107,8 +123,8 @@ async function initDB() {
       if (!db.objectStoreNames.contains(STORE_EVENTS_NAME)) {
         db.createObjectStore(STORE_EVENTS_NAME, { keyPath: "id" })
       }
-      if (!db.objectStoreNames.contains(STORE_STATE_NAME)) {
-        db.createObjectStore(STORE_STATE_NAME, { keyPath: "key" })
+      if (!db.objectStoreNames.contains(STORE_APP_STATE_NAME)) {
+        db.createObjectStore(STORE_APP_STATE_NAME, { keyPath: "key" })
       }
     },
   })
@@ -125,8 +141,8 @@ async function loadEvents() {
 }
 async function loadState() {
   const db = await initDB()
-  const tx = db.transaction(STORE_STATE_NAME, "readonly")
-  const store = tx.objectStore(STORE_STATE_NAME)
+  const tx = db.transaction(STORE_APP_STATE_NAME, "readonly")
+  const store = tx.objectStore(STORE_APP_STATE_NAME)
   const state = await store.get("focusedEventIndex")
   if (state) focusedEventIndex.value = state.value
   await tx.done
@@ -142,8 +158,8 @@ async function saveEvent(event) {
 }
 async function saveFocusedIndex() {
   const db = await initDB()
-  const tx = db.transaction(STORE_STATE_NAME, "readwrite")
-  const store = tx.objectStore(STORE_STATE_NAME)
+  const tx = db.transaction(STORE_APP_STATE_NAME, "readwrite")
+  const store = tx.objectStore(STORE_APP_STATE_NAME)
   await store.put({ key: "focusedEventIndex", value: focusedEventIndex.value })
   await tx.done
 }
@@ -172,7 +188,7 @@ async function saveFocusedIndex() {
 // const genMakeMemoryLocked = ref(false)
 // const genMakeTopicIdsLocked = ref(false)
 
-// const isAnyInputFocused = ref(false)
+// const hotkeysLockedByInput = ref(false)
 
 // nicely debounced
 // const tokensForNow = ref(0)
@@ -399,14 +415,14 @@ async function saveFocusedIndex() {
 //   if (document.activeElement === dateRef.value && event.key === "Escape") {
 //     dateRef.value.blur()
 //   }
-//   if (nameRef.value && !isAnyInputFocused.value && event.key === "c") {
+//   if (nameRef.value && !hotkeysLockedByInput.value && event.key === "c") {
 //     event.preventDefault()
 //     nextTick(() => {
 //       nameRef.value.focus()
 //       nameRef.value.setSelectionRange(0, nameRef.value.value.length)
 //     })
 //   }
-//   if (dateRef.value && !isAnyInputFocused.value && event.key === "u") {
+//   if (dateRef.value && !hotkeysLockedByInput.value && event.key === "u") {
 //     event.preventDefault()
 //     nextTick(() => {
 //       dateRef.value.focus()
@@ -416,19 +432,19 @@ async function saveFocusedIndex() {
 //       )
 //     })
 //   }
-//   if (focusedEventIndex.value && !isAnyInputFocused.value && event.key === "y") {
+//   if (focusedEventIndex.value && !hotkeysLockedByInput.value && event.key === "y") {
 //     event.preventDefault()
 //     nextTick(() => onCopyNow())
 //   }
-//   if (focusedEventIndex.value && !isAnyInputFocused.value && event.key === "m") {
+//   if (focusedEventIndex.value && !hotkeysLockedByInput.value && event.key === "m") {
 //     event.preventDefault()
 //     nextTick(() => onCopyMakeMemory())
 //   }
-//   if (editTopicId.value && !isAnyInputFocused.value && event.key === "m") {
+//   if (editTopicId.value && !hotkeysLockedByInput.value && event.key === "m") {
 //     event.preventDefault()
 //     nextTick(() => onCopyMakeTopicIds())
 //   }
-//   if (!isAnyInputFocused.value && focusedEventIndex.value) {
+//   if (!hotkeysLockedByInput.value && focusedEventIndex.value) {
 //     if (event.key === "h") {
 //       eventMod.value = EVENT_MOD.TEXT
 //       onEditModChange()
@@ -440,7 +456,7 @@ async function saveFocusedIndex() {
 //       onEditModChange()
 //     }
 //   }
-//   if (!isAnyInputFocused.value && editTopicId.value) {
+//   if (!hotkeysLockedByInput.value && editTopicId.value) {
 //     if (event.key === "t") {
 //       editTopicMod.value = TOPIC_MODS.MEMORY_IDS_RAW
 //       onEditModChange()
@@ -449,7 +465,7 @@ async function saveFocusedIndex() {
 //       onEditModChange()
 //     }
 //   }
-//   if (!isAnyInputFocused.value && eventsSorted.value.length) {
+//   if (!hotkeysLockedByInput.value && eventsSorted.value.length) {
 //     if (event.key === "w") {
 //       toggleEventEdit(eventsSorted.value[eventsSorted.value.length - 1][0])
 //     }
