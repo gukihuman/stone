@@ -9,10 +9,9 @@
         @toggle-event-focus="toggleEventFocus"
       />
       <Focused
-        v-if="focusedEventIndex"
+        v-if="focusedEventIndex !== null"
         :event="events[focusedEventIndex]"
         @update-name="updateFocusedEventName"
-        @update-date="updateFocusedEventDate"
         @remove="removeEvent"
       />
       <!-- topics -->
@@ -43,7 +42,7 @@ const DB_VERSION = 1
 const STORE_EVENTS_NAME = "events"
 const STORE_STATE_NAME = "state"
 
-const events = ref([])
+const events = ref([]) // sorted by date
 const focusedEventIndex = ref(null)
 let lastRemovedEvent = null
 
@@ -51,9 +50,9 @@ watch(focusedEventIndex, async () => await saveFocusedIndex())
 
 onMounted(async () => {
   await loadEvents()
+  events.value.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
   await loadState()
   // addEventListener("keydown", onKeyDown)
-  // localStorageLoad()
   // updateTokensForNow()
 })
 
@@ -61,13 +60,18 @@ onMounted(async () => {
 function addEvent(event) {
   const eventToAdd = event || {
     id: newId(),
-    date: new Date().toLocaleDateString(),
+    date: new Date().toISOString(),
     name: "now",
     text: "",
     memoryRaw: "",
   }
-  events.value.push(eventToAdd)
-  toggleEventFocus(events.value.length - 1)
+  const newDate = Date.parse(eventToAdd.date)
+  const insertIndex = events.value.reduce((acc, event, i) => {
+    if (i === 0) return 0
+    return Date.parse(event.date) < newDate ? i + 1 : acc
+  }, events.value.length)
+  events.value.splice(insertIndex, 0, eventToAdd)
+  toggleEventFocus(insertIndex)
   saveEvent(eventToAdd)
 }
 function toggleEventFocus(index) {
@@ -76,14 +80,14 @@ function toggleEventFocus(index) {
 }
 async function removeEvent() {
   const focusedEvent = events.value[focusedEventIndex.value]
-  lastRemovedEvent = focusedEvent
-  events.value.splice(focusedEventIndex.value, 1)
-  focusedEventIndex.value = null
   const db = await initDB()
   const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
   const store = tx.objectStore(STORE_EVENTS_NAME)
   await store.delete(focusedEvent.id)
   await tx.done
+  events.value.splice(focusedEventIndex.value, 1)
+  focusedEventIndex.value = null
+  lastRemovedEvent = focusedEvent
   console.log(`⏬ event removed from db [${timestamp()}]`)
 }
 function restoreEvent() {
@@ -93,11 +97,6 @@ function restoreEvent() {
 function updateFocusedEventName(name) {
   const focusedEvent = events.value[focusedEventIndex.value]
   focusedEvent.name = name
-  saveEvent(focusedEvent)
-}
-function updateFocusedEventDate(date) {
-  const focusedEvent = events.value[focusedEventIndex.value]
-  focusedEvent.date = date
   saveEvent(focusedEvent)
 }
 

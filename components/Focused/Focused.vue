@@ -3,21 +3,21 @@
     class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
   >
     <!-- edit menu top -->
-    <div class="w-full flex min-h-11 rounded-t-lg overflow-hidden">
+    <div
+      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden"
+    >
       <input
         ref="nameEl"
         type="text"
         v-model="name"
         @input="debouncedEmitUpdateName"
-        class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+        class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
       />
-      <input
-        ref="dateEl"
-        type="text"
-        v-model="date"
-        @input="debouncedEmitUpdateDate"
-        class="h-full focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate hover:bg-stone-800 hover:text-stone-300"
-      />
+      <p
+        class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
+      >
+        {{ event.date }}
+      </p>
     </div>
     <div class="flex-grow"></div>
     <!-- <FocusedScreen
@@ -135,7 +135,7 @@
 </template>
 <script setup>
 const props = defineProps(["event"])
-const emit = defineEmits(["update-name", "update-date", "remove"])
+const emit = defineEmits(["update-name", "remove"])
 
 // const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1 }
 // const eventMod = ref(EVENT_MOD.TEXT)
@@ -145,18 +145,18 @@ const emit = defineEmits(["update-name", "update-date", "remove"])
 //   memory: EVENT_MOD.MEMORY,
 // }
 
-// dom elements
 const nameEl = ref(null)
-const dateEl = ref(null)
 // const screenEl = ref(null)
 
-// handle v-model fields to edit
 const name = ref(props.event.name)
-const date = ref(props.event.date)
 // const screen = ref("")
 
 const debouncedEmitUpdateName = debounce(() => emit("update-name", name.value))
-const debouncedEmitUpdateDate = debounce(() => emit("update-date", date.value))
+
+watch(
+  () => props.event.name,
+  (newValue) => (name.value = newValue)
+)
 
 // function updateOnInput() {
 //   const editEvent = eventsById.value[focusedEventIndex.value]

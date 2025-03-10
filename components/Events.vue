@@ -26,6 +26,7 @@
     </div>
   </div>
 </template>
+
 <script setup>
 const props = defineProps(["events", "focusedEventIndex"])
 const emit = defineEmits(["add-event", "toggle-event-focus"])
