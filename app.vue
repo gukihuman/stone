@@ -81,13 +81,9 @@ function addEvent(event) {
     text: "",
     memoryRaw: "",
   }
-  const newDate = Date.parse(eventToAdd.date)
-  const insertIndex = events.value.reduce((acc, event, i) => {
-    if (i === 0) return 0
-    return Date.parse(event.date) < newDate ? i + 1 : acc
-  }, events.value.length)
-  events.value.splice(insertIndex, 0, eventToAdd)
-  toggleEventFocus(insertIndex)
+  events.value.push(eventToAdd)
+  events.value.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
+  toggleEventFocus(events.value.findIndex((e) => e.id === eventToAdd.id))
   saveEvent(eventToAdd)
 }
 function toggleEventFocus(index) {
