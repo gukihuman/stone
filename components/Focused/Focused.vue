@@ -1,0 +1,171 @@
+<template>
+  <div
+    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
+  >
+    <!-- edit menu top -->
+    <div class="w-full flex min-h-11 rounded-t-lg overflow-hidden">
+      <input
+        ref="nameEl"
+        type="text"
+        v-model="name"
+        @input="debouncedEmitUpdateName"
+        class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+      />
+    </div>
+    <div class="flex-grow"></div>
+    <!-- <FocusedScreen
+      ref="screenEl"
+      v-if="
+        editEventId
+          ? editEventMod === EVENT_MODS.TEXT ||
+            editEventMod === EVENT_MODS.MEMORY_RAW
+          : editTopicMod === TOPIC_MODS.MEMORY_IDS_RAW
+      "
+      v-model="screen"
+      @focus="isAnyInputFocused = true"
+      @blur="isAnyInputFocused = false"
+      :is-any-input-focused="isAnyInputFocused"
+      :update="`${editEventMod}${editEventId}${editTopicId}`"
+      :theme="
+        editTopicId || editEventMod === EVENT_MODS.MEMORY_RAW ? 'dark' : 'light'
+      "
+    /> -->
+    <!-- <Records
+      v-else
+      @focus="isAnyInputFocused = true"
+      @blur="isAnyInputFocused = false"
+      :memory-records-by-id="memoryRecordsById"
+      :events-by-id="eventsById"
+      :topics-by-id="topicsById"
+      :edit-event-id="editEventId"
+      :edit-topic-id="editTopicId"
+      :is-any-input-focused="isAnyInputFocused"
+      :update="`${editEventMod}${editEventId}${editTopicId}`"
+      theme="light"
+      @local-storage-save="debouncedLocalStorageSave"
+    /> -->
+    <!-- edit menu bot -->
+    <div class="flex flex-col w-full bg-stone-700">
+      <!-- <div
+        class="flex px-3 py-2 border-stone-600 border-b-[3px] border-dashed"
+        v-if="editEventId"
+      >
+        <div class="flex gap-2 w-[330px] justify-end">
+          <div class="pt-[3px]">
+            <Binary
+              v-if="tokensForNow"
+              :groups="toBinaryGroups(tokensForNow)"
+              theme="light"
+            />
+          </div>
+          <span class="text-stone-400 leading-[19px] self-end"> now </span>
+          <ButtonLight @click="onCopyNow" :disabled="copyLockedNow">
+            copy
+          </ButtonLight>
+          <ButtonLight @click="onGenNow" :disabled="genNowLocked">
+            gen
+          </ButtonLight>
+        </div>
+      </div> -->
+      <div class="flex p-3 justify-between">
+        <!-- <Switch
+          v-if="editEventId"
+          v-model="editEventMod"
+          :labels="editEventModLabels"
+          @change="onEditModChange"
+        />
+        <Switch
+          v-else
+          v-model="editTopicMod"
+          :labels="editTopicModLabels"
+          @change="onEditModChange"
+        /> -->
+        <!-- <div v-if="editEventId" class="flex gap-2 flex-grow pr-10 justify-end">
+          <div class="pt-[3px]">
+            <Binary
+              v-if="tokensForMakeMemory"
+              :groups="toBinaryGroups(tokensForMakeMemory)"
+              theme="light"
+            />
+          </div>
+          <span class="text-stone-400 leading-[19px] self-end"> make </span>
+          <ButtonLight
+            @click="onCopyMakeMemory"
+            :disabled="copyLockedMakeMemory"
+          >
+            copy
+          </ButtonLight>
+          <ButtonLight @click="onGenMakeMemory" :disabled="genMakeMemoryLocked">
+            gen
+          </ButtonLight>
+        </div>
+        <div v-else class="flex gap-2 flex-grow pr-10 justify-end">
+          <div class="pt-[3px]">
+            <Binary
+              v-if="tokensForMakeTopicIds"
+              :groups="toBinaryGroups(tokensForMakeTopicIds)"
+              theme="light"
+            />
+          </div>
+          <span class="text-stone-400 leading-[19px] self-end"> make </span>
+          <ButtonLight
+            @click="onCopyMakeTopicIds"
+            :disabled="copyLockedMakeTopicIds"
+          >
+            copy
+          </ButtonLight>
+          <ButtonLight
+            @click="onGenMakeTopicIds"
+            :disabled="genMakeTopicIdsLocked"
+          >
+            gen
+          </ButtonLight>
+        </div> -->
+        <ButtonLight @click="emit('remove')"> remove </ButtonLight>
+      </div>
+    </div>
+  </div>
+</template>
+<script setup>
+const props = defineProps(["event"])
+const emit = defineEmits(["update-name", "remove"])
+
+// const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1 }
+// const eventMod = ref(EVENT_MOD.TEXT)
+// const eventModLabels = {
+//   text: EVENT_MOD.TEXT,
+//   memoryRaw: EVENT_MOD.MEMORY_RAW,
+//   memory: EVENT_MOD.MEMORY,
+// }
+
+// dom elements
+const nameEl = ref(null)
+// const screenEl = ref(null)
+
+// handle v-model fields to edit
+const name = ref(props.event.name)
+// const screen = ref("")
+
+const debouncedEmitUpdateName = debounce(() => emit("update-name", name.value))
+
+// function updateOnInput() {
+//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   if (editEvent) {
+//     editEvent.name = name.value
+//     editEvent.date = date.value
+//     if (eventMod.value === EVENT_MOD.MEMORY_RAW) {
+//       editEvent.memoryRecordsRaw = screen.value
+//       debouncedUpdateMemories(editEvent)
+//     } else {
+//       editEvent.text = screen.value
+//     }
+//   }
+//   const editTopic = topicsById.value[editTopicId.value]
+//   if (editTopic) {
+//     editTopic.name = name.value
+//     editTopic.memoryIdsRaw = screen.value
+//     debouncedUpdateTopics(editTopic)
+//   }
+//   debouncedLocalStorageSave()
+// }
+</script>
