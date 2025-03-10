@@ -11,6 +11,13 @@
         @input="debouncedEmitUpdateName"
         class="h-full w-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
       />
+      <input
+        ref="dateEl"
+        type="text"
+        v-model="date"
+        @input="debouncedEmitUpdateDate"
+        class="h-full focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate hover:bg-stone-800 hover:text-stone-300"
+      />
     </div>
     <div class="flex-grow"></div>
     <!-- <FocusedScreen
@@ -128,7 +135,7 @@
 </template>
 <script setup>
 const props = defineProps(["event"])
-const emit = defineEmits(["update-name", "remove"])
+const emit = defineEmits(["update-name", "update-date", "remove"])
 
 // const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1 }
 // const eventMod = ref(EVENT_MOD.TEXT)
@@ -140,13 +147,16 @@ const emit = defineEmits(["update-name", "remove"])
 
 // dom elements
 const nameEl = ref(null)
+const dateEl = ref(null)
 // const screenEl = ref(null)
 
 // handle v-model fields to edit
 const name = ref(props.event.name)
+const date = ref(props.event.date)
 // const screen = ref("")
 
 const debouncedEmitUpdateName = debounce(() => emit("update-name", name.value))
+const debouncedEmitUpdateDate = debounce(() => emit("update-date", date.value))
 
 // function updateOnInput() {
 //   const editEvent = eventsById.value[focusedEventIndex.value]

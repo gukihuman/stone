@@ -12,6 +12,7 @@
         v-if="focusedEventIndex"
         :event="events[focusedEventIndex]"
         @update-name="updateFocusedEventName"
+        @update-date="updateFocusedEventDate"
         @remove="removeEvent"
       />
       <!-- topics -->
@@ -39,19 +40,24 @@
 import { openDB } from "idb"
 const DB_NAME = "StoneDB"
 const DB_VERSION = 1
-const STORE_NAME = "events"
+const STORE_EVENTS_NAME = "events"
+const STORE_STATE_NAME = "state"
 
 const events = ref([])
 const focusedEventIndex = ref(null)
 let lastRemovedEvent = null
 
+watch(focusedEventIndex, async () => await saveFocusedIndex())
+
 onMounted(async () => {
   await loadEvents()
+  await loadState()
   // addEventListener("keydown", onKeyDown)
   // localStorageLoad()
   // updateTokensForNow()
 })
 
+/////////////////////////////////// event //////////////////////////////////////
 function addEvent(event) {
   const eventToAdd = event || {
     id: newId(),
@@ -67,9 +73,6 @@ function addEvent(event) {
 function toggleEventFocus(index) {
   if (focusedEventIndex.value === index) focusedEventIndex.value = null
   else focusedEventIndex.value = index
-  // editTopicId.value = null
-  // updateInputFields()
-  // debouncedLocalStorageSave()
 }
 async function removeEvent() {
   const focusedEvent = events.value[focusedEventIndex.value]
@@ -77,8 +80,8 @@ async function removeEvent() {
   events.value.splice(focusedEventIndex.value, 1)
   focusedEventIndex.value = null
   const db = await initDB()
-  const tx = db.transaction(STORE_NAME, "readwrite")
-  const store = tx.objectStore(STORE_NAME)
+  const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
+  const store = tx.objectStore(STORE_EVENTS_NAME)
   await store.delete(focusedEvent.id)
   await tx.done
   console.log(`⏬ event removed from db [${timestamp()}]`)
@@ -87,38 +90,67 @@ function restoreEvent() {
   addEvent(lastRemovedEvent)
   lastRemovedEvent = null
 }
-
 function updateFocusedEventName(name) {
   const focusedEvent = events.value[focusedEventIndex.value]
   focusedEvent.name = name
   saveEvent(focusedEvent)
 }
-// IndexedDB
+function updateFocusedEventDate(date) {
+  const focusedEvent = events.value[focusedEventIndex.value]
+  focusedEvent.date = date
+  saveEvent(focusedEvent)
+}
+
+//////////////////////////////////// db ////////////////////////////////////////
 async function initDB() {
   const db = await openDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
-      db.createObjectStore(STORE_NAME, { keyPath: "id" })
+      if (!db.objectStoreNames.contains(STORE_EVENTS_NAME)) {
+        db.createObjectStore(STORE_EVENTS_NAME, { keyPath: "id" })
+      }
+      if (!db.objectStoreNames.contains(STORE_STATE_NAME)) {
+        db.createObjectStore(STORE_STATE_NAME, { keyPath: "key" })
+      }
     },
   })
   return db
 }
 async function loadEvents() {
   const db = await initDB()
-  const tx = db.transaction(STORE_NAME, "readonly")
-  const store = tx.objectStore(STORE_NAME)
+  const tx = db.transaction(STORE_EVENTS_NAME, "readonly")
+  const store = tx.objectStore(STORE_EVENTS_NAME)
   const allEvents = await store.getAll()
   await tx.done
   if (allEvents.length > 0) events.value = allEvents
   console.log(`⏬ events loaded from db [${timestamp()}]`)
 }
+async function loadState() {
+  const db = await initDB()
+  const tx = db.transaction(STORE_STATE_NAME, "readonly")
+  const store = tx.objectStore(STORE_STATE_NAME)
+  const state = await store.get("focusedEventIndex")
+  if (state) focusedEventIndex.value = state.value
+  await tx.done
+  console.log(`⏬ state loaded from db [${timestamp()}]`)
+}
 async function saveEvent(event) {
   const db = await initDB()
-  const tx = db.transaction(STORE_NAME, "readwrite")
-  const store = tx.objectStore(STORE_NAME)
+  const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
+  const store = tx.objectStore(STORE_EVENTS_NAME)
   await store.put(toRaw(event))
   await tx.done
   console.log(`⏬ event saved to db [${timestamp()}]`)
 }
+async function saveFocusedIndex() {
+  const db = await initDB()
+  const tx = db.transaction(STORE_STATE_NAME, "readwrite")
+  const store = tx.objectStore(STORE_STATE_NAME)
+  await store.put({ key: "focusedEventIndex", value: focusedEventIndex.value })
+  await tx.done
+}
+
+///////////////////////////////// fallback /////////////////////////////////////
+
 // const editTopicMod = ref(TOPIC_MODS.MEMORY_IDS_RAW)
 // const editTopicModLabels = {
 //   raw: TOPIC_MODS.MEMORY_IDS_RAW,

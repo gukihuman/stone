@@ -5,7 +5,7 @@
     <!-- events menu top -->
     <div class="flex">
       <button
-        @click="emit('create-event')"
+        @click="emit('add-event')"
         class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         new
@@ -28,5 +28,5 @@
 </template>
 <script setup>
 const props = defineProps(["events", "focusedEventIndex"])
-const emit = defineEmits(["create-event", "toggle-event-focus"])
+const emit = defineEmits(["add-event", "toggle-event-focus"])
 </script>
