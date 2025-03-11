@@ -29,31 +29,34 @@ export default function useDatabase() {
     const store = tx.objectStore(STORE_EVENTS_NAME)
     const eventsRaw = await store.getAll()
     await tx.done
+    console.log(`⏬ events loaded from db [${timestamp()}]`)
+
     events.length = 0 // clear existing
     eventsRaw.forEach((e) => events.push(e))
     events.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
-    console.log(`⏬ events loaded from db [${timestamp()}]`)
   }
   events.upsertDBSync = async function (event) {
+    const index = events.findIndex((e) => e.id === event.id)
+    if (index >= 0) events[index] = event
+    else events.push(event)
+    events.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
+
     const db = await initDB()
     const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
     const store = tx.objectStore(STORE_EVENTS_NAME)
     await store.put(toRaw(event))
     await tx.done
-    const index = events.findIndex((e) => e.id === event.id)
-    if (index >= 0) events[index] = event
-    else events.push(event)
-    events.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
     console.log(`⏬ event upsert to db [${timestamp()}]`)
   }
   events.removeDBSync = async function (eventId) {
+    const index = events.findIndex((e) => e.id === eventId)
+    if (index >= 0) events.splice(index, 1)
+
     const db = await initDB()
     const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
     const store = tx.objectStore(STORE_EVENTS_NAME)
     await store.delete(eventId)
     await tx.done
-    const index = events.findIndex((e) => e.id === eventId)
-    if (index >= 0) events.splice(index, 1)
     console.log(`⏬ event removed from db [${timestamp()}]`)
   }
 
@@ -63,16 +66,18 @@ export default function useDatabase() {
     const store = tx.objectStore(STORE_APP_STATE_NAME)
     const stateRaw = await store.getAll()
     await tx.done
+
     stateRaw.forEach(({ key, value }) => (appState[key] = value))
     console.log(`⏬ app state loaded from db [${timestamp()}]`)
   }
   appState.upsertDBSync = async function (key, value) {
+    appState[key] = value
+
     const db = await initDB()
     const tx = db.transaction(STORE_APP_STATE_NAME, "readwrite")
     const store = tx.objectStore(STORE_APP_STATE_NAME)
     await store.put({ key, value })
     await tx.done
-    appState[key] = value
     console.log(`⏬ app state upsert to db: ${key} [${timestamp()}]`)
   }
 

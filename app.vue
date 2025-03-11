@@ -62,7 +62,7 @@ onUnmounted(cleanupHotkeys)
 
 /////////////////////////////////// event //////////////////////////////////////
 async function newEvent() {
-  await events.upsertDBSync({
+  events.upsertDBSync({
     id: newId(),
     date: new Date().toISOString(),
     name: "now",
@@ -84,8 +84,8 @@ async function removeFocusedEvent() {
   events.removeDBSync(getFocusedEvent().id)
   appState.upsertDBSync("focusedEventIndex", null)
 }
-async function restoreEvent() {
-  await events.upsertDBSync(lastRemovedEvent)
+function restoreEvent() {
+  events.upsertDBSync(lastRemovedEvent)
   toggleEventFocus(events.findIndex((e) => e.id === lastRemovedEvent.id))
   lastRemovedEvent = null
 }
