@@ -10,7 +10,7 @@
         ref="nameEl"
         type="text"
         v-model="name"
-        @input="deEmitUpdateName"
+        @input="deEmitUpdate('name', name)"
         @focus="emit('lock-hotkeys')"
         @blur="emit('unlock-hotkeys')"
         class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
@@ -29,7 +29,8 @@
       <div class="relative overflow-hidden rounded-xl h-full">
         <textarea
           ref="textareaEl"
-          v-model="text"
+          :key="`textarea-${eventMod}`"
+          :value="textarea"
           @input="onTextareaInput"
           @scroll="onScroll"
           @focus="onFocus"
@@ -61,12 +62,11 @@
         </div>
       </div> -->
       <div class="flex p-3 justify-between">
-        <!-- <Switch
-          v-if="editEventId"
+        <Switch
           v-model="eventMod"
-          :labels="editEventModLabels"
-          @change="onEditModChange"
-        /> -->
+          :labels="eventModLabels"
+          @change="deEmitUpdate('memoryRaw', memoryRaw)"
+        />
         <ButtonLight @click="emit('remove')"> remove </ButtonLight>
       </div>
     </div>
@@ -76,45 +76,51 @@
 <script setup>
 const ADJUST_SCROLL = 24
 const LINES_OFFSET = -8
-const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1 }
+const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
 
 const props = defineProps(["event"])
-const emit = defineEmits([
-  "update-name",
-  "update-text",
-  "remove",
-  "lock-hotkeys",
-  "unlock-hotkeys",
-])
+const emit = defineEmits(["update", "remove", "lock-hotkeys", "unlock-hotkeys"])
 
-const eventMod = ref(EVENT_MOD.TEXT)
 const nameEl = ref(null)
 const textareaEl = ref(null)
-
-const name = ref(props.event.name)
-const text = ref(props.event.text)
 
 const isTextareaFocused = ref(false)
 const linesOffset = ref(`${LINES_OFFSET}px`)
 
-const deEmitUpdateName = debounce(() => emit("update", ["name", name.value]))
-const deEmitUpdateText = debounce(() => emit("update", ["text", text.value]))
+// v-model
+const name = ref(props.event.name)
+const eventMod = ref(EVENT_MOD.TEXT) // switch
+const textarea = ref(
+  eventMod.value === EVENT_MOD.TEXT ? props.event.text : props.event.memoryRaw
+)
 
-// const eventModLabels = {
-//   text: EVENT_MOD.TEXT,
-//   memoryRaw: EVENT_MOD.MEMORY_RAW,
-//   memory: EVENT_MOD.MEMORY,
-// }
+const eventModLabels = {
+  text: EVENT_MOD.TEXT,
+  memoryRaw: EVENT_MOD.MEMORY_RAW,
+  memory: EVENT_MOD.MEMORY,
+}
+
+const deEmitUpdate = debounce((key, value) => emit("update", [key, value]))
 
 watch(props.event, (newEvent) => {
   name.value = newEvent.name
-  text.value = newEvent.text
+  eventMod.value === EVENT_MOD.TEXT
+    ? (textarea.value = newEvent.text)
+    : (textarea.value = newEvent.memoryRaw)
 })
 
 defineExpose({ textareaEl, focusName, focusBot, focusTop })
 
-function onTextareaInput() {
-  deEmitUpdateText()
+function onTextareaInput(event) {
+  console.log(eventMod.value)
+  const newValue = event.target.value
+  if (eventMod.value === EVENT_MOD.TEXT) {
+    textarea.value = newValue
+    deEmitUpdate("text", newValue)
+  } else {
+    textarea.value = newValue
+    deEmitUpdate("memoryRaw", newValue)
+  }
   adjustScrollTop()
 }
 function onFocus() {
