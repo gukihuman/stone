@@ -4,16 +4,16 @@
     <div class="flex overflow-hidden justify-between gap-3 flex-grow">
       <Events
         :events="events"
-        :focused-event-index="focusedEventIndex"
-        @add-event="addEvent"
+        :focused-event-index="appState.focusedEventIndex"
+        @new-event="newEvent"
         @toggle-event-focus="toggleEventFocus"
       />
       <Focused
         ref="focusedRef"
-        v-if="focusedEventIndex !== null"
-        :event="events[focusedEventIndex]"
+        v-if="getFocusedEvent()"
+        :event="getFocusedEvent()"
         @update-name="updateFocusedEventName"
-        @remove="removeEvent"
+        @remove="removeFocusedEvent"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
@@ -40,124 +40,59 @@
 </template>
 
 <script setup>
-import { openDB } from "idb"
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
-
-const DB_NAME = "StoneDB"
-const DB_VERSION = 1
-const STORE_EVENTS_NAME = "events"
-const STORE_APP_STATE_NAME = "appState"
+const { events, appState } = useDatabase()
 
 const focusedRef = ref(null)
 
-const events = ref([]) // sorted by date
-const focusedEventIndex = ref(null)
-
 let lastRemovedEvent = null
-
 let cleanupHotkeys
 
 const hotkeys = {
-  w: () => toggleEventFocus(events.value.length - 1),
-  u: () => (focusedRef.value ? focusedRef.value.focusName() : {}),
+  w: () => toggleEventFocus(events.length - 1),
+  u: () => focusedRef.value?.focusName(),
 }
 
-watch(focusedEventIndex, async () => await saveFocusedIndex())
-
 onMounted(async () => {
-  await loadEvents()
-  events.value.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
-  await loadState()
+  events.loadFromDB()
+  appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
 })
 onUnmounted(cleanupHotkeys)
 
 /////////////////////////////////// event //////////////////////////////////////
-function addEvent(event) {
-  const eventToAdd = event || {
+async function newEvent() {
+  await events.upsertDBSync({
     id: newId(),
     date: new Date().toISOString(),
     name: "now",
     text: "",
     memoryRaw: "",
-  }
-  events.value.push(eventToAdd)
-  events.value.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
-  toggleEventFocus(events.value.findIndex((e) => e.id === eventToAdd.id))
-  saveEvent(eventToAdd)
+  })
+  toggleEventFocus(events.length - 1)
 }
 function toggleEventFocus(index) {
-  if (focusedEventIndex.value === index) focusedEventIndex.value = null
-  else focusedEventIndex.value = index
-}
-async function removeEvent() {
-  const focusedEvent = events.value[focusedEventIndex.value]
-  const db = await initDB()
-  const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
-  const store = tx.objectStore(STORE_EVENTS_NAME)
-  await store.delete(focusedEvent.id)
-  await tx.done
-  events.value.splice(focusedEventIndex.value, 1)
-  focusedEventIndex.value = null
-  lastRemovedEvent = focusedEvent
-  console.log(`⏬ event removed from db [${timestamp()}]`)
-}
-function restoreEvent() {
-  addEvent(lastRemovedEvent)
-  lastRemovedEvent = null
+  const newValue = appState.focusedEventIndex === index ? null : index
+  appState.upsertDBSync("focusedEventIndex", newValue)
 }
 function updateFocusedEventName(name) {
-  const focusedEvent = events.value[focusedEventIndex.value]
-  focusedEvent.name = name
-  saveEvent(focusedEvent)
+  getFocusedEvent().name = name
+  events.upsertDBSync(getFocusedEvent())
+}
+async function removeFocusedEvent() {
+  lastRemovedEvent = getFocusedEvent()
+  events.removeDBSync(getFocusedEvent().id)
+  appState.upsertDBSync("focusedEventIndex", null)
+}
+async function restoreEvent() {
+  await events.upsertDBSync(lastRemovedEvent)
+  toggleEventFocus(events.findIndex((e) => e.id === lastRemovedEvent.id))
+  lastRemovedEvent = null
 }
 
-//////////////////////////////////// db ////////////////////////////////////////
-async function initDB() {
-  const db = await openDB(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains(STORE_EVENTS_NAME)) {
-        db.createObjectStore(STORE_EVENTS_NAME, { keyPath: "id" })
-      }
-      if (!db.objectStoreNames.contains(STORE_APP_STATE_NAME)) {
-        db.createObjectStore(STORE_APP_STATE_NAME, { keyPath: "key" })
-      }
-    },
-  })
-  return db
-}
-async function loadEvents() {
-  const db = await initDB()
-  const tx = db.transaction(STORE_EVENTS_NAME, "readonly")
-  const store = tx.objectStore(STORE_EVENTS_NAME)
-  const allEvents = await store.getAll()
-  await tx.done
-  if (allEvents.length > 0) events.value = allEvents
-  console.log(`⏬ events loaded from db [${timestamp()}]`)
-}
-async function loadState() {
-  const db = await initDB()
-  const tx = db.transaction(STORE_APP_STATE_NAME, "readonly")
-  const store = tx.objectStore(STORE_APP_STATE_NAME)
-  const state = await store.get("focusedEventIndex")
-  if (state) focusedEventIndex.value = state.value
-  await tx.done
-  console.log(`⏬ state loaded from db [${timestamp()}]`)
-}
-async function saveEvent(event) {
-  const db = await initDB()
-  const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
-  const store = tx.objectStore(STORE_EVENTS_NAME)
-  await store.put(toRaw(event))
-  await tx.done
-  console.log(`⏬ event saved to db [${timestamp()}]`)
-}
-async function saveFocusedIndex() {
-  const db = await initDB()
-  const tx = db.transaction(STORE_APP_STATE_NAME, "readwrite")
-  const store = tx.objectStore(STORE_APP_STATE_NAME)
-  await store.put({ key: "focusedEventIndex", value: focusedEventIndex.value })
-  await tx.done
+// helper
+function getFocusedEvent() {
+  return events[appState.focusedEventIndex]
 }
 
 ///////////////////////////////// fallback /////////////////////////////////////
@@ -238,7 +173,7 @@ async function saveFocusedIndex() {
 //   () => updateTokensForNow(),
 //   { deep: true }
 // )
-// function removeEvent() {
+// function onRemoveEvent() {
 //   lastRemovedEvent = {}
 //   const id = focusedEventIndex.value
 //   lastRemovedEvent.event = eventsById.value[focusedEventIndex.value]
