@@ -59,6 +59,16 @@ export default function useDatabase() {
     await tx.done
     console.log(`⏬ event removed from db [${timestamp()}]`)
   }
+  events.clearDBSync = async function () {
+    events.length = 0
+
+    const db = await initDB()
+    const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
+    const store = tx.objectStore(STORE_EVENTS_NAME)
+    await store.clear()
+    await tx.done
+    console.log(`⏬️ all events cleared from db [${timestamp()}]`)
+  }
 
   appState.loadFromDB = async function () {
     const db = await initDB()

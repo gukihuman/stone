@@ -10,9 +10,10 @@
       />
       <Focused
         ref="focusedRef"
+        :key="`focused-${appState.focusedEventIndex}`"
         v-if="getFocusedEvent()"
         :event="getFocusedEvent()"
-        @update-name="updateFocusedEventName"
+        @update="updateFocusedEvent"
         @remove="removeFocusedEvent"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
@@ -50,9 +51,12 @@ let cleanupHotkeys
 
 const hotkeys = {
   w: () => toggleEventFocus(events.length - 1),
+  i: () => scrollToTop(focusedRef.value?.textareaEl),
+  g: () => scrollToBot(focusedRef.value?.textareaEl),
   u: () => focusedRef.value?.focusName(),
+  o: () => focusedRef.value?.focusBot(),
+  e: () => focusedRef.value?.focusTop(),
 }
-
 onMounted(() => {
   events.loadFromDB()
   appState.loadFromDB()
@@ -75,8 +79,8 @@ function toggleEventFocus(index) {
   const newValue = appState.focusedEventIndex === index ? null : index
   appState.upsertDBSync("focusedEventIndex", newValue)
 }
-function updateFocusedEventName(name) {
-  getFocusedEvent().name = name
+function updateFocusedEvent([key, value]) {
+  getFocusedEvent()[key] = value
   events.upsertDBSync(getFocusedEvent())
 }
 function removeFocusedEvent() {
@@ -93,14 +97,14 @@ function restoreEvent() {
 function getFocusedEvent() {
   return events[appState.focusedEventIndex]
 }
-/////////////////////////////// file save load /////////////////////////////////
+////////////////////////////// file save load /////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
   fileSave(filename, { events, appState })
 }
 async function onFileLoad() {
   fileLoad(async (loadedData) => {
-    events.length = 0
+    events.clearDBSync()
     await Promise.all(loadedData.events.map((e) => events.upsertDBSync(e)))
 
     const entries = Object.entries(loadedData.appState)
