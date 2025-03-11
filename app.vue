@@ -25,8 +25,8 @@
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
       <div class="rounded-lg overflow-hidden">
-        <!-- <ButtonDark @click="onFileSave"> save </ButtonDark>
-        <ButtonDark @click="onFileLoad" theme="dark"> load </ButtonDark> -->
+        <ButtonDark @click="onFileSave"> save </ButtonDark>
+        <ButtonDark @click="onFileLoad" theme="dark"> load </ButtonDark>
         <ButtonDark
           @click="restoreEvent"
           theme="dark"
@@ -53,7 +53,7 @@ const hotkeys = {
   u: () => focusedRef.value?.focusName(),
 }
 
-onMounted(async () => {
+onMounted(() => {
   events.loadFromDB()
   appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
@@ -61,7 +61,7 @@ onMounted(async () => {
 onUnmounted(cleanupHotkeys)
 
 /////////////////////////////////// event //////////////////////////////////////
-async function newEvent() {
+function newEvent() {
   events.upsertDBSync({
     id: newId(),
     date: new Date().toISOString(),
@@ -79,7 +79,7 @@ function updateFocusedEventName(name) {
   getFocusedEvent().name = name
   events.upsertDBSync(getFocusedEvent())
 }
-async function removeFocusedEvent() {
+function removeFocusedEvent() {
   lastRemovedEvent = getFocusedEvent()
   events.removeDBSync(getFocusedEvent().id)
   appState.upsertDBSync("focusedEventIndex", null)
@@ -89,12 +89,26 @@ function restoreEvent() {
   toggleEventFocus(events.findIndex((e) => e.id === lastRemovedEvent.id))
   lastRemovedEvent = null
 }
-
 // helper
 function getFocusedEvent() {
   return events[appState.focusedEventIndex]
 }
+/////////////////////////////// file save load /////////////////////////////////
+async function onFileSave() {
+  const filename = `stone ${events[events.length - 1]?.name || ""}.json`
+  fileSave(filename, { events, appState })
+}
+async function onFileLoad() {
+  fileLoad(async (loadedData) => {
+    events.length = 0
+    await Promise.all(loadedData.events.map((e) => events.upsertDBSync(e)))
 
+    const entries = Object.entries(loadedData.appState)
+    await Promise.all(entries.map(([key, v]) => appState.upsertDBSync(key, v)))
+
+    console.log(`⏬ data loaded from file [${timestamp()}]`)
+  })
+}
 ///////////////////////////////// fallback /////////////////////////////////////
 
 // const editTopicMod = ref(TOPIC_MODS.MEMORY_IDS_RAW)
