@@ -64,7 +64,11 @@ const hotkeys = {
   u: () => focusedRef.value?.focusName(),
   o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
+  h: () => appState.upsertDBSync("focusedField", "text"),
+  t: () => appState.upsertDBSync("focusedField", "memoryRaw"),
+  n: () => appState.upsertDBSync("focusedField", "memory"),
 }
+
 // vue logic
 onMounted(() => {
   events.loadFromDB()
@@ -87,7 +91,6 @@ function newEvent() {
 function toggleEventFocus(index) {
   const newValue = appState.focusedEventIndex === index ? null : index
   appState.upsertDBSync("focusedEventIndex", newValue)
-  appState.upsertDBSync("focusedField", "text")
 }
 function updateFocusedEvent([key, value]) {
   getFocusedEvent()[key] = value

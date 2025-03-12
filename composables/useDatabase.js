@@ -5,6 +5,7 @@ export default function useDatabase() {
   const DB_VERSION = 1
   const STORE_EVENTS_NAME = "events"
   const STORE_APP_STATE_NAME = "appState"
+  const DEFAULT_APP_STATE = { focusedField: "text" }
 
   const events = reactive([]) // sorted by date
   const appState = reactive({})
@@ -78,6 +79,9 @@ export default function useDatabase() {
     await tx.done
 
     stateRaw.forEach(({ key, value }) => (appState[key] = value))
+    Object.entries(DEFAULT_APP_STATE).forEach(([key, value]) => {
+      if (!appState[key]) appState[key] = value
+    })
     console.log(`⏬ app state loaded from db [${timestamp()}]`)
   }
   appState.upsertDBSync = async function (key, value) {

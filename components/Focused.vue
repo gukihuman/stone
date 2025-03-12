@@ -102,6 +102,10 @@ watch(props.item, (newValue) => {
   name.value = newValue.name
   textarea.value = newValue[field.value]
 })
+watch(
+  () => props.field,
+  (newValue) => (field.value = newValue)
+)
 defineExpose({ textareaEl, focusName, focusBot, focusTop })
 
 ///////////////////////////////// functions ////////////////////////////////////
