@@ -10,7 +10,7 @@
         ref="nameEl"
         type="text"
         v-model="name"
-        @input="deEmitUpdate('name', name)"
+        @input="dEmitUpdateItem('name', name)"
         @focus="emit('lock-hotkeys')"
         @blur="emit('unlock-hotkeys')"
         class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
@@ -18,7 +18,7 @@
       <p
         class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
       >
-        {{ event.date.substring(0, 10) }}
+        {{ item.date.substring(0, 10) }}
       </p>
     </div>
     <!-------------------------- textarea ------------------------------------->
@@ -29,15 +29,15 @@
       <div class="relative overflow-hidden rounded-xl h-full">
         <textarea
           ref="textareaEl"
-          :key="`textarea-${eventMod}`"
-          :value="textarea"
+          :key="`textarea-${field}`"
+          v-model="textarea"
           @input="onTextareaInput"
           @scroll="onScroll"
           @focus="onFocus"
           @blur="onBlur"
           class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
           :class="
-            eventMod === EVENT_MOD.TEXT
+            field === 'text'
               ? 'bg-stone-400 text-stone-800'
               : 'bg-stone-600 bg-lines-light selection-light text-stone-300'
           "
@@ -62,66 +62,58 @@
         </div>
       </div> -->
       <div class="flex p-3 justify-between">
-        <Switch
-          v-model="eventMod"
-          :labels="eventModLabels"
-          @change="deEmitUpdate('memoryRaw', memoryRaw)"
-        />
-        <ButtonLight @click="emit('remove')"> remove </ButtonLight>
+        <Switch v-model="field" :fields="fields" @change="onSwitchChange" />
+        <ButtonLight @click="emit('remove-item')"> remove</ButtonLight>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+// constants
 const ADJUST_SCROLL = 24
 const LINES_OFFSET = -8
-const EVENT_MOD = { TEXT: 0, MEMORY_RAW: 1, MEMORY: 2 }
 
-const props = defineProps(["event"])
-const emit = defineEmits(["update", "remove", "lock-hotkeys", "unlock-hotkeys"])
+// connect
+const props = defineProps(["item", "field", "fields"])
+const emit = defineEmits([
+  "update-item",
+  "remove-item",
+  "update-app-state",
+  "lock-hotkeys",
+  "unlock-hotkeys",
+])
 
+// refs
 const nameEl = ref(null)
 const textareaEl = ref(null)
 
+// reactive
 const isTextareaFocused = ref(false)
 const linesOffset = ref(`${LINES_OFFSET}px`)
 
 // v-model
-const name = ref(props.event.name)
-const eventMod = ref(EVENT_MOD.TEXT) // switch
-const textarea = ref(
-  eventMod.value === EVENT_MOD.TEXT ? props.event.text : props.event.memoryRaw
-)
+const name = ref(props.item.name)
+const field = ref(props.field)
+const textarea = ref(props.item[props.field])
 
-const eventModLabels = {
-  text: EVENT_MOD.TEXT,
-  memoryRaw: EVENT_MOD.MEMORY_RAW,
-  memory: EVENT_MOD.MEMORY,
-}
-
-const deEmitUpdate = debounce((key, value) => emit("update", [key, value]))
-
-watch(props.event, (newEvent) => {
-  name.value = newEvent.name
-  eventMod.value === EVENT_MOD.TEXT
-    ? (textarea.value = newEvent.text)
-    : (textarea.value = newEvent.memoryRaw)
+// vue logic
+watch(props.item, (newValue) => {
+  name.value = newValue.name
+  textarea.value = newValue[field.value]
 })
-
 defineExpose({ textareaEl, focusName, focusBot, focusTop })
 
+///////////////////////////////// functions ////////////////////////////////////
+const dEmitUpdateItem = debounce((key, v) => emit("update-item", [key, v]))
+
 function onTextareaInput(event) {
-  console.log(eventMod.value)
-  const newValue = event.target.value
-  if (eventMod.value === EVENT_MOD.TEXT) {
-    textarea.value = newValue
-    deEmitUpdate("text", newValue)
-  } else {
-    textarea.value = newValue
-    deEmitUpdate("memoryRaw", newValue)
-  }
+  dEmitUpdateItem(field.value, event.target.value)
   adjustScrollTop()
+}
+function onSwitchChange() {
+  textarea.value = props.item[field.value]
+  emit("update-app-state", "focusedField", field.value)
 }
 function onFocus() {
   isTextareaFocused.value = true

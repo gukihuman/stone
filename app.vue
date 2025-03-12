@@ -12,9 +12,12 @@
         ref="focusedRef"
         :key="`focused-${appState.focusedEventIndex}`"
         v-if="getFocusedEvent()"
-        :event="getFocusedEvent()"
-        @update="updateFocusedEvent"
-        @remove="removeFocusedEvent"
+        :item="getFocusedEvent()"
+        :field="appState.focusedField"
+        :fields="EVENT_FOCUSED_FIELDS"
+        @update-item="updateFocusedEvent"
+        @remove-item="removeFocusedEvent"
+        @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
@@ -41,14 +44,19 @@
 </template>
 
 <script setup>
+// constants
+const EVENT_FOCUSED_FIELDS = ["text", "memoryRaw", "memory"]
+
+// composables
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
 const { events, appState } = useDatabase()
 
+// reactive
 const focusedRef = ref(null)
 
+// regular
 let lastRemovedEvent = null
 let cleanupHotkeys
-
 const hotkeys = {
   w: () => toggleEventFocus(events.length - 1),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
@@ -57,6 +65,7 @@ const hotkeys = {
   o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
 }
+// vue logic
 onMounted(() => {
   events.loadFromDB()
   appState.loadFromDB()
@@ -78,6 +87,7 @@ function newEvent() {
 function toggleEventFocus(index) {
   const newValue = appState.focusedEventIndex === index ? null : index
   appState.upsertDBSync("focusedEventIndex", newValue)
+  appState.upsertDBSync("focusedField", "text")
 }
 function updateFocusedEvent([key, value]) {
   getFocusedEvent()[key] = value
@@ -254,7 +264,7 @@ async function onFileLoad() {
 //   if (editEvent) {
 //     name.value = editEvent.name
 //     date.value = editEvent.date
-//     eventMod.value === EVENT_MOD.MEMORY_RAW
+//     eventMod.value === EVENT_MOD_TYPES.MEMORY_RAW
 //       ? (paper.value = editEvent.memoryRecordsRaw)
 //       : (paper.value = editEvent.text)
 //   }
@@ -269,7 +279,7 @@ async function onFileLoad() {
 //   if (editEvent) {
 //     editEvent.name = name.value
 //     editEvent.date = date.value
-//     if (eventMod.value === EVENT_MOD.MEMORY_RAW) {
+//     if (eventMod.value === EVENT_MOD_TYPES.MEMORY_RAW) {
 //       editEvent.memoryRecordsRaw = paper.value
 //       debouncedUpdateMemories(editEvent)
 //     } else {
@@ -395,13 +405,13 @@ async function onFileLoad() {
 //   }
 //   if (!hotkeysLockedByInput.value && focusedEventIndex.value) {
 //     if (event.key === "h") {
-//       eventMod.value = EVENT_MOD.TEXT
+//       eventMod.value = EVENT_MOD_TYPES.TEXT
 //       onEditModChange()
 //     } else if (event.key === "t") {
-//       eventMod.value = EVENT_MOD.MEMORY_RAW
+//       eventMod.value = EVENT_MOD_TYPES.MEMORY_RAW
 //       onEditModChange()
 //     } else if (event.key === "n") {
-//       eventMod.value = EVENT_MOD.MEMORY
+//       eventMod.value = EVENT_MOD_TYPES.MEMORY
 //       onEditModChange()
 //     }
 //   }
@@ -433,7 +443,7 @@ async function onFileLoad() {
 // async function onGenNow() {
 //   genNowLocked.value = true
 //   genEventId = focusedEventIndex.value
-//   genEventMod = EVENT_MOD.TEXT
+//   genEventMod = EVENT_MOD_TYPES.TEXT
 
 //   const editEvent = eventsById.value[focusedEventIndex.value]
 //   editEvent.text += "\n\nJane\n"
