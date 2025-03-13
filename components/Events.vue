@@ -2,7 +2,7 @@
   <div
     class="w-[250px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
   >
-    <!-- events menu top -->
+    <!-- # top menu ----------------------------------------------------------->
     <div class="flex">
       <button
         @click="onClickNew"
@@ -11,12 +11,12 @@
         new
       </button>
     </div>
-    <!-- event list -->
+    <!-- # list --------------------------------------------------------------->
     <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
       <div class="flex flex-col-reverse">
         <div v-for="({ name }, index) in events" :key="`event-${index}`">
           <ButtonList
-            :active="focusedEventIndex === index"
+            :active="focusedIndex === index"
             @click="emit('toggle-event-focus', index)"
           >
             <span class="truncate">{{ name }}</span>
@@ -28,11 +28,12 @@
 </template>
 
 <script setup>
-const props = defineProps(["events", "focusedEventIndex"])
+const props = defineProps(["events", "focusedIndex"])
 const emit = defineEmits(["new-event", "toggle-event-focus"])
 
 const listEl = ref(null)
 
+////////////////////////////////////////////////////////////////////////////////
 function onClickNew() {
   scrollToTop(listEl.value)
   emit("new-event")

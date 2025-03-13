@@ -1,30 +1,50 @@
 <template>
   <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1 pb-8">
-    <!-- main field -->
+    <!-- # mid ---------------------------------------------------------------->
     <div class="flex overflow-hidden justify-between gap-3 flex-grow">
       <Events
         :events="events"
-        :focused-event-index="appState.focusedEventIndex"
+        :focused-index="
+          appState.focusedList === 'events' ? appState.focusedIndex : null
+        "
         @new-event="newEvent"
         @toggle-event-focus="toggleEventFocus"
       />
-      <Focused
-        ref="focusedRef"
-        :key="`focused-${appState.focusedEventIndex}`"
+      <FocusedEvent
         v-if="getFocusedEvent()"
-        :item="getFocusedEvent()"
-        :field="appState.focusedField"
-        :fields="EVENT_FOCUSED_FIELDS"
-        @update-item="updateFocusedEvent"
-        @remove-item="removeFocusedEvent"
+        :key="`focused-event-${appState.focusedIndex}-${appState.focusedEditField}`"
+        ref="focusedRef"
+        :event="getFocusedEvent()"
+        :edit-field="appState.focusedEditField"
+        :edit-fields="['text', 'memoryRaw']"
+        @update-event="updateFocusedEvent"
+        @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
-      <!-- topics -->
-      <div class="w-[250px] flex-shrink-0"></div>
+      <FocusedTopic
+        v-else-if="getFocusedTopic()"
+        :key="`focused-topic-${appState.focusedIndex}`"
+        ref="focusedRef"
+        :topic="getFocusedTopic()"
+        @update-topic="updateFocusedTopic"
+        @remove-item="removeFocusedTopic"
+        @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+        @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+      />
+      <Topics
+        :topics="topics"
+        :focused-index="
+          appState.focusedList === 'topics' ? appState.focusedIndex : null
+        "
+        @new-topic="newTopic"
+        @toggle-topic-focus="toggleTopicFocus"
+        @sort-topic-up="sortTopicUp"
+        @sort-topic-down="sortTopicDown"
+      />
     </div>
-    <!-- main bottom menu -->
+    <!-- # bot ---------------------------------------------------------------->
     <div
       class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
     >
@@ -44,15 +64,8 @@
 </template>
 
 <script setup>
-// constants
-const EVENT_FOCUSED_FIELDS = ["text", "memoryRaw", "memory"]
-
-// composables
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
-const { events, appState } = useDatabase()
-
-// reactive
-const focusedRef = ref(null)
+const { events, topics, appState } = useDatabase()
 
 // regular
 let lastRemovedEvent = null
@@ -64,14 +77,16 @@ const hotkeys = {
   u: () => focusedRef.value?.focusName(),
   o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
-  h: () => appState.upsertDBSync("focusedField", "text"),
-  t: () => appState.upsertDBSync("focusedField", "memoryRaw"),
-  n: () => appState.upsertDBSync("focusedField", "memory"),
+  h: () => appState.upsertDBSync("focusedEditField", "text"),
+  t: () => appState.upsertDBSync("focusedEditField", "memoryRaw"),
 }
 
-// vue logic
+// reactive
+const focusedRef = ref(null)
+
 onMounted(() => {
   events.loadFromDB()
+  topics.loadFromDB()
   appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
 })
@@ -87,10 +102,13 @@ function newEvent() {
     memoryRaw: "",
   })
   toggleEventFocus(events.length - 1)
+  appState.upsertDBSync("focusedEditField", "text")
+  nextTick(() => focusedRef.value?.focusBot())
 }
-function toggleEventFocus(index) {
-  const newValue = appState.focusedEventIndex === index ? null : index
-  appState.upsertDBSync("focusedEventIndex", newValue)
+function toggleEventFocus(i) {
+  const same = appState.focusedList === "events" && appState.focusedIndex === i
+  appState.upsertDBSync("focusedIndex", same ? null : i)
+  appState.upsertDBSync("focusedList", same ? null : "events")
 }
 function updateFocusedEvent([key, value]) {
   getFocusedEvent()[key] = value
@@ -98,32 +116,81 @@ function updateFocusedEvent([key, value]) {
 }
 function removeFocusedEvent() {
   lastRemovedEvent = getFocusedEvent()
-  events.removeDBSync(getFocusedEvent().id)
-  appState.upsertDBSync("focusedEventIndex", null)
+  events.removeDBSync(getFocusedEvent())
+  appState.upsertDBSync("focusedIndex", null)
 }
 function restoreEvent() {
   events.upsertDBSync(lastRemovedEvent)
   toggleEventFocus(events.findIndex((e) => e.id === lastRemovedEvent.id))
   lastRemovedEvent = null
 }
-// helper
-function getFocusedEvent() {
-  return events[appState.focusedEventIndex]
+////////////////////////////////// topics //////////////////////////////////////
+function newTopic() {
+  topics.insertDBSync("topic")
+  toggleTopicFocus(topics.length - 1)
 }
-////////////////////////////// file save load /////////////////////////////////
+function toggleTopicFocus(i) {
+  const same = appState.focusedList === "topics" && appState.focusedIndex === i
+  appState.upsertDBSync("focusedIndex", same ? null : i)
+  appState.upsertDBSync("focusedList", same ? null : "topics")
+}
+function updateFocusedTopic(topic) {
+  topics[appState.focusedIndex] = topic
+  topics.updateDBSync()
+}
+function removeFocusedTopic() {
+  topics.removeDBSync(getFocusedTopic())
+  appState.upsertDBSync("focusedIndex", null)
+  appState.upsertDBSync("focusedList", null)
+}
+function sortTopicUp() {
+  const index = topics.indexOf(getFocusedTopic())
+  if (index === topics.length - 1) return
+  const topic = topics[index]
+  topics.splice(index, 1)
+  topics.splice(index + 1, 0, topic)
+  topics.updateDBSync()
+  appState.upsertDBSync("focusedIndex", index + 1)
+}
+function sortTopicDown() {
+  const index = topics.indexOf(getFocusedTopic())
+  console.log(index)
+  if (index === 0) return
+  const topic = topics[index]
+  topics.splice(index, 1)
+  topics.splice(index - 1, 0, topic)
+  topics.updateDBSync()
+  appState.upsertDBSync("focusedIndex", index - 1)
+}
+///////////////////////////////// helpers //////////////////////////////////////
+function getFocusedTopic() {
+  if (appState.focusedList !== "topics") return null
+  return topics[appState.focusedIndex] || null
+}
+function getFocusedEvent() {
+  if (appState.focusedList !== "events") return null
+  return events[appState.focusedIndex] || null
+}
+////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
-  fileSave(filename, { events, appState })
+  fileSave(filename, { events, topics, appState })
 }
 async function onFileLoad() {
   fileLoad(async (loadedData) => {
     events.clearDBSync()
     await Promise.all(loadedData.events.map((e) => events.upsertDBSync(e)))
 
+    topics.clearDBSync()
+    await Promise.all(loadedData.topics.map((t) => topics.insertDBSync(t)))
+
     const entries = Object.entries(loadedData.appState)
     await Promise.all(entries.map(([key, v]) => appState.upsertDBSync(key, v)))
-
     console.log(`⏬ data loaded from file [${timestamp()}]`)
+
+    // not react to same focused after load, reset cleaner for now
+    appState.upsertDBSync("focusedIndex", null)
+    appState.upsertDBSync("focusedList", null)
   })
 }
 ///////////////////////////////// fallback /////////////////////////////////////
@@ -182,7 +249,7 @@ async function onFileLoad() {
 //   }, 0)
 // })
 // const totalRecentMemories = computed(() => {
-//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   const editEvent = eventsById.value[focusedIndex.value]
 //   if (!editEvent) return
 //   return Object.values(eventsById.value).reduce((sum, e) => {
 //     if (
@@ -200,15 +267,15 @@ async function onFileLoad() {
 //   { deep: true }
 // )
 // watch(
-//   () => [focusedEventIndex, recentEventLimit, topicsById],
+//   () => [focusedIndex, recentEventLimit, topicsById],
 //   () => updateTokensForNow(),
 //   { deep: true }
 // )
 // function onRemoveEvent() {
 //   lastRemovedEvent = {}
-//   const id = focusedEventIndex.value
-//   lastRemovedEvent.event = eventsById.value[focusedEventIndex.value]
-//   lastRemovedEvent.focusedEventIndex = id
+//   const id = focusedIndex.value
+//   lastRemovedEvent.event = eventsById.value[focusedIndex.value]
+//   lastRemovedEvent.focusedIndex = id
 //   toggleEventEdit(id)
 //   delete eventsById.value[id]
 //   Object.values(eventsById.value).forEach((event) => {
@@ -217,7 +284,7 @@ async function onFileLoad() {
 //   lastRemovedEvent.event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
 // }
 // async function updateTokensForNow() {
-//   if (!focusedEventIndex.value) return
+//   if (!focusedIndex.value) return
 //   tokensForNow.value = getTokens(await getPromptCopyNow())
 // }
 // async function onFileSave() {
@@ -232,7 +299,7 @@ async function onFileLoad() {
 //   memoryRecordsById.value = storage.memoryRecordsById
 //   eventsById.value = storage.eventsById
 //   topicsById.value = storage.topicsById
-//   focusedEventIndex.value = storage.focusedEventIndex
+//   focusedIndex.value = storage.focusedIndex
 //   editTopicId.value = storage.editTopicId
 //   eventMod.value = storage.eventMod
 //   editTopicMod.value = storage.editTopicMod
@@ -244,7 +311,7 @@ async function onFileLoad() {
 //     memoryRecordsById: memoryRecordsById.value,
 //     eventsById: eventsById.value,
 //     topicsById: topicsById.value,
-//     focusedEventIndex: focusedEventIndex.value,
+//     focusedIndex: focusedIndex.value,
 //     editTopicId: editTopicId.value,
 //     eventMod: eventMod.value,
 //     editTopicMod: editTopicMod.value,
@@ -254,7 +321,7 @@ async function onFileLoad() {
 // function toggleTopicEdit(id) {
 //   if (editTopicId.value === id) editTopicId.value = null
 //   else editTopicId.value = id
-//   focusedEventIndex.value = null
+//   focusedIndex.value = null
 //   updateInputFields()
 //   debouncedLocalStorageSave()
 // }
@@ -263,7 +330,7 @@ async function onFileLoad() {
 //   debouncedLocalStorageSave()
 // }
 // function updateInputFields() {
-//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   const editEvent = eventsById.value[focusedIndex.value]
 //   if (editEvent) {
 //     name.value = editEvent.name
 //     date.value = editEvent.date
@@ -278,7 +345,7 @@ async function onFileLoad() {
 //   }
 // }
 // function updateOnInput() {
-//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   const editEvent = eventsById.value[focusedIndex.value]
 //   if (editEvent) {
 //     editEvent.name = name.value
 //     editEvent.date = date.value
@@ -354,12 +421,12 @@ async function onFileLoad() {
 // function restore() {
 //   if (!lastRemovedEvent) return
 //   if (lastRemovedEvent.event) {
-//     eventsById.value[lastRemovedEvent.focusedEventIndex] = {
+//     eventsById.value[lastRemovedEvent.focusedIndex] = {
 //       ...lastRemovedEvent.event,
 //       sort: Object.keys(eventsById.value).length,
 //     }
-//     toggleEventEdit(lastRemovedEvent.focusedEventIndex)
-//     updateMemoriesWithNewIds(eventsById.value[lastRemovedEvent.focusedEventIndex])
+//     toggleEventEdit(lastRemovedEvent.focusedIndex)
+//     updateMemoriesWithNewIds(eventsById.value[lastRemovedEvent.focusedIndex])
 //   } else {
 //     topicsById.value[lastRemovedEvent.editTopicId] = {
 //       ...lastRemovedEvent.topic,
@@ -394,11 +461,11 @@ async function onFileLoad() {
 //       )
 //     })
 //   }
-//   if (focusedEventIndex.value && !hotkeysLockedByInput.value && event.key === "y") {
+//   if (focusedIndex.value && !hotkeysLockedByInput.value && event.key === "y") {
 //     event.preventDefault()
 //     nextTick(() => onCopyNow())
 //   }
-//   if (focusedEventIndex.value && !hotkeysLockedByInput.value && event.key === "m") {
+//   if (focusedIndex.value && !hotkeysLockedByInput.value && event.key === "m") {
 //     event.preventDefault()
 //     nextTick(() => onCopyMakeMemory())
 //   }
@@ -406,7 +473,7 @@ async function onFileLoad() {
 //     event.preventDefault()
 //     nextTick(() => onCopyMakeTopicIds())
 //   }
-//   if (!hotkeysLockedByInput.value && focusedEventIndex.value) {
+//   if (!hotkeysLockedByInput.value && focusedIndex.value) {
 //     if (event.key === "h") {
 //       eventMod.value = EVENT_MOD_TYPES.TEXT
 //       onEditModChange()
@@ -434,21 +501,21 @@ async function onFileLoad() {
 //   }
 // }
 // async function getPromptCopyNow() {
-//   if (!focusedEventIndex.value) return
+//   if (!focusedIndex.value) return
 //   return await promptNow(
 //     memoryRecordsById.value,
 //     topicsSorted.value,
 //     eventsSorted.value,
-//     eventsById.value[focusedEventIndex.value],
+//     eventsById.value[focusedIndex.value],
 //     recentEventLimit.value
 //   )
 // }
 // async function onGenNow() {
 //   genNowLocked.value = true
-//   genEventId = focusedEventIndex.value
+//   genEventId = focusedIndex.value
 //   genEventMod = EVENT_MOD_TYPES.TEXT
 
-//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   const editEvent = eventsById.value[focusedIndex.value]
 //   editEvent.text += "\n\nJane\n"
 //   onNextChunk() // to see Jane addition immideately
 //   await genWithMistral(await getPromptCopyNow(), editEvent, "text", onNextChunk)
@@ -460,10 +527,10 @@ async function onFileLoad() {
 //   genNowLocked.value = false
 // }
 // function onNextChunk() {
-//   const editEvent = eventsById.value[focusedEventIndex.value]
+//   const editEvent = eventsById.value[focusedIndex.value]
 //   const editTopic = topicsById.value[editTopicId.value]
 //   throttledLocalStorageSave()
-//   if (genEventId === focusedEventIndex.value && genEventMod === eventMod.value) {
+//   if (genEventId === focusedIndex.value && genEventMod === eventMod.value) {
 //     updatePaperOnNextChunk()
 //     throttledUpdateMemories(editEvent)
 //   }

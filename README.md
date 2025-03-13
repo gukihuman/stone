@@ -8,7 +8,9 @@ npm run dev
 npm run build
 ```
 
-## structure
+## data structure
+
+first class data, stored in indexedDB
 
 ### events
 
@@ -24,3 +26,23 @@ memoryRaw string must be parsed as valid JSON. it consists of topics, each topic
   }
 ]
 ```
+
+### topics
+
+```json
+["general", "my core identity and behavior"]
+```
+
+### appState
+
+```json
+{
+  "focusedIndex": 0,
+  "focusedIndex": 0,
+  "focusedEditField": "text"
+}
+```
+
+## dynamic app structure
+
+### tokens

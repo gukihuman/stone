@@ -1,33 +1,31 @@
 import { openDB } from "idb"
 
 export default function useDatabase() {
-  const DB_NAME = "StoneDB"
   const DB_VERSION = 1
-  const STORE_EVENTS_NAME = "events"
-  const STORE_APP_STATE_NAME = "appState"
-  const DEFAULT_APP_STATE = { focusedField: "text" }
+  const DEFAULT_APP_FIELDS = { focusedEditField: "text" }
 
   const events = reactive([]) // sorted by date
+  const topics = reactive([])
   const appState = reactive({})
 
+  //////////////////////////////////////////////////////////////////////////////
   async function initDB() {
-    const db = await openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(STORE_EVENTS_NAME)) {
-          db.createObjectStore(STORE_EVENTS_NAME, { keyPath: "id" })
-        }
-        if (!db.objectStoreNames.contains(STORE_APP_STATE_NAME)) {
-          db.createObjectStore(STORE_APP_STATE_NAME, { keyPath: "key" })
+    const db = await openDB("StoneDB", DB_VERSION, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          db.createObjectStore("events", { keyPath: "id" })
+          db.createObjectStore("topics")
+          db.createObjectStore("appState", { keyPath: "key" })
         }
       },
     })
     return db
   }
-
+  //////////////////////////////// events //////////////////////////////////////
   events.loadFromDB = async function () {
     const db = await initDB()
-    const tx = db.transaction(STORE_EVENTS_NAME, "readonly")
-    const store = tx.objectStore(STORE_EVENTS_NAME)
+    const tx = db.transaction("events", "readonly")
+    const store = tx.objectStore("events")
     const eventsRaw = await store.getAll()
     await tx.done
     console.log(`⏬ events loaded from db [${timestamp()}]`)
@@ -43,20 +41,20 @@ export default function useDatabase() {
     events.sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
 
     const db = await initDB()
-    const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
-    const store = tx.objectStore(STORE_EVENTS_NAME)
+    const tx = db.transaction("events", "readwrite")
+    const store = tx.objectStore("events")
     await store.put(toRaw(event))
     await tx.done
     console.log(`⏬ event upsert to db [${timestamp()}]`)
   }
-  events.removeDBSync = async function (eventId) {
-    const index = events.findIndex((e) => e.id === eventId)
+  events.removeDBSync = async function (event) {
+    const index = events.findIndex((e) => e.id === event.id)
     if (index >= 0) events.splice(index, 1)
 
     const db = await initDB()
-    const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
-    const store = tx.objectStore(STORE_EVENTS_NAME)
-    await store.delete(eventId)
+    const tx = db.transaction("events", "readwrite")
+    const store = tx.objectStore("events")
+    await store.delete(event.id)
     await tx.done
     console.log(`⏬ event removed from db [${timestamp()}]`)
   }
@@ -64,22 +62,75 @@ export default function useDatabase() {
     events.length = 0
 
     const db = await initDB()
-    const tx = db.transaction(STORE_EVENTS_NAME, "readwrite")
-    const store = tx.objectStore(STORE_EVENTS_NAME)
+    const tx = db.transaction("events", "readwrite")
+    const store = tx.objectStore("events")
     await store.clear()
     await tx.done
     console.log(`⏬️ all events cleared from db [${timestamp()}]`)
   }
+  //////////////////////////////// topics //////////////////////////////////////
+  topics.loadFromDB = async function () {
+    const db = await initDB()
+    const tx = db.transaction("topics", "readonly")
+    const store = tx.objectStore("topics")
+    const topicsRaw = (await store.get("topics")) || []
+    await tx.done
+    console.log(`⏬ topics loaded from db [${timestamp()}]`)
 
+    topics.length = 0
+    topicsRaw.forEach((topic) => topics.push(topic))
+  }
+  topics.updateDBSync = async function () {
+    const db = await initDB()
+    const tx = db.transaction("topics", "readwrite")
+    const store = tx.objectStore("topics")
+    await store.put([...topics], "topics")
+    await tx.done
+    console.log(`⏬ topic upsert to db [${timestamp()}]`)
+  }
+  topics.insertDBSync = async function (topic) {
+    topics.push(topic)
+
+    const db = await initDB()
+    const tx = db.transaction("topics", "readwrite")
+    const store = tx.objectStore("topics")
+    await store.put([...topics], "topics")
+    await tx.done
+    console.log(`⏬ topic upsert to db [${timestamp()}]`)
+  }
+  topics.removeDBSync = async function (topic) {
+    const index = topics.indexOf(topic)
+    if (index < 0) return
+    topics.splice(index, 1)
+
+    const db = await initDB()
+    const tx = db.transaction("topics", "readwrite")
+    const store = tx.objectStore("topics")
+    await store.put([...topics], "topics")
+    await tx.done
+    console.log(`⏬ topic removed from db [${timestamp()}]`)
+  }
+  topics.clearDBSync = async function () {
+    topics.length = 0
+
+    const db = await initDB()
+    const tx = db.transaction("topics", "readwrite")
+    const store = tx.objectStore("topics")
+    await store.clear()
+    await tx.done
+    console.log(`⏬️ all topics cleared from db [${timestamp()}]`)
+  }
+
+  /////////////////////////////// app state ////////////////////////////////////
   appState.loadFromDB = async function () {
     const db = await initDB()
-    const tx = db.transaction(STORE_APP_STATE_NAME, "readonly")
-    const store = tx.objectStore(STORE_APP_STATE_NAME)
+    const tx = db.transaction("appState", "readonly")
+    const store = tx.objectStore("appState")
     const stateRaw = await store.getAll()
     await tx.done
 
     stateRaw.forEach(({ key, value }) => (appState[key] = value))
-    Object.entries(DEFAULT_APP_STATE).forEach(([key, value]) => {
+    Object.entries(DEFAULT_APP_FIELDS).forEach(([key, value]) => {
       if (!appState[key]) appState[key] = value
     })
     console.log(`⏬ app state loaded from db [${timestamp()}]`)
@@ -88,12 +139,12 @@ export default function useDatabase() {
     appState[key] = value
 
     const db = await initDB()
-    const tx = db.transaction(STORE_APP_STATE_NAME, "readwrite")
-    const store = tx.objectStore(STORE_APP_STATE_NAME)
+    const tx = db.transaction("appState", "readwrite")
+    const store = tx.objectStore("appState")
     await store.put({ key, value })
     await tx.done
     console.log(`⏬ app state upsert to db: ${key} [${timestamp()}]`)
   }
 
-  return { events, appState }
+  return { events, topics, appState }
 }
