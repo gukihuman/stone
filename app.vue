@@ -206,21 +206,6 @@ async function onFileLoad() {
 }
 ///////////////////////////////// fallback /////////////////////////////////////
 
-// const editTopicMod = ref(TOPIC_MODS.MEMORY_IDS_RAW)
-// const editTopicModLabels = {
-//   raw: TOPIC_MODS.MEMORY_IDS_RAW,
-//   memory: TOPIC_MODS.MEMORY,
-// }
-// const memoryRecordsById = ref({}) // main memory storage
-// const topicsById = ref({})
-// const editTopicId = ref(null)
-// let genEventId = null
-// let genEventMod = null
-// let genTopicId = null
-// let genTopicMod = null
-
-// let lastRemovedEvent = null
-
 // const copyLockedNow = ref(false)
 // const copyLockedMakeMemory = ref(false)
 // const copyLockedMakeTopicIds = ref(false)
@@ -228,31 +213,16 @@ async function onFileLoad() {
 // const genMakeMemoryLocked = ref(false)
 // const genMakeTopicIdsLocked = ref(false)
 
-// const hotkeysLockedByInput = ref(false)
-
-// nicely debounced
 // const tokensForNow = ref(0)
 // const tokensForMakeMemory = ref(0)
 // const tokensForMakeTopicIds = ref(0)
 
-// const debouncedLocalStorageSave = debounce(localStorageSave)
 // const debouncedUpdateMemories = debounce(updateMemoriesWithNewIds)
 // const debouncedUpdateTopics = debounce(updateTopics)
 // const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
-// const throttledLocalStorageSave = throttle(localStorageSave)
 // const throttledUpdateMemories = throttle(updateMemoriesWithNewIds)
 // const throttledUpdateTopics = throttle(updateTopics)
 
-// const eventsSorted = computed(() => {
-//   return Object.entries(eventsById.value).sort(
-//     ([, a], [, b]) => a.sort - b.sort
-//   )
-// })
-// const topicsSorted = computed(() => {
-//   return Object.entries(topicsById.value).sort(
-//     ([, a], [, b]) => a.sort - b.sort
-//   )
-// })
 // const totalTopicMemories = computed(() => {
 //   return Object.values(topicsById.value).reduce((sum, topic) => {
 //     if (topic.selected) return sum + topic.memoryIds.length
@@ -272,108 +242,9 @@ async function onFileLoad() {
 //     return sum
 //   }, 0)
 // })
-// watch(
-//   () => eventsById, // on input
-//   () => debouncedUpdateTokensForNow(),
-//   { deep: true }
-// )
-// watch(
-//   () => [focusedIndex, recentEventLimit, topicsById],
-//   () => updateTokensForNow(),
-//   { deep: true }
-// )
-// function onRemoveEvent() {
-//   lastRemovedEvent = {}
-//   const id = focusedIndex.value
-//   lastRemovedEvent.event = eventsById.value[focusedIndex.value]
-//   lastRemovedEvent.focusedIndex = id
-//   toggleEventEdit(id)
-//   delete eventsById.value[id]
-//   Object.values(eventsById.value).forEach((event) => {
-//     if (event.sort > lastRemovedEvent.event.sort) event.sort--
-//   })
-//   lastRemovedEvent.event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
-// }
 // async function updateTokensForNow() {
 //   if (!focusedIndex.value) return
 //   tokensForNow.value = getTokens(await getPromptCopyNow())
-// }
-// async function onFileSave() {
-//   const mostRecentEvent = eventsSorted.value[eventsSorted.value.length - 1][1]
-//   fileSave(`stone ${mostRecentEvent.name}.json`, getStorage())
-// }
-// async function onFileLoad() {
-//   await fileLoad(injectStorage)
-//   debouncedLocalStorageSave()
-// }
-// function injectStorage(storage) {
-//   memoryRecordsById.value = storage.memoryRecordsById
-//   eventsById.value = storage.eventsById
-//   topicsById.value = storage.topicsById
-//   focusedIndex.value = storage.focusedIndex
-//   editTopicId.value = storage.editTopicId
-//   eventMod.value = storage.eventMod
-//   editTopicMod.value = storage.editTopicMod
-//   recentEventLimit.value = storage.recentEventLimit
-//   updateInputFields()
-// }
-// function getStorage() {
-//   return {
-//     memoryRecordsById: memoryRecordsById.value,
-//     eventsById: eventsById.value,
-//     topicsById: topicsById.value,
-//     focusedIndex: focusedIndex.value,
-//     editTopicId: editTopicId.value,
-//     eventMod: eventMod.value,
-//     editTopicMod: editTopicMod.value,
-//     recentEventLimit: recentEventLimit.value,
-//   }
-// }
-// function toggleTopicEdit(id) {
-//   if (editTopicId.value === id) editTopicId.value = null
-//   else editTopicId.value = id
-//   focusedIndex.value = null
-//   updateInputFields()
-//   debouncedLocalStorageSave()
-// }
-// const onEditModChange = () => {
-//   updateInputFields()
-//   debouncedLocalStorageSave()
-// }
-// function updateInputFields() {
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   if (editEvent) {
-//     name.value = editEvent.name
-//     date.value = editEvent.date
-//     eventMod.value === EVENT_MOD_TYPES.MEMORY_RAW
-//       ? (paper.value = editEvent.memoryRecordsRaw)
-//       : (paper.value = editEvent.text)
-//   }
-//   const editTopic = topicsById.value[editTopicId.value]
-//   if (editTopic) {
-//     name.value = editTopic.name
-//     paper.value = editTopic.memoryIdsRaw
-//   }
-// }
-// function updateOnInput() {
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   if (editEvent) {
-//     editEvent.name = name.value
-//     editEvent.date = date.value
-//     if (eventMod.value === EVENT_MOD_TYPES.MEMORY_RAW) {
-//       editEvent.memoryRecordsRaw = paper.value
-//       debouncedUpdateMemories(editEvent)
-//     } else {
-//       editEvent.text = paper.value
-//     }
-//   }
-//   const editTopic = topicsById.value[editTopicId.value]
-//   if (editTopic) {
-//     editTopic.name = name.value
-//     editTopic.memoryIdsRaw = paper.value
-//     debouncedUpdateTopics(editTopic)
-//   }
-//   debouncedLocalStorageSave()
 // }
 // function updateMemoriesWithNewIds(event) {
 //   event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
@@ -415,99 +286,6 @@ async function onFileLoad() {
 //       console.log(`❗ invalid JSON format, ${resetString} [${timestamp()}]`)
 //     } else {
 //       console.log(`❗ ${error.message} ${resetString} [${timestamp()}]`)
-//     }
-//   }
-// }
-// function removeTopic() {
-//   lastRemovedEvent = {}
-//   const id = editTopicId.value
-//   lastRemovedEvent.topic = topicsById.value[editTopicId.value]
-//   lastRemovedEvent.editTopicId = id
-//   toggleTopicEdit(id)
-//   delete topicsById.value[id]
-//   Object.values(topicsById.value).forEach((topic) => {
-//     if (topic.sort > lastRemovedEvent.topic.sort) topic.sort--
-//   })
-// }
-// function restore() {
-//   if (!lastRemovedEvent) return
-//   if (lastRemovedEvent.event) {
-//     eventsById.value[lastRemovedEvent.focusedIndex] = {
-//       ...lastRemovedEvent.event,
-//       sort: Object.keys(eventsById.value).length,
-//     }
-//     toggleEventEdit(lastRemovedEvent.focusedIndex)
-//     updateMemoriesWithNewIds(eventsById.value[lastRemovedEvent.focusedIndex])
-//   } else {
-//     topicsById.value[lastRemovedEvent.editTopicId] = {
-//       ...lastRemovedEvent.topic,
-//       sort: Object.keys(topicsById.value).length,
-//     }
-//     toggleTopicEdit(lastRemovedEvent.editTopicId)
-//   }
-//   lastRemovedEvent = null
-//   debouncedLocalStorageSave()
-// }
-// function onKeyDown(event) {
-//   if (document.activeElement === nameRef.value && event.key === "Escape") {
-//     nameRef.value.blur()
-//   }
-//   if (document.activeElement === dateRef.value && event.key === "Escape") {
-//     dateRef.value.blur()
-//   }
-//   if (nameRef.value && !hotkeysLockedByInput.value && event.key === "c") {
-//     event.preventDefault()
-//     nextTick(() => {
-//       nameRef.value.focus()
-//       nameRef.value.setSelectionRange(0, nameRef.value.value.length)
-//     })
-//   }
-//   if (dateRef.value && !hotkeysLockedByInput.value && event.key === "u") {
-//     event.preventDefault()
-//     nextTick(() => {
-//       dateRef.value.focus()
-//       dateRef.value.setSelectionRange(
-//         dateRef.value.value.length,
-//         dateRef.value.value.length
-//       )
-//     })
-//   }
-//   if (focusedIndex.value && !hotkeysLockedByInput.value && event.key === "y") {
-//     event.preventDefault()
-//     nextTick(() => onCopyNow())
-//   }
-//   if (focusedIndex.value && !hotkeysLockedByInput.value && event.key === "m") {
-//     event.preventDefault()
-//     nextTick(() => onCopyMakeMemory())
-//   }
-//   if (editTopicId.value && !hotkeysLockedByInput.value && event.key === "m") {
-//     event.preventDefault()
-//     nextTick(() => onCopyMakeTopicIds())
-//   }
-//   if (!hotkeysLockedByInput.value && focusedIndex.value) {
-//     if (event.key === "h") {
-//       eventMod.value = EVENT_MOD_TYPES.TEXT
-//       onEditModChange()
-//     } else if (event.key === "t") {
-//       eventMod.value = EVENT_MOD_TYPES.MEMORY_RAW
-//       onEditModChange()
-//     } else if (event.key === "n") {
-//       eventMod.value = EVENT_MOD_TYPES.MEMORY
-//       onEditModChange()
-//     }
-//   }
-//   if (!hotkeysLockedByInput.value && editTopicId.value) {
-//     if (event.key === "t") {
-//       editTopicMod.value = TOPIC_MODS.MEMORY_IDS_RAW
-//       onEditModChange()
-//     } else if (event.key === "n") {
-//       editTopicMod.value = TOPIC_MODS.MEMORY
-//       onEditModChange()
-//     }
-//   }
-//   if (!hotkeysLockedByInput.value && eventsSorted.value.length) {
-//     if (event.key === "w") {
-//       toggleEventEdit(eventsSorted.value[eventsSorted.value.length - 1][0])
 //     }
 //   }
 // }
