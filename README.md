@@ -45,4 +45,12 @@ memoryRaw string must be parsed as valid JSON. it consists of topics, each topic
 
 ## dynamic app structure
 
+### selected topics
+
+indecies identical to topics
+
+```json
+[true, false]
+```
+
 ### tokens

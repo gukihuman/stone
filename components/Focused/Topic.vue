@@ -20,9 +20,8 @@
     <div class="flex-grow" />
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700">
-      <div class="flex p-3 justify-between">
-        <div></div>
-        <ButtonLight @click()="emit('remove-item')"> remove</ButtonLight>
+      <div class="flex p-3 justify-end">
+        <ButtonLight @click="emit('remove-topic')"> remove</ButtonLight>
       </div>
     </div>
   </div>
@@ -32,7 +31,7 @@
 const props = defineProps(["topic"])
 const emit = defineEmits([
   "update-topic",
-  "remove-item",
+  "remove-topic",
   "lock-hotkeys",
   "unlock-hotkeys",
 ])

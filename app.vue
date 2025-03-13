@@ -29,19 +29,22 @@
         ref="focusedRef"
         :topic="getFocusedTopic()"
         @update-topic="updateFocusedTopic"
-        @remove-item="removeFocusedTopic"
+        @remove-topic="removeFocusedTopic"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
       <Topics
         :topics="topics"
+        :selected="appState.selectedTopics || []"
         :focused-index="
           appState.focusedList === 'topics' ? appState.focusedIndex : null
         "
         @new-topic="newTopic"
-        @toggle-topic-focus="toggleTopicFocus"
-        @sort-topic-up="sortTopicUp"
-        @sort-topic-down="sortTopicDown"
+        @toggle-focus="toggleTopicFocus"
+        @toggle-select="toggleTopicSelect"
+        @toggle-select-all="toggleSelectAllTopics"
+        @sort-up="sortTopic(1)"
+        @sort-down="sortTopic(-1)"
       />
     </div>
     <!-- # bot ---------------------------------------------------------------->
@@ -117,7 +120,6 @@ function updateFocusedEvent([key, value]) {
 function removeFocusedEvent() {
   lastRemovedEvent = getFocusedEvent()
   events.removeDBSync(getFocusedEvent())
-  appState.upsertDBSync("focusedIndex", null)
 }
 function restoreEvent() {
   events.upsertDBSync(lastRemovedEvent)
@@ -128,6 +130,8 @@ function restoreEvent() {
 function newTopic() {
   topics.insertDBSync("topic")
   toggleTopicFocus(topics.length - 1)
+  appState.selectedTopics.push(true)
+  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function toggleTopicFocus(i) {
   const same = appState.focusedList === "topics" && appState.focusedIndex === i
@@ -140,27 +144,33 @@ function updateFocusedTopic(topic) {
 }
 function removeFocusedTopic() {
   topics.removeDBSync(getFocusedTopic())
-  appState.upsertDBSync("focusedIndex", null)
-  appState.upsertDBSync("focusedList", null)
 }
-function sortTopicUp() {
+function toggleTopicSelect(i) {
+  appState.selectedTopics[i] = !appState.selectedTopics[i]
+  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
+}
+function toggleSelectAllTopics() {
+  const value = appState.selectedTopics.every((is) => is) ? false : true
+  appState.selectedTopics = appState.selectedTopics.map(() => value)
+  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
+}
+function sortTopic(direction) {
   const index = topics.indexOf(getFocusedTopic())
-  if (index === topics.length - 1) return
+  if (direction > 0 && index === topics.length - 1) return
+  if (direction < 0 && index === 0) return
+  const newIndex = index + direction
+
   const topic = topics[index]
   topics.splice(index, 1)
-  topics.splice(index + 1, 0, topic)
+  topics.splice(newIndex, 0, topic)
   topics.updateDBSync()
-  appState.upsertDBSync("focusedIndex", index + 1)
-}
-function sortTopicDown() {
-  const index = topics.indexOf(getFocusedTopic())
-  console.log(index)
-  if (index === 0) return
-  const topic = topics[index]
-  topics.splice(index, 1)
-  topics.splice(index - 1, 0, topic)
-  topics.updateDBSync()
-  appState.upsertDBSync("focusedIndex", index - 1)
+
+  const isSelected = appState.selectedTopics[index]
+  appState.selectedTopics.splice(index, 1)
+  appState.selectedTopics.splice(newIndex, 0, isSelected)
+
+  appState.upsertDBSync("focusedIndex", newIndex)
+  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 ///////////////////////////////// helpers //////////////////////////////////////
 function getFocusedTopic() {
@@ -185,6 +195,7 @@ async function onFileLoad() {
     await Promise.all(loadedData.topics.map((t) => topics.insertDBSync(t)))
 
     const entries = Object.entries(loadedData.appState)
+    console.log(loadedData.appState)
     await Promise.all(entries.map(([key, v]) => appState.upsertDBSync(key, v)))
     console.log(`⏬ data loaded from file [${timestamp()}]`)
 

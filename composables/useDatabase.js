@@ -2,7 +2,7 @@ import { openDB } from "idb"
 
 export default function useDatabase() {
   const DB_VERSION = 1
-  const DEFAULT_APP_FIELDS = { focusedEditField: "text" }
+  const DEFAULT_APP_FIELDS = { focusedEditField: "text", selectedTopics: [] }
 
   const events = reactive([]) // sorted by date
   const topics = reactive([])
@@ -50,6 +50,8 @@ export default function useDatabase() {
   events.removeDBSync = async function (event) {
     const index = events.findIndex((e) => e.id === event.id)
     if (index >= 0) events.splice(index, 1)
+    appState.upsertDBSync("focusedIndex", null)
+    appState.upsertDBSync("focusedList", null)
 
     const db = await initDB()
     const tx = db.transaction("events", "readwrite")
@@ -102,6 +104,10 @@ export default function useDatabase() {
     const index = topics.indexOf(topic)
     if (index < 0) return
     topics.splice(index, 1)
+    appState.selectedTopics.splice(index, 1)
+    appState.upsertDBSync("selectedTopics", appState.selectedTopics)
+    appState.upsertDBSync("focusedIndex", null)
+    appState.upsertDBSync("focusedList", null)
 
     const db = await initDB()
     const tx = db.transaction("topics", "readwrite")
@@ -131,7 +137,7 @@ export default function useDatabase() {
 
     stateRaw.forEach(({ key, value }) => (appState[key] = value))
     Object.entries(DEFAULT_APP_FIELDS).forEach(([key, value]) => {
-      if (!appState[key]) appState[key] = value
+      if (!appState[key]) appState.upsertDBSync(key, value)
     })
     console.log(`⏬ app state loaded from db [${timestamp()}]`)
   }
@@ -141,7 +147,7 @@ export default function useDatabase() {
     const db = await initDB()
     const tx = db.transaction("appState", "readwrite")
     const store = tx.objectStore("appState")
-    await store.put({ key, value })
+    await store.put({ key, value: toRaw(value) })
     await tx.done
     console.log(`⏬ app state upsert to db: ${key} [${timestamp()}]`)
   }
