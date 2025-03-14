@@ -54,6 +54,9 @@
 .bg-stone-450 {
   background-color: rgb(144, 137, 133);
 }
+.bg-stone-550 {
+  background-color: rgb(98, 92, 87);
+}
 [contenteditable] {
   white-space: pre-wrap;
 }

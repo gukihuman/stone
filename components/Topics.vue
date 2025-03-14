@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[250px] flex flex-col gap-3 flex-shrink-0">
+  <div class="w-[280px] flex flex-col gap-3 flex-shrink-0">
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
@@ -23,18 +23,27 @@
         >
           new
         </button>
-        <div
-          v-if="selected.length"
-          class="flex-shrink-0 flex items-center justify-center cursor-pointer px-3"
-          @click="emit('toggle-select-all')"
-        >
+        <div v-if="selected.length" class="flex px-[10px]">
           <div
-            class="flex items-center justify-center rounded-full size-5 bg-stone-600"
+            v-for="state in [0, 1, null]"
+            class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
+            @click="emit('toggle-select-all', state)"
           >
             <div
-              class="rounded-full size-3"
-              :class="{ 'bg-stone-300/80': selected.every((is) => is) }"
-            />
+              class="flex items-center justify-center rounded-full size-5 bg-stone-600"
+            >
+              <div
+                class="rounded-full size-3"
+                :class="{
+                  'bg-stone-300':
+                    state === 0 && selected.every((is) => is === 0),
+                  'bg-stone-400':
+                    state === 1 && selected.every((is) => is === 1),
+                  'bg-stone-500':
+                    state === null && selected.every((is) => is === null),
+                }"
+              />
+            </div>
           </div>
         </div>
         <div v-else class="w-[82px]" />
@@ -53,17 +62,24 @@
             >
               <span class="truncate">{{ topic }}</span>
             </ButtonList>
-            <div
-              class="flex-shrink-0 flex items-center justify-center cursor-pointer pl-3 pr-1"
-              @click="emit('toggle-select', i)"
-            >
+            <div class="flex pr-[2px]">
               <div
-                class="flex items-center justify-center rounded-full size-5 bg-stone-600"
+                v-for="state in [0, 1, null]"
+                class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
+                @click="emit('toggle-select', i, state)"
               >
                 <div
-                  class="rounded-full size-3"
-                  :class="{ 'bg-stone-300/80': selected[i] }"
-                />
+                  class="flex items-center justify-center rounded-full size-5 bg-stone-550"
+                >
+                  <div
+                    class="rounded-full size-3"
+                    :class="{
+                      'bg-stone-300': state === 0 && selected[i] === 0,
+                      'bg-stone-400': state === 1 && selected[i] === 1,
+                      'bg-stone-500': state === null && selected[i] === null,
+                    }"
+                  />
+                </div>
               </div>
             </div>
           </div>

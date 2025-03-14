@@ -130,7 +130,7 @@ function restoreEvent() {
 function newTopic() {
   topics.insertDBSync("topic")
   toggleTopicFocus(topics.length - 1)
-  appState.selectedTopics.push(true)
+  appState.selectedTopics.push(1)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function toggleTopicFocus(i) {
@@ -145,13 +145,12 @@ function updateFocusedTopic(topic) {
 function removeFocusedTopic() {
   topics.removeDBSync(getFocusedTopic())
 }
-function toggleTopicSelect(i) {
-  appState.selectedTopics[i] = !appState.selectedTopics[i]
+function toggleTopicSelect(i, state) {
+  appState.selectedTopics[i] = state
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
-function toggleSelectAllTopics() {
-  const value = appState.selectedTopics.every((is) => is) ? false : true
-  appState.selectedTopics = appState.selectedTopics.map(() => value)
+function toggleSelectAllTopics(state) {
+  appState.selectedTopics = appState.selectedTopics.map(() => state)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function sortTopic(direction) {
@@ -165,9 +164,9 @@ function sortTopic(direction) {
   topics.splice(newIndex, 0, topic)
   topics.updateDBSync()
 
-  const isSelected = appState.selectedTopics[index]
+  const selectState = appState.selectedTopics[index]
   appState.selectedTopics.splice(index, 1)
-  appState.selectedTopics.splice(newIndex, 0, isSelected)
+  appState.selectedTopics.splice(newIndex, 0, selectState)
 
   appState.upsertDBSync("focusedIndex", newIndex)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
