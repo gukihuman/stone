@@ -17,9 +17,11 @@
         :event="getFocusedEvent()"
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
+        :is-copy-make-memory-locked="isCopyMakeMemoryLocked"
         @update-event="updateFocusedEvent"
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
+        @copy-make-memory="onCopyMakeMemory"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
@@ -70,22 +72,27 @@
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
 const { events, topics, appState } = useDatabase()
 
+// els refs
+const focusedRef = ref(null)
+
+// reactive
+const isCopyMakeMemoryLocked = ref(null)
+
 // regular
 let lastRemovedEvent = null
 let cleanupHotkeys
 const hotkeys = {
   w: () => toggleEventFocus(events.length - 1),
-  i: () => scrollToTop(focusedRef.value?.textareaEl),
-  g: () => scrollToBot(focusedRef.value?.textareaEl),
   u: () => focusedRef.value?.focusName(),
   o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
+  g: () => scrollToBot(focusedRef.value?.textareaEl),
+  i: () => scrollToTop(focusedRef.value?.textareaEl),
+
   h: () => appState.upsertDBSync("focusedEditField", "text"),
   t: () => appState.upsertDBSync("focusedEditField", "memoryRaw"),
+  l: () => onCopyMakeMemory(),
 }
-
-// reactive
-const focusedRef = ref(null)
 
 onMounted(() => {
   events.loadFromDB()
@@ -145,12 +152,12 @@ function updateFocusedTopic(topic) {
 function removeFocusedTopic() {
   topics.removeDBSync(getFocusedTopic())
 }
-function toggleTopicSelect(i, state) {
-  appState.selectedTopics[i] = state
+function toggleTopicSelect(i, level) {
+  appState.selectedTopics[i] = level
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
-function toggleSelectAllTopics(state) {
-  appState.selectedTopics = appState.selectedTopics.map(() => state)
+function toggleSelectAllTopics(level) {
+  appState.selectedTopics = appState.selectedTopics.map(() => level)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function sortTopic(direction) {
@@ -180,6 +187,36 @@ function getFocusedEvent() {
   if (appState.focusedList !== "events") return null
   return events[appState.focusedIndex] || null
 }
+/////////////////////////////////// copy ///////////////////////////////////////
+async function onCopyMakeMemory() {
+  if (!getFocusedEvent()) return
+  copyToClipboard(
+    await promptMakeMemory(
+      events,
+      topics,
+      appState.selectedTopics,
+      getFocusedEvent()
+    ),
+    isCopyMakeMemoryLocked
+  )
+}
+/////////////////////////////////// gen ////////////////////////////////////////
+// async function onGenNow() {
+//   genNowLocked.value = true
+//   genEventId = focusedIndex.value
+//   genEventMod = EVENT_MOD_TYPES.TEXT
+
+//   const editEvent = eventsById.value[focusedIndex.value]
+//   editEvent.text += "\n\nJane\n"
+//   onNextChunk() // to see Jane addition immideately
+//   await genWithMistral(await getPromptCopyNow(), editEvent, "text", onNextChunk)
+//   editEvent.text += "\n\nGuki\n"
+//   onNextChunk() // one last time to update Guki addition
+
+//   genEventMod = null
+//   genEventId = null
+//   genNowLocked.value = false
+// }
 ////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
@@ -206,7 +243,7 @@ async function onFileLoad() {
 ///////////////////////////////// fallback /////////////////////////////////////
 
 // const copyLockedNow = ref(false)
-// const copyLockedMakeMemory = ref(false)
+// const isCopyMakeMemoryLocked = ref(false)
 // const copyLockedMakeTopicIds = ref(false)
 // const genNowLocked = ref(false)
 // const genMakeMemoryLocked = ref(false)

@@ -25,9 +25,9 @@
         </button>
         <div v-if="selected.length" class="flex px-[10px]">
           <div
-            v-for="state in [0, 1, null]"
+            v-for="level in [0, 1, null]"
             class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-            @click="emit('toggle-select-all', state)"
+            @click="emit('toggle-select-all', level)"
           >
             <div
               class="flex items-center justify-center rounded-full size-5 bg-stone-600"
@@ -36,11 +36,11 @@
                 class="rounded-full size-3"
                 :class="{
                   'bg-stone-300':
-                    state === 0 && selected.every((is) => is === 0),
+                    level === 0 && selected.every((is) => is === 0),
                   'bg-stone-400':
-                    state === 1 && selected.every((is) => is === 1),
+                    level === 1 && selected.every((is) => is === 1),
                   'bg-stone-500':
-                    state === null && selected.every((is) => is === null),
+                    level === null && selected.every((is) => is === null),
                 }"
               />
             </div>
@@ -64,9 +64,9 @@
             </ButtonList>
             <div class="flex pr-[2px]">
               <div
-                v-for="state in [0, 1, null]"
+                v-for="level in [0, 1, null]"
                 class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-                @click="emit('toggle-select', i, state)"
+                @click="emit('toggle-select', i, level)"
               >
                 <div
                   class="flex items-center justify-center rounded-full size-5 bg-stone-550"
@@ -74,9 +74,9 @@
                   <div
                     class="rounded-full size-3"
                     :class="{
-                      'bg-stone-300': state === 0 && selected[i] === 0,
-                      'bg-stone-400': state === 1 && selected[i] === 1,
-                      'bg-stone-500': state === null && selected[i] === null,
+                      'bg-stone-300': level === 0 && selected[i] === 0,
+                      'bg-stone-400': level === 1 && selected[i] === 1,
+                      'bg-stone-500': level === null && selected[i] === null,
                     }"
                   />
                 </div>

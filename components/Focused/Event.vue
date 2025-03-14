@@ -54,6 +54,17 @@
           :states="editFields"
           @change="emit('update-app-state', 'focusedEditField', editField)"
         />
+        <div class="flex gap-2">
+          <p class="text-stone-400 cursor-default">make memory</p>
+          <p>
+            <ButtonLight
+              @click="emit('copy-make-memory')"
+              :disabled="isCopyMakeMemoryLocked"
+              >copy</ButtonLight
+            >
+          </p>
+        </div>
+
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>
     </div>
@@ -61,11 +72,17 @@
 </template>
 
 <script setup>
-const props = defineProps(["event", "editField", "editFields"])
+const props = defineProps([
+  "event",
+  "editField",
+  "editFields",
+  "isCopyMakeMemoryLocked",
+])
 const emit = defineEmits([
   "update-event",
   "remove-event",
   "update-app-state",
+  "copy-make-memory",
   "lock-hotkeys",
   "unlock-hotkeys",
 ])

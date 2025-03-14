@@ -30,7 +30,7 @@ memoryRaw string must be parsed as valid JSON. it consists of topics, each topic
 ### topics
 
 ```json
-["general", "my core identity and behavior"]
+["general", "my core identity and behavior", "my memory structure", "our plans"]
 ```
 
 ### appState
@@ -47,10 +47,10 @@ memoryRaw string must be parsed as valid JSON. it consists of topics, each topic
 
 ### selected topics
 
-indecies identical to topics
+indecies identical to topics. values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memoryRaw topics
 
 ```json
-[true, false]
+[0, 1, null, 1]
 ```
 
 ### tokens
