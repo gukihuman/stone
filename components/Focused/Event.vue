@@ -54,8 +54,9 @@
           :states="editFields"
           @change="emit('update-app-state', 'focusedEditField', editField)"
         />
-        <div class="flex gap-2">
-          <p class="text-stone-400 cursor-default">make memory</p>
+        <div class="w-[300px] flex gap-2 text-stone-400 justify-end">
+          <PrettyNum :number="copyMakeMemoryTokens" />
+          <p class="cursor-default">make memory</p>
           <p>
             <ButtonLight
               @click="emit('copy-make-memory')"
@@ -64,7 +65,6 @@
             >
           </p>
         </div>
-
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>
     </div>
@@ -77,6 +77,7 @@ const props = defineProps([
   "editField",
   "editFields",
   "isCopyMakeMemoryLocked",
+  "copyMakeMemoryTokens",
 ])
 const emit = defineEmits([
   "update-event",

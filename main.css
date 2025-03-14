@@ -51,6 +51,9 @@
   );
   background-size: 100% 28px;
 }
+.text-stone-450 {
+  color: rgb(144, 137, 133);
+}
 .bg-stone-450 {
   background-color: rgb(144, 137, 133);
 }

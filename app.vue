@@ -18,6 +18,7 @@
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
         :is-copy-make-memory-locked="isCopyMakeMemoryLocked"
+        :copy-make-memory-tokens="copyMakeMemoryTokens"
         @update-event="updateFocusedEvent"
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
@@ -77,6 +78,11 @@ const focusedRef = ref(null)
 
 // reactive
 const isCopyMakeMemoryLocked = ref(null)
+const copyMakeMemoryTokens = computed(() => {
+  return getTokens(
+    promptMakeMemory(events, topics, appState.selectedTopics, getFocusedEvent())
+  )
+})
 
 // regular
 let lastRemovedEvent = null
