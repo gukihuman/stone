@@ -54,16 +54,19 @@
           :states="editFields"
           @change="emit('update-app-state', 'focusedEditField', editField)"
         />
-        <div class="w-[300px] flex gap-2 text-stone-400 justify-end">
+        <div class="w-[320px] flex gap-2 text-stone-400 justify-end">
           <PrettyNum :number="copyMakeMemoryTokens" />
           <p class="cursor-default">make memory</p>
-          <p>
-            <ButtonLight
-              @click="emit('copy-make-memory')"
-              :disabled="isCopyMakeMemoryLocked"
-              >copy</ButtonLight
-            >
-          </p>
+          <ButtonLight
+            @click="emit('copy-make-memory')"
+            :disabled="isCopyMakeMemoryLocked"
+            >copy
+          </ButtonLight>
+          <ButtonLight
+            @click="emit('gen-make-memory')"
+            :disabled="isGenMakeMemoryLocked"
+            >gen
+          </ButtonLight>
         </div>
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>
@@ -77,6 +80,7 @@ const props = defineProps([
   "editField",
   "editFields",
   "isCopyMakeMemoryLocked",
+  "isGenMakeMemoryLocked",
   "copyMakeMemoryTokens",
 ])
 const emit = defineEmits([
@@ -84,6 +88,7 @@ const emit = defineEmits([
   "remove-event",
   "update-app-state",
   "copy-make-memory",
+  "gen-make-memory",
   "lock-hotkeys",
   "unlock-hotkeys",
 ])
@@ -111,6 +116,11 @@ const textarea = ref(props.event?.[props.editField])
 watch(
   () => props.editField,
   (newValue) => (editField.value = newValue)
+)
+watch(
+  () => props.event,
+  (newValue) => (textarea.value = newValue[props.editField]),
+  { deep: true }
 )
 defineExpose({
   textareaEl,

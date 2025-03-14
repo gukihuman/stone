@@ -18,11 +18,13 @@
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
         :is-copy-make-memory-locked="isCopyMakeMemoryLocked"
+        :is-gen-make-memory-locked="isGenMakeMemoryLocked"
         :copy-make-memory-tokens="copyMakeMemoryTokens"
         @update-event="updateFocusedEvent"
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
         @copy-make-memory="onCopyMakeMemory"
+        @gen-make-memory="onGenMakeMemory"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
@@ -78,6 +80,8 @@ const focusedRef = ref(null)
 
 // reactive
 const isCopyMakeMemoryLocked = ref(null)
+const isGenMakeMemoryLocked = ref(null)
+
 const copyMakeMemoryTokens = computed(() => {
   return getTokens(
     promptMakeMemory(events, topics, appState.selectedTopics, getFocusedEvent())
@@ -194,10 +198,10 @@ function getFocusedEvent() {
   return events[appState.focusedIndex] || null
 }
 /////////////////////////////////// copy ///////////////////////////////////////
-async function onCopyMakeMemory() {
+function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
   copyToClipboard(
-    await promptMakeMemory(
+    promptMakeMemory(
       events,
       topics,
       appState.selectedTopics,
@@ -207,22 +211,33 @@ async function onCopyMakeMemory() {
   )
 }
 /////////////////////////////////// gen ////////////////////////////////////////
-// async function onGenNow() {
-//   genNowLocked.value = true
-//   genEventId = focusedIndex.value
-//   genEventMod = EVENT_MOD_TYPES.TEXT
-
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   editEvent.text += "\n\nJane\n"
-//   onNextChunk() // to see Jane addition immideately
-//   await genWithMistral(await getPromptCopyNow(), editEvent, "text", onNextChunk)
-//   editEvent.text += "\n\nGuki\n"
-//   onNextChunk() // one last time to update Guki addition
-
-//   genEventMod = null
-//   genEventId = null
-//   genNowLocked.value = false
-// }
+async function onGenMakeMemory() {
+  getFocusedEvent().memoryRaw = ""
+  await gen(
+    promptMakeMemory(
+      events,
+      topics,
+      appState.selectedTopics,
+      getFocusedEvent()
+    ),
+    getFocusedEvent(),
+    "memoryRaw",
+    isGenMakeMemoryLocked,
+    onNextMakeMemoryChunk,
+    "json"
+  )
+}
+function onNextMakeMemoryChunk(genEvent) {
+  events.tUpsertDBSync(genEvent)
+  // if (genEventId === focusedIndex.value && genEventMod === eventMod.value) {
+  //   updatePaperOnNextChunk()
+  //   throttledUpdateMemories(getFocusedEvent())
+  // }
+  // if (genTopicId === editTopicId.value && genTopicMod === editTopicMod.value) {
+  //   updatePaperOnNextChunk()
+  //   throttledUpdateTopics(getFocusedTopic())
+  // }
+}
 ////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
@@ -252,7 +267,7 @@ async function onFileLoad() {
 // const isCopyMakeMemoryLocked = ref(false)
 // const copyLockedMakeTopicIds = ref(false)
 // const genNowLocked = ref(false)
-// const genMakeMemoryLocked = ref(false)
+// const isGenMakeMemoryLocked = ref(false)
 // const genMakeTopicIdsLocked = ref(false)
 
 // const tokensForNow = ref(0)
@@ -272,12 +287,12 @@ async function onFileLoad() {
 //   }, 0)
 // })
 // const totalRecentMemories = computed(() => {
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   if (!editEvent) return
+//   const getFocusedEvent() = eventsById.value[focusedIndex.value]
+//   if (!getFocusedEvent()) return
 //   return Object.values(eventsById.value).reduce((sum, e) => {
 //     if (
-//       editEvent.sort > e.sort &&
-//       e.sort >= Math.max(editEvent.sort - recentEventLimit.value, 0)
+//       getFocusedEvent().sort > e.sort &&
+//       e.sort >= Math.max(getFocusedEvent().sort - recentEventLimit.value, 0)
 //     ) {
 //       return sum + e.memoryIds.length
 //     }
@@ -341,33 +356,17 @@ async function onFileLoad() {
 //     recentEventLimit.value
 //   )
 // }
-// async function onGenNow() {
-//   genNowLocked.value = true
-//   genEventId = focusedIndex.value
-//   genEventMod = EVENT_MOD_TYPES.TEXT
-
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   editEvent.text += "\n\nJane\n"
-//   onNextChunk() // to see Jane addition immideately
-//   await genWithMistral(await getPromptCopyNow(), editEvent, "text", onNextChunk)
-//   editEvent.text += "\n\nGuki\n"
-//   onNextChunk() // one last time to update Guki addition
-
-//   genEventMod = null
-//   genEventId = null
-//   genNowLocked.value = false
-// }
-// function onNextChunk() {
-//   const editEvent = eventsById.value[focusedIndex.value]
-//   const editTopic = topicsById.value[editTopicId.value]
+// function onNextMakeMemoryChunk() {
+//   const getFocusedEvent() = eventsById.value[focusedIndex.value]
+//   const getFocusedTopic() = topicsById.value[editTopicId.value]
 //   throttledLocalStorageSave()
 //   if (genEventId === focusedIndex.value && genEventMod === eventMod.value) {
 //     updatePaperOnNextChunk()
-//     throttledUpdateMemories(editEvent)
+//     throttledUpdateMemories(getFocusedEvent())
 //   }
 //   if (genTopicId === editTopicId.value && genTopicMod === editTopicMod.value) {
 //     updatePaperOnNextChunk()
-//     throttledUpdateTopics(editTopic)
+//     throttledUpdateTopics(getFocusedTopic())
 //   }
 // }
 // function updatePaperOnNextChunk() {

@@ -47,6 +47,8 @@ export default function useDatabase() {
     await tx.done
     console.log(`⏬ event upsert to db [${timestamp()}]`)
   }
+  events.tUpsertDBSync = throttle((event) => events.upsertDBSync(event))
+
   events.removeDBSync = async function (event) {
     const index = events.findIndex((e) => e.id === event.id)
     if (index >= 0) events.splice(index, 1)

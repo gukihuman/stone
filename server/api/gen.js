@@ -1,7 +1,7 @@
 import { ChatMistralAI } from "@langchain/mistralai"
 import { HumanMessage } from "@langchain/core/messages"
 
-export default defineEventHandler(async (event, json) => {
+export default defineEventHandler(async (event) => {
   const { input } = await readBody(event)
   const llmModel = new ChatMistralAI({
     model: "mistral-large-latest",
