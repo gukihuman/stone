@@ -40,6 +40,7 @@
       />
       <Topics
         :topics="topics"
+        :events="events"
         :selected="appState.selectedTopics || []"
         :focused-index="
           appState.focusedList === 'topics' ? appState.focusedIndex : null
@@ -82,11 +83,7 @@ const focusedRef = ref(null)
 const isCopyMakeMemoryLocked = ref(null)
 const isGenMakeMemoryLocked = ref(null)
 
-const copyMakeMemoryTokens = computed(() => {
-  return getTokens(
-    promptMakeMemory(events, topics, appState.selectedTopics, getFocusedEvent())
-  )
-})
+const copyMakeMemoryTokens = computed(() => getTokens(getPromptMakeMemory()))
 
 // regular
 let lastRemovedEvent = null
@@ -188,15 +185,6 @@ function sortTopic(direction) {
   appState.upsertDBSync("focusedIndex", newIndex)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
-///////////////////////////////// helpers //////////////////////////////////////
-function getFocusedTopic() {
-  if (appState.focusedList !== "topics") return null
-  return topics[appState.focusedIndex] || null
-}
-function getFocusedEvent() {
-  if (appState.focusedList !== "events") return null
-  return events[appState.focusedIndex] || null
-}
 /////////////////////////////////// copy ///////////////////////////////////////
 function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
@@ -213,30 +201,14 @@ function onCopyMakeMemory() {
 /////////////////////////////////// gen ////////////////////////////////////////
 async function onGenMakeMemory() {
   getFocusedEvent().memoryRaw = ""
-  await gen(
-    promptMakeMemory(
-      events,
-      topics,
-      appState.selectedTopics,
-      getFocusedEvent()
-    ),
-    getFocusedEvent(),
-    "memoryRaw",
-    isGenMakeMemoryLocked,
-    onNextMakeMemoryChunk,
-    "json"
-  )
-}
-function onNextMakeMemoryChunk(genEvent) {
-  events.tUpsertDBSync(genEvent)
-  // if (genEventId === focusedIndex.value && genEventMod === eventMod.value) {
-  //   updatePaperOnNextChunk()
-  //   throttledUpdateMemories(getFocusedEvent())
-  // }
-  // if (genTopicId === editTopicId.value && genTopicMod === editTopicMod.value) {
-  //   updatePaperOnNextChunk()
-  //   throttledUpdateTopics(getFocusedTopic())
-  // }
+  await gen({
+    message: getPromptMakeMemory(),
+    genEvent: getFocusedEvent(),
+    field: "memoryRaw",
+    genLocked: isGenMakeMemoryLocked,
+    onNextChunk: events.tUpsertDBSync,
+    responseType: "json",
+  })
 }
 ////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
@@ -260,6 +232,23 @@ async function onFileLoad() {
     appState.upsertDBSync("focusedIndex", null)
     appState.upsertDBSync("focusedList", null)
   })
+}
+///////////////////////////////// helpers //////////////////////////////////////
+function getPromptMakeMemory() {
+  return promptMakeMemory(
+    events,
+    topics,
+    appState.selectedTopics,
+    getFocusedEvent()
+  )
+}
+function getFocusedTopic() {
+  if (appState.focusedList !== "topics") return null
+  return topics[appState.focusedIndex] || null
+}
+function getFocusedEvent() {
+  if (appState.focusedList !== "events") return null
+  return events[appState.focusedIndex] || null
 }
 ///////////////////////////////// fallback /////////////////////////////////////
 

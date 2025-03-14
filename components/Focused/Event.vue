@@ -55,7 +55,7 @@
           @change="emit('update-app-state', 'focusedEditField', editField)"
         />
         <div class="w-[320px] flex gap-2 text-stone-400 justify-end">
-          <PrettyNum :number="copyMakeMemoryTokens" />
+          <PrettyNum :number="copyMakeMemoryTokens" theme="dark" />
           <p class="cursor-default">make memory</p>
           <ButtonLight
             @click="emit('copy-make-memory')"

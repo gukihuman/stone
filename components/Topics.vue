@@ -23,6 +23,7 @@
         >
           new
         </button>
+        <!-- ## circles top menu ---------------------------------------------->
         <div v-if="selected.length" class="flex px-[10px]">
           <div
             v-for="level in [0, 1, null]"
@@ -61,7 +62,12 @@
               @click="emit('toggle-focus', i)"
             >
               <span class="truncate">{{ topic }}</span>
+              <PrettyNum
+                :number="getTokens(getMemories(topic))"
+                theme="light"
+              />
             </ButtonList>
+            <!-- ## circles list ---------------------------------------------->
             <div class="flex pr-[2px]">
               <div
                 v-for="level in [0, 1, null]"
@@ -89,7 +95,7 @@
   </div>
 </template>
 <script setup>
-const props = defineProps(["topics", "selected", "focusedIndex"])
+const props = defineProps(["topics", "events", "selected", "focusedIndex"])
 const emit = defineEmits([
   "new-topic",
   "toggle-focus",
@@ -101,4 +107,17 @@ const emit = defineEmits([
 
 // els refs
 const listEl = ref(null)
+
+////////////////////////////////////////////////////////////////////////////////
+function getMemories(topic) {
+  return props.events.reduce((acc, event) => {
+    const topicIndex = props.topics.indexOf(topic)
+    try {
+      const memory = JSON.parse(event.memoryRaw)
+      const topicMemory = memory[topic]?.[props.selected[topicIndex]]
+      if (topicMemory) acc = [acc, topicMemory].join("\n\n")
+    } catch (e) {}
+    return acc
+  }, "")
+}
 </script>

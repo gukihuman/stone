@@ -1,21 +1,32 @@
 <template>
-  <div class="flex gap-1 pr-[1px] flex-shrink-0">
+  <div
+    class="flex h-6 pb-1 pr-[1px] flex-shrink-0"
+    :class="theme === 'light' ? 'gap-[2px]' : 'gap-1'"
+  >
     <div
       v-for="(group, i) in groups"
       :key="i"
-      class="h-7 flex items-center"
-      :class="{
-        'text-lg pb-[2px] text-stone-400': i === groups.length - 3,
-        'text-[17px] pb-[1px] text-stone-400': i === groups.length - 2,
-        'text-stone-450': i === groups.length - 1,
-      }"
+      class="w-7 h-6 flex justify-end items-center font-semibold"
+      :class="
+        theme === 'light'
+          ? [
+              i === groups.length - 3 ? 'text-lg text-stone-350' : '',
+              i === groups.length - 2 ? 'text-[15px] text-stone-350' : '',
+              i === groups.length - 1 ? 'text-sm pt-[1px] text-stone-400' : '',
+            ]
+          : [
+              i === groups.length - 3 ? 'text-lg text-stone-400' : '',
+              i === groups.length - 2 ? 'text-[17px] text-stone-400' : '',
+              i === groups.length - 1 ? 'pt-[1px] text-stone-450' : '',
+            ]
+      "
     >
       {{ group }}
     </div>
   </div>
 </template>
 <script setup>
-const props = defineProps(["number"])
+const props = defineProps(["number", "theme"])
 
 const groups = computed(() => {
   if (props.number === 0) return [""]

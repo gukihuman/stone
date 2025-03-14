@@ -14,12 +14,13 @@
     <!-- # list --------------------------------------------------------------->
     <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
       <div class="flex flex-col-reverse">
-        <div v-for="({ name }, index) in events" :key="`event-${index}`">
+        <div v-for="({ name, text }, index) in events" :key="`event-${index}`">
           <ButtonList
             :active="focusedIndex === index"
             @click="emit('toggle-event-focus', index)"
           >
             <span class="truncate">{{ name }}</span>
+            <PrettyNum :number="getTokens(text)" theme="light" />
           </ButtonList>
         </div>
       </div>

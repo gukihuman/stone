@@ -1,12 +1,12 @@
 // genEvent and field used to preserve reactive mutability
-export default async function (
+export default async function ({
   message,
   genEvent,
   field,
   genLocked,
   onNextChunk,
-  responseType = "string"
-) {
+  responseType,
+}) {
   genLocked.value = true
   const response = await fetch("/api/gen", {
     method: "POST",
