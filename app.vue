@@ -29,7 +29,7 @@
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
       <FocusedTopic
-        v-else-if="getFocusedTopic()"
+        v-else-if="getFocusedTopic() !== null"
         :key="`focused-topic-${appState.focusedIndex}`"
         ref="focusedRef"
         :topic="getFocusedTopic()"
@@ -244,7 +244,7 @@ function getPromptMakeMemory() {
 }
 function getFocusedTopic() {
   if (appState.focusedList !== "topics") return null
-  return topics[appState.focusedIndex] || null
+  return topics[appState.focusedIndex]
 }
 function getFocusedEvent() {
   if (appState.focusedList !== "events") return null

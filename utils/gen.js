@@ -31,7 +31,6 @@ export default async function ({
       break // stop processing further chunks
     }
     if (capturing) {
-      console.log(onNextChunk)
       genEvent[field] += buffer
       onNextChunk(genEvent)
     }

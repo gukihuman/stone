@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex h-6 pb-1 pr-[1px] flex-shrink-0"
-    :class="theme === 'light' ? 'gap-[2px]' : 'gap-1'"
+    :class="theme === 'dark' ? 'gap-[3px]' : ''"
   >
     <div
       v-for="(group, i) in groups"
