@@ -17,12 +17,17 @@
         :event="getFocusedEvent()"
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
+        :is-copy-now-locked="isCopyNowLocked"
+        :is-gen-now-locked="isGenNowLocked"
         :is-copy-make-memory-locked="isCopyMakeMemoryLocked"
         :is-gen-make-memory-locked="isGenMakeMemoryLocked"
+        :copy-now-tokens="copyNowTokens"
         :copy-make-memory-tokens="copyMakeMemoryTokens"
         @update-event="updateFocusedEvent"
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
+        @copy-now="onCopyNow"
+        @gen-now="onGenNow"
         @copy-make-memory="onCopyMakeMemory"
         @gen-make-memory="onGenMakeMemory"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
@@ -80,10 +85,13 @@ const { events, topics, appState } = useDatabase()
 const focusedRef = ref(null)
 
 // reactive
+const isCopyNowLocked = ref(null)
+const isGenNowLocked = ref(null)
 const isCopyMakeMemoryLocked = ref(null)
 const isGenMakeMemoryLocked = ref(null)
 
 const copyMakeMemoryTokens = computed(() => getTokens(getPromptMakeMemory()))
+const copyNowTokens = computed(() => getTokens(getPromptNow()))
 
 // regular
 let lastRemovedEvent = null
@@ -99,6 +107,7 @@ const hotkeys = {
   h: () => appState.upsertDBSync("focusedEditField", "text"),
   t: () => appState.upsertDBSync("focusedEditField", "memoryRaw"),
   l: () => onCopyMakeMemory(),
+  y: () => onCopyNow(),
 }
 
 onMounted(() => {
@@ -186,19 +195,26 @@ function sortTopic(direction) {
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 /////////////////////////////////// copy ///////////////////////////////////////
+function onCopyNow() {
+  if (!getFocusedEvent()) return
+  copyToClipboard(getPromptNow(), isCopyNowLocked)
+}
 function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
-  copyToClipboard(
-    promptMakeMemory(
-      events,
-      topics,
-      appState.selectedTopics,
-      getFocusedEvent()
-    ),
-    isCopyMakeMemoryLocked
-  )
+  copyToClipboard(getPromptMakeMemory(), isCopyMakeMemoryLocked)
 }
 /////////////////////////////////// gen ////////////////////////////////////////
+async function onGenNow() {
+  console.log("of")
+  await gen({
+    message: getPromptNow(),
+    genEvent: getFocusedEvent(),
+    field: "text",
+    genLocked: isGenNowLocked,
+    onNextChunk: events.tUpsertDBSync,
+    responseType: "string",
+  })
+}
 async function onGenMakeMemory() {
   getFocusedEvent().memoryRaw = ""
   await gen({
@@ -234,6 +250,9 @@ async function onFileLoad() {
   })
 }
 ///////////////////////////////// helpers //////////////////////////////////////
+function getPromptNow() {
+  return promptNow(events, topics, appState.selectedTopics, getFocusedEvent())
+}
 function getPromptMakeMemory() {
   return promptMakeMemory(
     events,
@@ -250,124 +269,4 @@ function getFocusedEvent() {
   if (appState.focusedList !== "events") return null
   return events[appState.focusedIndex] || null
 }
-///////////////////////////////// fallback /////////////////////////////////////
-
-// const copyLockedNow = ref(false)
-// const isCopyMakeMemoryLocked = ref(false)
-// const copyLockedMakeTopicIds = ref(false)
-// const genNowLocked = ref(false)
-// const isGenMakeMemoryLocked = ref(false)
-// const genMakeTopicIdsLocked = ref(false)
-
-// const tokensForNow = ref(0)
-// const tokensForMakeMemory = ref(0)
-// const tokensForMakeTopicIds = ref(0)
-
-// const debouncedUpdateMemories = debounce(updateMemoriesWithNewIds)
-// const debouncedUpdateTopics = debounce(updateTopics)
-// const debouncedUpdateTokensForNow = debounce(updateTokensForNow)
-// const throttledUpdateMemories = throttle(updateMemoriesWithNewIds)
-// const throttledUpdateTopics = throttle(updateTopics)
-
-// const totalTopicMemories = computed(() => {
-//   return Object.values(topicsById.value).reduce((sum, topic) => {
-//     if (topic.selected) return sum + topic.memoryIds.length
-//     return sum
-//   }, 0)
-// })
-// const totalRecentMemories = computed(() => {
-//   const getFocusedEvent() = eventsById.value[focusedIndex.value]
-//   if (!getFocusedEvent()) return
-//   return Object.values(eventsById.value).reduce((sum, e) => {
-//     if (
-//       getFocusedEvent().sort > e.sort &&
-//       e.sort >= Math.max(getFocusedEvent().sort - recentEventLimit.value, 0)
-//     ) {
-//       return sum + e.memoryIds.length
-//     }
-//     return sum
-//   }, 0)
-// })
-// async function updateTokensForNow() {
-//   if (!focusedIndex.value) return
-//   tokensForNow.value = getTokens(await getPromptCopyNow())
-// }
-// function updateMemoriesWithNewIds(event) {
-//   event.memoryIds.forEach((id) => delete memoryRecordsById.value[id])
-//   event.memoryIds = []
-//   try {
-//     const parsedMemory = JSON.parse(event.memoryRecordsRaw)
-//     if (Array.isArray(parsedMemory)) {
-//       parsedMemory.forEach((item) => {
-//         const id = newId()
-//         event.memoryIds.push(id)
-//         memoryRecordsById.value[id] = item
-//       })
-//     } else {
-//       throw new Error("memory input must be a JSON array,")
-//     }
-//     console.log(`⏬ memoryRecordsRaw updated [${timestamp()}]`)
-//   } catch (error) {
-//     const resetString = "memory of this event has been reset"
-//     if (error instanceof SyntaxError) {
-//       console.log(`❗ invalid JSON format, ${resetString} [${timestamp()}]`)
-//     } else {
-//       console.log(`❗ ${error.message} ${resetString} [${timestamp()}]`)
-//     }
-//   }
-// }
-// function updateTopics(topic) {
-//   topic.memoryIds = []
-//   try {
-//     const parsedMemoryIds = JSON.parse(topic.memoryIdsRaw)
-//     if (Array.isArray(parsedMemoryIds)) {
-//       topic.memoryIds = parsedMemoryIds
-//     } else {
-//       throw new Error("topic input must be a JSON array,")
-//     }
-//     console.log(`⏬ topic updated [${timestamp()}]`)
-//   } catch (error) {
-//     const resetString = "topic has been reset"
-//     if (error instanceof SyntaxError) {
-//       console.log(`❗ invalid JSON format, ${resetString} [${timestamp()}]`)
-//     } else {
-//       console.log(`❗ ${error.message} ${resetString} [${timestamp()}]`)
-//     }
-//   }
-// }
-// async function getPromptCopyNow() {
-//   if (!focusedIndex.value) return
-//   return await promptNow(
-//     memoryRecordsById.value,
-//     topicsSorted.value,
-//     eventsSorted.value,
-//     eventsById.value[focusedIndex.value],
-//     recentEventLimit.value
-//   )
-// }
-// function onNextMakeMemoryChunk() {
-//   const getFocusedEvent() = eventsById.value[focusedIndex.value]
-//   const getFocusedTopic() = topicsById.value[editTopicId.value]
-//   throttledLocalStorageSave()
-//   if (genEventId === focusedIndex.value && genEventMod === eventMod.value) {
-//     updatePaperOnNextChunk()
-//     throttledUpdateMemories(getFocusedEvent())
-//   }
-//   if (genTopicId === editTopicId.value && genTopicMod === editTopicMod.value) {
-//     updatePaperOnNextChunk()
-//     throttledUpdateTopics(getFocusedTopic())
-//   }
-// }
-// function updatePaperOnNextChunk() {
-//   updateInputFields()
-//   nextTick(() => {
-//     const el = paperRef.value.screenRef
-//     if (el.scrollTop + el.clientHeight > el.scrollHeight - STICK_GEN_HEIGHT) {
-//       scrollToBot(el)
-//     }
-//   })
-// }
-// async function onCopyNow() {
-//   copyToClipboard(await getPromptCopyNow(), copyLockedNow)
-// }
 </script>

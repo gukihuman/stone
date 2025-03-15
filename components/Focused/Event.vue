@@ -48,13 +48,18 @@
     </div>
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700">
-      <div class="flex p-3 justify-between">
-        <Switch
-          v-model="editField"
-          :states="editFields"
-          @change="emit('update-app-state', 'focusedEditField', editField)"
-        />
-        <div class="w-[320px] flex gap-2 text-stone-400 justify-end">
+      <div class="flex p-3 border-b-[3px] border-dashed border-stone-600">
+        <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
+          <PrettyNum :number="copyNowTokens" theme="dark" />
+          <p class="cursor-default">now</p>
+          <ButtonLight @click="emit('copy-now')" :disabled="isCopyNowLocked"
+            >copy
+          </ButtonLight>
+          <ButtonLight @click="emit('gen-now')" :disabled="isGenNowLocked"
+            >gen
+          </ButtonLight>
+        </div>
+        <div class="w-[330px] flex gap-2 text-stone-400 justify-end">
           <PrettyNum :number="copyMakeMemoryTokens" theme="dark" />
           <p class="cursor-default">make memory</p>
           <ButtonLight
@@ -68,6 +73,13 @@
             >gen
           </ButtonLight>
         </div>
+      </div>
+      <div class="flex p-3 justify-between">
+        <Switch
+          v-model="editField"
+          :states="editFields"
+          @change="emit('update-app-state', 'focusedEditField', editField)"
+        />
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>
     </div>
@@ -79,14 +91,19 @@ const props = defineProps([
   "event",
   "editField",
   "editFields",
+  "isCopyNowLocked",
+  "isGenNowLocked",
   "isCopyMakeMemoryLocked",
   "isGenMakeMemoryLocked",
+  "copyNowTokens",
   "copyMakeMemoryTokens",
 ])
 const emit = defineEmits([
   "update-event",
   "remove-event",
   "update-app-state",
+  "copy-now",
+  "gen-now",
   "copy-make-memory",
   "gen-make-memory",
   "lock-hotkeys",
