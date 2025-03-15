@@ -6,7 +6,8 @@ const CONFIG = {
   jsonStringParsed: { start: '["', end: '"]', include: false },
 }
 export default async function ({
-  message,
+  model,
+  input,
   event,
   eventField,
   locked,
@@ -20,10 +21,8 @@ export default async function ({
 
   const response = await fetch("/api/gen", {
     method: "POST",
-    body: JSON.stringify({ input: message }),
-    headers: {
-      "Content-Type": "application/json",
-    },
+    body: JSON.stringify({ input, model }),
+    headers: { "Content-Type": "application/json" },
   })
 
   let capturing = config.start === "" ? true : false

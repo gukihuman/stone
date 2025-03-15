@@ -197,7 +197,7 @@ function sortTopic(direction) {
 function onCopyNow() {
   if (!getFocusedEvent()) return
   copyToClipboard({
-    message: getPromptNow(),
+    input: getPromptNow(),
     locked: isLocked.copy,
     lockedField: "now",
   })
@@ -205,7 +205,7 @@ function onCopyNow() {
 function onCopyName() {
   if (!getFocusedEvent()) return
   copyToClipboard({
-    message: getPromptName(),
+    input: getPromptName(),
     locked: isLocked.copy,
     lockedField: "name",
   })
@@ -213,7 +213,7 @@ function onCopyName() {
 function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
   copyToClipboard({
-    message: getPromptMakeMemory(),
+    input: getPromptMakeMemory(),
     locked: isLocked.copy,
     lockedField: "makeMemory",
   })
@@ -221,7 +221,8 @@ function onCopyMakeMemory() {
 /////////////////////////////////// gen ////////////////////////////////////////
 async function onGenNow() {
   await gen({
-    message: getPromptNow(),
+    model: "gemini-2.0-pro-exp-02-05",
+    input: getPromptNow(),
     event: getFocusedEvent(),
     eventField: "text",
     locked: isLocked.gen,
@@ -233,7 +234,8 @@ async function onGenNow() {
 async function onGenName() {
   getFocusedEvent().name = ""
   await gen({
-    message: getPromptName(),
+    model: "gemini-2.0-flash",
+    input: getPromptName(),
     event: getFocusedEvent(),
     eventField: "name",
     locked: isLocked.gen,
@@ -245,7 +247,8 @@ async function onGenName() {
 async function onGenMakeMemory() {
   getFocusedEvent().memoryRaw = ""
   await gen({
-    message: getPromptMakeMemory(),
+    model: "gemini-2.0-pro-exp-02-05",
+    input: getPromptMakeMemory(),
     event: getFocusedEvent(),
     eventField: "memoryRaw",
     locked: isLocked.gen,
