@@ -148,7 +148,10 @@ watch(
 )
 watch(
   () => props.event,
-  (newValue) => (textarea.value = newValue[props.editField]),
+  (newValue) => {
+    textarea.value = newValue[props.editField]
+    name.value = newValue.name
+  },
   { deep: true }
 )
 defineExpose({

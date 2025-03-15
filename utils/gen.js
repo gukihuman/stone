@@ -1,29 +1,10 @@
-/**
- * Streaming response handler
- * responseType options:
- * - string: full response
- * - jsonObject: captures first {} including braces
- * - jsonStringParsed: captures content inside first [""] excluding [""]
- */
-const RESPONSE_TYPE_CONFIGS = {
-  string: {
-    startSymbol: "",
-    endSymbol: "",
-    includeSymbols: true,
-    // String type captures everything by default
-  },
-  jsonObject: {
-    startSymbol: "{",
-    endSymbol: "}",
-    includeSymbols: true,
-  },
-  jsonStringParsed: {
-    startSymbol: '["',
-    endSymbol: '"]',
-    includeSymbols: false,
-  },
-}
+// event and eventField used to preserve reactive mutability
 
+const CONFIG = {
+  string: { start: "", end: "", include: true },
+  jsonObject: { start: "{", end: "}", include: true },
+  jsonStringParsed: { start: '["', end: '"]', include: false },
+}
 export default async function ({
   message,
   event,
@@ -35,8 +16,7 @@ export default async function ({
 }) {
   locked[lockedField] = true
 
-  const config =
-    RESPONSE_TYPE_CONFIGS[responseType] || RESPONSE_TYPE_CONFIGS.string
+  const config = CONFIG[responseType] || CONFIG.string
 
   const response = await fetch("/api/gen", {
     method: "POST",
@@ -46,9 +26,9 @@ export default async function ({
     },
   })
 
-  let capturing = config.startSymbol === "" ? true : false
-  let startSymbolIndex = 0
-  let endSymbolIndex = 0
+  let capturing = config.start === "" ? true : false
+  let startIndex = 0
+  let endIndex = 0
   let buffer = ""
 
   const reader = response.body.getReader()
@@ -60,61 +40,59 @@ export default async function ({
     const chunk = new TextDecoder().decode(value)
     buffer += chunk
 
-    // Logic for finding the start position
+    // logic for finding the start position
     if (!capturing) {
-      // For jsonStringParsed, we need to match ["
-      // For other types, we match the entire startSymbol at once
+      // for jsonStringParsed, we need to match ["
+      // for other types, we match the entire start at once
       let searchStartPos = 0
 
       while (searchStartPos < buffer.length) {
-        if (buffer[searchStartPos] === config.startSymbol[startSymbolIndex]) {
-          startSymbolIndex++
-          if (startSymbolIndex === config.startSymbol.length) {
-            // We found the complete start symbol
+        if (buffer[searchStartPos] === config.start[startIndex]) {
+          startIndex++
+          if (startIndex === config.start.length) {
+            // we found the complete start symbol
             capturing = true
-            const captureStartPos = searchStartPos - startSymbolIndex + 1
+            const captureStartPos = searchStartPos - startIndex + 1
 
-            // If we should include the symbols, start from the beginning of the symbol
-            // Otherwise, start after the symbol
-            const sliceStartPos = config.includeSymbols
+            // if we should include the symbols, start from the beginning of the symbol, otherwise, start after the symbol
+            const sliceStartPos = config.include
               ? captureStartPos
-              : captureStartPos + config.startSymbol.length
+              : captureStartPos + config.start.length
 
             buffer = buffer.substring(sliceStartPos)
             break
           }
-        } else if (startSymbolIndex > 0) {
-          // If we've started matching but hit a non-match, don't reset completely
-          // This is only relevant for multi-character symbols like ["
-          startSymbolIndex = 0
+        } else if (startIndex > 0) {
+          // if we've started matching but hit a non-match, don't reset completely, this is only relevant for multi-character symbols like ["
+          startIndex = 0
         }
         searchStartPos++
       }
     }
 
-    // Process chunk if we're capturing
+    // process chunk if we're capturing
     if (capturing) {
-      // Check for end symbol if we have one
-      if (config.endSymbol) {
+      // check for end symbol if we have one
+      if (config.end) {
         let endPos = -1
 
         for (let i = 0; i < buffer.length; i++) {
-          if (buffer[i] === config.endSymbol[endSymbolIndex]) {
-            endSymbolIndex++
-            if (endSymbolIndex === config.endSymbol.length) {
-              endPos = i - endSymbolIndex + 1
+          if (buffer[i] === config.end[endIndex]) {
+            endIndex++
+            if (endIndex === config.end.length) {
+              endPos = i - endIndex + 1
               break
             }
-          } else if (endSymbolIndex > 0) {
-            // Similar to start symbol logic, don't reset completely on non-match
-            endSymbolIndex = 0
+          } else if (endIndex > 0) {
+            // similar to start logic, don't reset completely on non-match
+            endIndex = 0
           }
         }
 
         if (endPos >= 0) {
-          // We found the end symbol
-          const finalChunk = config.includeSymbols
-            ? buffer.substring(0, endPos + config.endSymbol.length)
+          // we found the end symbol
+          const finalChunk = config.include
+            ? buffer.substring(0, endPos + config.end.length)
             : buffer.substring(0, endPos)
 
           event[eventField] += finalChunk
@@ -123,7 +101,7 @@ export default async function ({
         }
       }
 
-      // If no end symbol found or it's not complete yet, add the entire buffer
+      // if no end symbol found or it's not complete yet, add the entire buffer
       event[eventField] += buffer
       onNextChunk(event)
       buffer = ""
