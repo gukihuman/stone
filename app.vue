@@ -17,10 +17,7 @@
         :event="getFocusedEvent()"
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
-        :is-copy-now-locked="isCopyNowLocked"
-        :is-gen-now-locked="isGenNowLocked"
-        :is-copy-make-memory-locked="isCopyMakeMemoryLocked"
-        :is-gen-make-memory-locked="isGenMakeMemoryLocked"
+        :is-locked="isLocked"
         :copy-now-tokens="copyNowTokens"
         :copy-make-memory-tokens="copyMakeMemoryTokens"
         @update-event="updateFocusedEvent"
@@ -85,10 +82,10 @@ const { events, topics, appState } = useDatabase()
 const focusedRef = ref(null)
 
 // reactive
-const isCopyNowLocked = ref(null)
-const isGenNowLocked = ref(null)
-const isCopyMakeMemoryLocked = ref(null)
-const isGenMakeMemoryLocked = ref(null)
+const isLocked = reactive({
+  copy: { now: false, makeMemory: false },
+  gen: { now: false, makeMemory: false },
+})
 
 const copyMakeMemoryTokens = computed(() => getTokens(getPromptMakeMemory()))
 const copyNowTokens = computed(() => getTokens(getPromptNow()))
@@ -197,20 +194,29 @@ function sortTopic(direction) {
 /////////////////////////////////// copy ///////////////////////////////////////
 function onCopyNow() {
   if (!getFocusedEvent()) return
-  copyToClipboard(getPromptNow(), isCopyNowLocked)
+  copyToClipboard({
+    message: getPromptNow(),
+    locked: isLocked.copy,
+    lockedField: "now",
+  })
 }
 function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
-  copyToClipboard(getPromptMakeMemory(), isCopyMakeMemoryLocked)
+  copyToClipboard({
+    message: getPromptMakeMemory(),
+    locked: isLocked.copy,
+    lockedField: "makeMemory",
+  })
 }
 /////////////////////////////////// gen ////////////////////////////////////////
 async function onGenNow() {
   console.log("of")
   await gen({
     message: getPromptNow(),
-    genEvent: getFocusedEvent(),
-    field: "text",
-    genLocked: isGenNowLocked,
+    event: getFocusedEvent(),
+    eventField: "text",
+    locked: isLocked.gen,
+    lockedField: "now",
     onNextChunk: events.tUpsertDBSync,
     responseType: "string",
   })
@@ -219,9 +225,10 @@ async function onGenMakeMemory() {
   getFocusedEvent().memoryRaw = ""
   await gen({
     message: getPromptMakeMemory(),
-    genEvent: getFocusedEvent(),
-    field: "memoryRaw",
-    genLocked: isGenMakeMemoryLocked,
+    event: getFocusedEvent(),
+    eventField: "memoryRaw",
+    locked: isLocked.gen,
+    lockedField: "makeMemory",
     onNextChunk: events.tUpsertDBSync,
     responseType: "json",
   })

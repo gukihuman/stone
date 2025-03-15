@@ -1,13 +1,14 @@
-// genEvent and field used to preserve reactive mutability
+// event and eventField used to preserve reactive mutability
 export default async function ({
   message,
-  genEvent,
-  field,
-  genLocked,
+  event,
+  eventField,
+  locked,
+  lockedField,
   onNextChunk,
   responseType,
 }) {
-  genLocked.value = true
+  locked[lockedField] = true
   const response = await fetch("/api/gen", {
     method: "POST",
     body: JSON.stringify({ input: message }),
@@ -26,14 +27,14 @@ export default async function ({
     }
     if (responseType === "json" && capturing && buffer.includes("}")) {
       const endIndex = buffer.indexOf("}")
-      genEvent[field] += buffer.substring(0, endIndex + 1)
-      onNextChunk(genEvent)
+      event[eventField] += buffer.substring(0, endIndex + 1)
+      onNextChunk(event)
       break // stop processing further chunks
     }
     if (capturing) {
-      genEvent[field] += buffer
-      onNextChunk(genEvent)
+      event[eventField] += buffer
+      onNextChunk(event)
     }
   }
-  genLocked.value = false
+  locked[lockedField] = false
 }

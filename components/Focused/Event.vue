@@ -52,10 +52,10 @@
         <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
           <PrettyNum :number="copyNowTokens" theme="dark" />
           <p class="cursor-default">now</p>
-          <ButtonLight @click="emit('copy-now')" :disabled="isCopyNowLocked"
+          <ButtonLight @click="emit('copy-now')" :disabled="isLocked.copy.now"
             >copy
           </ButtonLight>
-          <ButtonLight @click="emit('gen-now')" :disabled="isGenNowLocked"
+          <ButtonLight @click="emit('gen-now')" :disabled="isLocked.gen.now"
             >gen
           </ButtonLight>
         </div>
@@ -64,22 +64,34 @@
           <p class="cursor-default">make memory</p>
           <ButtonLight
             @click="emit('copy-make-memory')"
-            :disabled="isCopyMakeMemoryLocked"
+            :disabled="isLocked.copy.makeMemory"
             >copy
           </ButtonLight>
           <ButtonLight
             @click="emit('gen-make-memory')"
-            :disabled="isGenMakeMemoryLocked"
+            :disabled="isLocked.gen.makeMemory"
             >gen
           </ButtonLight>
         </div>
       </div>
       <div class="flex p-3 justify-between">
-        <Switch
-          v-model="editField"
-          :states="editFields"
-          @change="emit('update-app-state', 'focusedEditField', editField)"
-        />
+        <div class="flex">
+          <Switch
+            v-model="editField"
+            :states="editFields"
+            @change="emit('update-app-state', 'focusedEditField', editField)"
+          />
+          <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
+            <PrettyNum :number="copyNowTokens" theme="dark" />
+            <p class="cursor-default">name</p>
+            <ButtonLight @click="emit('copy-now')" :disabled="isLocked.copy.now"
+              >copy
+            </ButtonLight>
+            <ButtonLight @click="emit('gen-now')" :disabled="isLocked.gen.now"
+              >gen
+            </ButtonLight>
+          </div>
+        </div>
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>
     </div>
@@ -91,10 +103,7 @@ const props = defineProps([
   "event",
   "editField",
   "editFields",
-  "isCopyNowLocked",
-  "isGenNowLocked",
-  "isCopyMakeMemoryLocked",
-  "isGenMakeMemoryLocked",
+  "isLocked",
   "copyNowTokens",
   "copyMakeMemoryTokens",
 ])
