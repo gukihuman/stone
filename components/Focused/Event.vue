@@ -82,12 +82,13 @@
             @change="emit('update-app-state', 'focusedEditField', editField)"
           />
           <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
-            <PrettyNum :number="copyNowTokens" theme="dark" />
             <p class="cursor-default">name</p>
-            <ButtonLight @click="emit('copy-now')" :disabled="isLocked.copy.now"
+            <ButtonLight
+              @click="emit('copy-name')"
+              :disabled="isLocked.copy.name"
               >copy
             </ButtonLight>
-            <ButtonLight @click="emit('gen-now')" :disabled="isLocked.gen.now"
+            <ButtonLight @click="emit('gen-name')" :disabled="isLocked.gen.name"
               >gen
             </ButtonLight>
           </div>
@@ -112,8 +113,10 @@ const emit = defineEmits([
   "remove-event",
   "update-app-state",
   "copy-now",
-  "gen-now",
+  "copy-name",
   "copy-make-memory",
+  "gen-now",
+  "gen-name",
   "gen-make-memory",
   "lock-hotkeys",
   "unlock-hotkeys",

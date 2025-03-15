@@ -24,8 +24,10 @@
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
         @copy-now="onCopyNow"
-        @gen-now="onGenNow"
+        @copy-name="onCopyName"
         @copy-make-memory="onCopyMakeMemory"
+        @gen-now="onGenNow"
+        @gen-name="onGenName"
         @gen-make-memory="onGenMakeMemory"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
@@ -83,8 +85,8 @@ const focusedRef = ref(null)
 
 // reactive
 const isLocked = reactive({
-  copy: { now: false, makeMemory: false },
-  gen: { now: false, makeMemory: false },
+  copy: { now: false, name: false, makeMemory: false },
+  gen: { now: false, name: false, makeMemory: false },
 })
 
 const copyMakeMemoryTokens = computed(() => getTokens(getPromptMakeMemory()))
@@ -200,6 +202,14 @@ function onCopyNow() {
     lockedField: "now",
   })
 }
+function onCopyName() {
+  if (!getFocusedEvent()) return
+  copyToClipboard({
+    message: getPromptName(),
+    locked: isLocked.copy,
+    lockedField: "name",
+  })
+}
 function onCopyMakeMemory() {
   if (!getFocusedEvent()) return
   copyToClipboard({
@@ -210,7 +220,6 @@ function onCopyMakeMemory() {
 }
 /////////////////////////////////// gen ////////////////////////////////////////
 async function onGenNow() {
-  console.log("of")
   await gen({
     message: getPromptNow(),
     event: getFocusedEvent(),
@@ -219,6 +228,18 @@ async function onGenNow() {
     lockedField: "now",
     onNextChunk: events.tUpsertDBSync,
     responseType: "string",
+  })
+}
+async function onGenName() {
+  getFocusedEvent().name = ""
+  await gen({
+    message: getPromptName(),
+    event: getFocusedEvent(),
+    eventField: "name",
+    locked: isLocked.gen,
+    lockedField: "name",
+    onNextChunk: events.tUpsertDBSync,
+    responseType: "jsonStringParsed",
   })
 }
 async function onGenMakeMemory() {
@@ -230,7 +251,7 @@ async function onGenMakeMemory() {
     locked: isLocked.gen,
     lockedField: "makeMemory",
     onNextChunk: events.tUpsertDBSync,
-    responseType: "json",
+    responseType: "jsonObject",
   })
 }
 ////////////////////////////// file save load //////////////////////////////////
@@ -259,6 +280,9 @@ async function onFileLoad() {
 ///////////////////////////////// helpers //////////////////////////////////////
 function getPromptNow() {
   return promptNow(events, topics, appState.selectedTopics, getFocusedEvent())
+}
+function getPromptName() {
+  return promptName(events, topics, appState.selectedTopics, getFocusedEvent())
 }
 function getPromptMakeMemory() {
   return promptMakeMemory(

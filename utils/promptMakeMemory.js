@@ -30,13 +30,13 @@ export default function (events, topics, selectedTopics, focusedEvent) {
     return topicAcc
   }, [])
 
-  const eventLine = `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`
   return [
     `# instruction`,
     instruction,
     ...(topicsPart.length ? [`## existing memories by topics`] : []),
     ...topicsPart,
-    [`## event to make memory from:`, eventLine].join(`\n\n`),
+    `## event to make memory from`,
+    `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
     focusedEvent.text,
     [`## possible topics to make memory`, topics.join(", ")].join("\n\n"),
   ].join("\n\n")

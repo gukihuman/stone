@@ -5,8 +5,8 @@ export default defineEventHandler(async (event) => {
   const { input } = await readBody(event)
   const llmModel = new ChatGoogleGenerativeAI({
     // model: "gemini-2.0-flash-thinking-exp-01-21",
-    // model: "gemini-2.0-flash",
-    model: "gemini-2.0-pro-exp-02-05",
+    model: "gemini-2.0-flash",
+    // model: "gemini-2.0-pro-exp-02-05",
     temperature: 1,
     apiKey: process.env.GEMINI_API_KEY,
   })
