@@ -18,17 +18,12 @@
         :edit-field="appState.focusedEditField"
         :edit-fields="['text', 'memoryRaw']"
         :is-locked="isLocked"
-        :copy-now-tokens="copyNowTokens"
-        :copy-make-memory-tokens="copyMakeMemoryTokens"
+        :get-prompt="getPrompt"
         @update-event="updateFocusedEvent"
         @remove-event="removeFocusedEvent"
         @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
-        @copy-now="onCopyNow"
-        @copy-name="onCopyName"
-        @copy-make-memory="onCopyMakeMemory"
-        @gen-now="onGenNow"
-        @gen-name="onGenName"
-        @gen-make-memory="onGenMakeMemory"
+        @copy="onCopy"
+        @gen="onGen"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
@@ -85,12 +80,9 @@ const focusedRef = ref(null)
 
 // reactive
 const isLocked = reactive({
-  copy: { now: false, name: false, makeMemory: false },
-  gen: { now: false, name: false, makeMemory: false },
+  copy: { text: false, name: false, memoryRaw: false },
+  gen: { text: false, name: false, memoryRaw: false },
 })
-
-const copyMakeMemoryTokens = computed(() => getTokens(getPromptMakeMemory()))
-const copyNowTokens = computed(() => getTokens(getPromptNow()))
 
 // regular
 let lastRemovedEvent = null
@@ -105,8 +97,8 @@ const hotkeys = {
 
   h: () => appState.upsertDBSync("focusedEditField", "text"),
   t: () => appState.upsertDBSync("focusedEditField", "memoryRaw"),
-  l: () => onCopyMakeMemory(),
-  y: () => onCopyNow(),
+  l: () => onCopy("memoryRaw"),
+  y: () => onCopy("text"),
 }
 
 onMounted(() => {
@@ -193,68 +185,19 @@ function sortTopic(direction) {
   appState.upsertDBSync("focusedIndex", newIndex)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
-/////////////////////////////////// copy ///////////////////////////////////////
-function onCopyNow() {
-  if (!getFocusedEvent()) return
-  copyToClipboard({
-    input: getPromptNow(),
-    locked: isLocked.copy,
-    lockedField: "now",
-  })
+///////////////////////////////// copy gen /////////////////////////////////////
+function onCopy(field) {
+  if (!getFocusedEvent()) return // hotkey case
+  copyToClipboard({ input: getPrompt(field), locked: isLocked.copy, field })
 }
-function onCopyName() {
-  if (!getFocusedEvent()) return
-  copyToClipboard({
-    input: getPromptName(),
-    locked: isLocked.copy,
-    lockedField: "name",
-  })
-}
-function onCopyMakeMemory() {
-  if (!getFocusedEvent()) return
-  copyToClipboard({
-    input: getPromptMakeMemory(),
-    locked: isLocked.copy,
-    lockedField: "makeMemory",
-  })
-}
-/////////////////////////////////// gen ////////////////////////////////////////
-async function onGenNow() {
+async function onGen(field) {
   await gen({
-    model: "gemini-2.0-pro-exp-02-05",
-    input: getPromptNow(),
+    model: field === "name" ? "gemini-2.0-flash" : "gemini-2.0-pro-exp-02-05",
+    input: getPrompt(field),
     event: getFocusedEvent(),
-    eventField: "text",
     locked: isLocked.gen,
-    lockedField: "now",
+    field,
     onNextChunk: events.tUpsertDBSync,
-    responseType: "string",
-  })
-}
-async function onGenName() {
-  getFocusedEvent().name = ""
-  await gen({
-    model: "gemini-2.0-flash",
-    input: getPromptName(),
-    event: getFocusedEvent(),
-    eventField: "name",
-    locked: isLocked.gen,
-    lockedField: "name",
-    onNextChunk: events.tUpsertDBSync,
-    responseType: "jsonStringParsed",
-  })
-}
-async function onGenMakeMemory() {
-  getFocusedEvent().memoryRaw = ""
-  await gen({
-    model: "gemini-2.0-pro-exp-02-05",
-    input: getPromptMakeMemory(),
-    event: getFocusedEvent(),
-    eventField: "memoryRaw",
-    locked: isLocked.gen,
-    lockedField: "makeMemory",
-    onNextChunk: events.tUpsertDBSync,
-    responseType: "jsonObject",
   })
 }
 ////////////////////////////// file save load //////////////////////////////////
@@ -281,20 +224,27 @@ async function onFileLoad() {
   })
 }
 ///////////////////////////////// helpers //////////////////////////////////////
-function getPromptNow() {
-  return promptNow(events, topics, appState.selectedTopics, getFocusedEvent())
+function getPrompt(field) {
+  let prompt
+  if (field === "text") prompt = promptText
+  else if (field === "name") prompt = promptName
+  else if (field === "memoryRaw") prompt = promptMemoryRaw
+  return prompt(events, topics, appState.selectedTopics, getFocusedEvent())
 }
-function getPromptName() {
-  return promptName(events, topics, appState.selectedTopics, getFocusedEvent())
-}
-function getPromptMakeMemory() {
-  return promptMakeMemory(
-    events,
-    topics,
-    appState.selectedTopics,
-    getFocusedEvent()
-  )
-}
+// function getPromptNow() {
+//   return promptNow(events, topics, appState.selectedTopics, getFocusedEvent())
+// }
+// function getPromptName() {
+//   return promptName(events, topics, appState.selectedTopics, getFocusedEvent())
+// }
+// function getPromptMakeMemory() {
+//   return promptMakeMemory(
+//     events,
+//     topics,
+//     appState.selectedTopics,
+//     getFocusedEvent()
+//   )
+// }
 function getFocusedTopic() {
   if (appState.focusedList !== "topics") return null
   return topics[appState.focusedIndex]

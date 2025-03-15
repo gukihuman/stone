@@ -50,46 +50,60 @@
     <div class="flex flex-col w-full bg-stone-700">
       <div class="flex p-3 border-b-[3px] border-dashed border-stone-600">
         <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
-          <PrettyNum :number="copyNowTokens" theme="dark" />
-          <p class="cursor-default">now</p>
-          <ButtonLight @click="emit('copy-now')" :disabled="isLocked.copy.now"
-            >copy
+          <PrettyNum :number="getTokens(getPrompt('text'))" theme="dark" />
+          <p class="cursor-default">text</p>
+          <ButtonLight
+            @click="emit('copy', 'text')"
+            :disabled="isLocked.copy.text"
+          >
+            copy
           </ButtonLight>
-          <ButtonLight @click="emit('gen-now')" :disabled="isLocked.gen.now"
-            >gen
+          <ButtonLight
+            @click="emit('gen', 'text')"
+            :disabled="isLocked.gen.text"
+          >
+            gen
           </ButtonLight>
         </div>
         <div class="w-[330px] flex gap-2 text-stone-400 justify-end">
-          <PrettyNum :number="copyMakeMemoryTokens" theme="dark" />
+          <PrettyNum :number="getTokens(getPrompt('memoryRaw'))" theme="dark" />
           <p class="cursor-default">make memory</p>
           <ButtonLight
-            @click="emit('copy-make-memory')"
-            :disabled="isLocked.copy.makeMemory"
-            >copy
+            @click="emit('copy', 'memoryRaw')"
+            :disabled="isLocked.copy.memoryRaw"
+          >
+            copy
           </ButtonLight>
           <ButtonLight
-            @click="emit('gen-make-memory')"
-            :disabled="isLocked.gen.makeMemory"
-            >gen
+            @click="emit('gen', 'memoryRaw')"
+            :disabled="isLocked.gen.memoryRaw"
+          >
+            gen
           </ButtonLight>
         </div>
       </div>
       <div class="flex p-3 justify-between">
         <div class="flex">
+          <!-- 📜 i want to rename focusedEditField to focusedField and editField to field -->
           <Switch
             v-model="editField"
             :states="editFields"
             @change="emit('update-app-state', 'focusedEditField', editField)"
           />
           <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
+            <PrettyNum :number="getTokens(getPrompt('name'))" theme="dark" />
             <p class="cursor-default">name</p>
             <ButtonLight
-              @click="emit('copy-name')"
+              @click="emit('copy', 'name')"
               :disabled="isLocked.copy.name"
-              >copy
+            >
+              copy
             </ButtonLight>
-            <ButtonLight @click="emit('gen-name')" :disabled="isLocked.gen.name"
-              >gen
+            <ButtonLight
+              @click="emit('gen', 'name')"
+              :disabled="isLocked.gen.name"
+            >
+              gen
             </ButtonLight>
           </div>
         </div>
@@ -105,19 +119,14 @@ const props = defineProps([
   "editField",
   "editFields",
   "isLocked",
-  "copyNowTokens",
-  "copyMakeMemoryTokens",
+  "getPrompt",
 ])
 const emit = defineEmits([
   "update-event",
   "remove-event",
   "update-app-state",
-  "copy-now",
-  "copy-name",
-  "copy-make-memory",
-  "gen-now",
-  "gen-name",
-  "gen-make-memory",
+  "copy",
+  "gen",
   "lock-hotkeys",
   "unlock-hotkeys",
 ])

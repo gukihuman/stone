@@ -1,23 +1,19 @@
-// event and eventField used to preserve reactive mutability
-
 const CONFIG = {
-  string: { start: "", end: "", include: true },
-  jsonObject: { start: "{", end: "}", include: true },
-  jsonStringParsed: { start: '["', end: '"]', include: false },
+  text: { start: "", end: "", include: true },
+  name: { start: '["', end: '"]', include: false },
+  memoryRaw: { start: "{", end: "}", include: true },
 }
 export default async function ({
   model,
   input,
   event,
-  eventField,
+  field,
   locked,
-  lockedField,
   onNextChunk,
-  responseType = "string",
 }) {
-  locked[lockedField] = true
+  locked[field] = true
 
-  const config = CONFIG[responseType] || CONFIG.string
+  const config = CONFIG[field] || CONFIG.text
 
   const response = await fetch("/api/gen", {
     method: "POST",
@@ -94,18 +90,18 @@ export default async function ({
             ? buffer.substring(0, endPos + config.end.length)
             : buffer.substring(0, endPos)
 
-          event[eventField] += finalChunk
+          event[field] += finalChunk
           onNextChunk(event)
           break // Stop processing further chunks
         }
       }
 
       // if no end symbol found or it's not complete yet, add the entire buffer
-      event[eventField] += buffer
+      event[field] += buffer
       onNextChunk(event)
       buffer = ""
     }
   }
 
-  locked[lockedField] = false
+  locked[field] = false
 }
