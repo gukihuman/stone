@@ -23,10 +23,13 @@
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
-      class="w-full relative h-full p-3"
+      class="w-full relative flex-grow p-3 overflow-hidden"
       :class="[isTextareaFocused ? 'bg-stone-700' : '']"
     >
-      <div class="relative overflow-hidden rounded-xl h-full">
+      <div
+        v-if="field"
+        class="relative overflow-hidden rounded-xl scroll-light h-full"
+      >
         <textarea
           ref="textareaEl"
           :key="`textarea-${field}`"
@@ -42,12 +45,27 @@
               : 'bg-stone-600 bg-lines-light selection-light text-stone-300'
           "
           :style="{ backgroundPositionY: linesOffset }"
-          :disabled="!field"
         />
+      </div>
+      <div
+        v-else
+        class="relative overflow-auto rounded-xl scroll-light h-full max-h-full"
+      >
+        <div
+          ref="textareaEl"
+          class="w-full h-full flex flex-col gap-4 scroll-light overflow-auto items-center rounded-lg bg-stone-450"
+        >
+          <FocusedRecord
+            v-for="([topic, topicMemory], i) in topicParts"
+            :key="`event-memory-${i}`"
+            :name="topic"
+            :text="topicMemory"
+          />
+        </div>
       </div>
     </div>
     <!-- # bot ---------------------------------------------------------------->
-    <div class="flex flex-col w-full bg-stone-700">
+    <div class="flex flex-col w-full bg-stone-700 flex-shrink-0">
       <div class="flex p-3 gap-8 border-b-[3px] border-dashed border-stone-600">
         <div class="flex w-full justify-between">
           <CopyGen
@@ -115,8 +133,18 @@ const textareaEl = ref(null)
 // v-model
 const name = ref(props.event?.name || "")
 const field = ref(props.field) // to switch
-const textarea = ref(props.field ? props.event[props.field] : getPrettyMemory())
+const textarea = ref(props.event[props.field])
 
+const topicParts = computed(() => {
+  const result = []
+  try {
+    const memory = JSON.parse(props.event.memory)
+    Object.entries(memory).forEach(([topic, memories]) => {
+      result.push([topic, [memories[0], memories[1]].join("\n\n")])
+    })
+  } catch (e) {}
+  return result
+})
 watch(
   () => props.field,
   (newValue) => (field.value = newValue)
@@ -140,15 +168,5 @@ const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
 function onTextareaInput(event) {
   dEmitUpdateEvent(field.value, event.target.value)
   adjustScrollTop(textareaEl)
-}
-function getPrettyMemory() {
-  const topicsParts = []
-  try {
-    const memory = JSON.parse(props.event.memory)
-    Object.entries(memory).forEach(([topic, memories]) => {
-      topicsParts.push([`# ${topic}`, memories[0], memories[1]].join("\n\n"))
-    })
-  } catch (e) {}
-  return topicsParts.join("\n\n\n")
 }
 </script>

@@ -20,6 +20,7 @@
     <div class="w-full p-3 overflow-hidden flex-grow">
       <div class="overflow-hidden h-full rounded-lg">
         <div
+          ref="textareaEl"
           class="w-full h-full flex flex-col gap-4 scroll-light overflow-auto items-center rounded-lg bg-stone-450"
         >
           <FocusedRecord
@@ -42,7 +43,7 @@
 </template>
 
 <script setup>
-const props = defineProps(["topic", "events", "topics", "selected"])
+const props = defineProps(["topic", "events", "level"])
 const emit = defineEmits([
   "update-topic",
   "remove-topic",
@@ -56,24 +57,23 @@ const { focusName } = useFocused()
 
 // els refs
 const nameEl = ref(null)
+const textareaEl = ref(null)
 
 // v-model
 const name = ref(props.topic)
 
 const eventData = computed(() => {
   return props.events.reduce((acc, event) => {
-    const topicIndex = props.topics.indexOf(props.topic)
     try {
       const fullEventMemory = JSON.parse(event.memory)
-      const level = props.selected[topicIndex]
-      const eventMemory = fullEventMemory[props.topic]?.[level]
+      const eventMemory = fullEventMemory[props.topic]?.[props.level]
       if (eventMemory) acc.push([event.name, event.date, eventMemory])
     } catch (e) {}
     return acc
   }, [])
 })
 
-defineExpose({ focusName: () => focusName(nameEl) })
+defineExpose({ textareaEl, focusName: () => focusName(nameEl) })
 
 ////////////////////////////////////////////////////////////////////////////////
 const dEmitUpdateTopic = debounce(() => emit("update-topic", name.value))

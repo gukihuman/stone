@@ -5,7 +5,7 @@
       class="flex justify-between h-9 bg-stone-550 cursor-default rounded-t-lg px-8 items-center"
     >
       <p class="text-stone-300 text-lg pb-[2px]">{{ name }}</p>
-      <p class="text-stone-400">{{ date.substring(0, 10) }}</p>
+      <p v-if="date" class="text-stone-400">{{ date.substring(0, 10) }}</p>
     </div>
     <!-- text ----------------------------------------------------------------->
     <div

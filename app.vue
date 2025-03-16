@@ -12,7 +12,7 @@
       />
       <FocusedEvent
         v-if="getFocusedEvent()"
-        :key="`focused-event-${appState.focusedIndex}-${appState.focusedField}`"
+        :key="`event-${appState.focusedIndex}-${appState.focusedField}`"
         ref="focusedRef"
         :event="getFocusedEvent()"
         :field="appState.focusedField"
@@ -29,12 +29,11 @@
       />
       <FocusedTopic
         v-else-if="getFocusedTopic() !== null"
-        :key="`focused-topic-${appState.focusedIndex}`"
+        :key="`topic-${appState.focusedIndex}-${getFocusedTopicLevel()}`"
         ref="focusedRef"
         :topic="getFocusedTopic()"
+        :level="getFocusedTopicLevel()"
         :events="events"
-        :topics="topics"
-        :selected="appState.selectedTopics"
         @update-topic="updateFocusedTopic"
         @remove-topic="removeFocusedTopic"
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
@@ -257,5 +256,9 @@ function getFocusedTopic() {
 function getFocusedEvent() {
   if (appState.focusedList !== "events") return null
   return events[appState.focusedIndex] || null
+}
+function getFocusedTopicLevel() {
+  const topicIndex = topics.indexOf(getFocusedTopic())
+  return appState.selectedTopics[topicIndex]
 }
 </script>
