@@ -27,7 +27,7 @@
 const props = defineProps(["modelValue", "states"])
 const emit = defineEmits(["update:modelValue", "change"])
 
-// const states = computed(() => Object.entries(props.states))
+////////////////////////////////////////////////////////////////////////////////
 function handleClick(state) {
   if (state !== props.modelValue) {
     emit("update:modelValue", state)

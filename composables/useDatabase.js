@@ -139,7 +139,7 @@ export default function useDatabase() {
 
     stateRaw.forEach(({ key, value }) => (appState[key] = value))
     Object.entries(DEFAULT_APP_FIELDS).forEach(([key, value]) => {
-      if (!appState[key]) appState.upsertDBSync(key, value)
+      if (appState[key] === undefined) appState.upsertDBSync(key, value)
     })
     console.log(`⏬ app state loaded from db [${timestamp()}]`)
   }

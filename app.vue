@@ -97,6 +97,7 @@ const hotkeys = {
 
   h: () => appState.upsertDBSync("focusedField", "text"),
   t: () => appState.upsertDBSync("focusedField", "memory"),
+  n: () => appState.upsertDBSync("focusedField", null),
   y: () => onCopy("text"),
   m: () => onCopy("name"),
   l: () => onCopy("memory"),

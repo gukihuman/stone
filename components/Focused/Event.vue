@@ -28,7 +28,6 @@
     >
       <div class="relative overflow-hidden rounded-xl h-full">
         <textarea
-          v-if="fields.length"
           ref="textareaEl"
           :key="`textarea-${field}`"
           v-model="textarea"
@@ -38,11 +37,12 @@
           @blur="onBlur(emit)"
           class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
           :class="
-            field === 'text'
+            field !== 'memory'
               ? 'bg-stone-400 text-stone-800'
               : 'bg-stone-600 bg-lines-light selection-light text-stone-300'
           "
           :style="{ backgroundPositionY: linesOffset }"
+          :disabled="!field"
         />
       </div>
     </div>
@@ -69,7 +69,13 @@
             @change="emit('update-app-state', 'focusedField', field)"
           />
         </div>
-        <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
+        <ButtonLight
+          @click="emit('update-app-state', 'focusedField', null)"
+          :disabled="!field"
+        >
+          pretty memory
+        </ButtonLight>
+        <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>
     </div>
   </div>
@@ -105,19 +111,11 @@ const textareaEl = ref(null)
 // v-model
 const name = ref(props.event?.name || "")
 const field = ref(props.field) // to switch
-const textarea = ref(props.event?.[props.field])
+const textarea = ref(props.field ? props.event[props.field] : getPrettyMemory())
 
 watch(
   () => props.field,
   (newValue) => (field.value = newValue)
-)
-watch(
-  () => props.event,
-  (newValue) => {
-    textarea.value = newValue[props.field]
-    name.value = newValue.name
-  },
-  { deep: true }
 )
 defineExpose({
   textareaEl,
@@ -131,5 +129,19 @@ const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
 function onTextareaInput(event) {
   dEmitUpdateEvent(field.value, event.target.value)
   adjustScrollTop(textareaEl)
+}
+function getPrettyMemory() {
+  const topicsParts = []
+  try {
+    const memory = JSON.parse(props.event.memory)
+    Object.entries(memory).forEach(([topic, memories]) => {
+      const part = []
+      part.push(`# ${topic}`)
+      part.push(memories[0])
+      part.push(memories[1])
+      topicsParts.push(part.join("\n\n"))
+    })
+  } catch (e) {}
+  return topicsParts.join("\n\n\n\n")
 }
 </script>
