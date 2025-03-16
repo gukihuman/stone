@@ -46,6 +46,7 @@ export default function useFocusedItem() {
     scrollToTop(textareaEl.value, "auto")
   }
   return {
+    LINES_OFFSET,
     isTextareaFocused,
     linesOffset,
     onFocus,

@@ -17,7 +17,21 @@
       />
     </div>
     <!-- # mid --------------------------------------------------------------->
-    <div class="flex-grow" />
+    <div class="w-full p-3 overflow-hidden flex-grow">
+      <div class="overflow-hidden h-full rounded-lg">
+        <div
+          class="w-full h-full flex flex-col gap-4 scroll-light overflow-auto items-center rounded-lg bg-stone-450"
+        >
+          <FocusedRecord
+            v-for="([eventName, eventDate, eventMemory], i) in eventData"
+            :key="`event-memory-${i}`"
+            :name="eventName"
+            :date="eventDate"
+            :text="eventMemory"
+          />
+        </div>
+      </div>
+    </div>
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700">
       <div class="flex p-3 justify-end">
@@ -28,12 +42,14 @@
 </template>
 
 <script setup>
-const props = defineProps(["topic"])
+const props = defineProps(["topic", "events", "topics", "selected"])
 const emit = defineEmits([
   "update-topic",
   "remove-topic",
   "lock-hotkeys",
   "unlock-hotkeys",
+  "focus",
+  "blur",
 ])
 
 const { focusName } = useFocused()
@@ -44,9 +60,20 @@ const nameEl = ref(null)
 // v-model
 const name = ref(props.topic)
 
-defineExpose({
-  focusName: () => focusName(nameEl),
+const eventData = computed(() => {
+  return props.events.reduce((acc, event) => {
+    const topicIndex = props.topics.indexOf(props.topic)
+    try {
+      const fullEventMemory = JSON.parse(event.memory)
+      const level = props.selected[topicIndex]
+      const eventMemory = fullEventMemory[props.topic]?.[level]
+      if (eventMemory) acc.push([event.name, event.date, eventMemory])
+    } catch (e) {}
+    return acc
+  }, [])
 })
+
+defineExpose({ focusName: () => focusName(nameEl) })
 
 ////////////////////////////////////////////////////////////////////////////////
 const dEmitUpdateTopic = debounce(() => emit("update-topic", name.value))

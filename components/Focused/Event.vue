@@ -146,13 +146,9 @@ function getPrettyMemory() {
   try {
     const memory = JSON.parse(props.event.memory)
     Object.entries(memory).forEach(([topic, memories]) => {
-      const part = []
-      part.push(`# ${topic}`)
-      part.push(memories[0])
-      part.push(memories[1])
-      topicsParts.push(part.join("\n\n"))
+      topicsParts.push([`# ${topic}`, memories[0], memories[1]].join("\n\n"))
     })
   } catch (e) {}
-  return topicsParts.join("\n\n\n\n")
+  return topicsParts.join("\n\n\n")
 }
 </script>
