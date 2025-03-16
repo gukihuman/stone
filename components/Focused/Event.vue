@@ -93,6 +93,7 @@
           <ButtonLight
             @click="emit('update-app-state', 'focusedField', null)"
             :disabled="!field"
+            theme="darker"
           >
             pretty memory
           </ButtonLight>
@@ -153,7 +154,7 @@ watch(
   props.event, // for gen
   (newValue) => {
     name.value = newValue.name
-    textarea.value = newValue[props.field] || getPrettyMemory()
+    textarea.value = newValue[props.field]
   }
 )
 defineExpose({

@@ -33,6 +33,12 @@ export default async function ({
     if (done) break
 
     const chunk = new TextDecoder().decode(value)
+
+    if (chunk.startsWith("ERROR: ")) {
+      event[field] += `${chunk.substring(7)}`
+      break
+    }
+
     buffer += chunk
 
     // logic for finding the start position

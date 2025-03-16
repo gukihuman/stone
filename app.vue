@@ -91,6 +91,8 @@ let lastRemovedEvent = null
 let cleanupHotkeys
 const hotkeys = {
   w: () => toggleEventFocus(events.length - 1),
+  "{": toggleDown,
+  "}": toggleUp,
   u: () => focusedRef.value?.focusName(),
   o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
@@ -103,6 +105,7 @@ const hotkeys = {
   y: () => onCopy("text"),
   m: () => onCopy("name"),
   l: () => onCopy("memory"),
+  p: () => toggleTopicFocus(topics.length - 1),
 }
 
 onMounted(() => {
@@ -235,20 +238,6 @@ function getPrompt(field) {
   else if (field === "memory") prompt = promptMemory
   return prompt(events, topics, appState.selectedTopics, getFocusedEvent())
 }
-// function getPromptNow() {
-//   return promptNow(events, topics, appState.selectedTopics, getFocusedEvent())
-// }
-// function getPromptName() {
-//   return promptName(events, topics, appState.selectedTopics, getFocusedEvent())
-// }
-// function getPromptMakeMemory() {
-//   return promptMakeMemory(
-//     events,
-//     topics,
-//     appState.selectedTopics,
-//     getFocusedEvent()
-//   )
-// }
 function getFocusedTopic() {
   if (appState.focusedList !== "topics") return null
   return topics[appState.focusedIndex]
@@ -260,5 +249,22 @@ function getFocusedEvent() {
 function getFocusedTopicLevel() {
   const topicIndex = topics.indexOf(getFocusedTopic())
   return appState.selectedTopics[topicIndex]
+}
+function toggleDown() {
+  const list = appState.focusedList === "topics" ? topics : events
+  let index =
+    appState.focusedIndex === null ? list.length - 1 : appState.focusedIndex - 1
+  if (index < 0) return
+  appState.focusedList === "topics"
+    ? toggleTopicFocus(index)
+    : toggleEventFocus(index)
+}
+function toggleUp() {
+  const list = appState.focusedList === "topics" ? topics : events
+  let index = appState.focusedIndex === null ? 0 : appState.focusedIndex + 1
+  if (index > list.length - 1) return
+  appState.focusedList === "topics"
+    ? toggleTopicFocus(index)
+    : toggleEventFocus(index)
 }
 </script>

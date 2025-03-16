@@ -15,7 +15,14 @@ export default defineEventHandler(async (event) => {
     "Cache-Control": "no-cache",
     Connection: "keep-alive",
   })
-  const stream = await llmModel.stream(messages)
-  for await (const chunk of stream) event.node.res.write(chunk.content)
+  try {
+    const stream = await Promise.race([
+      llmModel.stream(messages),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("")), 8000)),
+    ])
+    for await (const chunk of stream) event.node.res.write(chunk.content)
+  } catch (error) {
+    event.node.res.write(`ERROR: ${error.message}`)
+  }
   event.node.res.end()
 })
