@@ -28,9 +28,9 @@
     >
       <div class="relative overflow-hidden rounded-xl h-full">
         <textarea
-          v-if="editFields.length"
+          v-if="fields.length"
           ref="textareaEl"
-          :key="`textarea-${editField}`"
+          :key="`textarea-${field}`"
           v-model="textarea"
           @input="onTextareaInput"
           @scroll="onScroll"
@@ -38,7 +38,7 @@
           @blur="onBlur(emit)"
           class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
           :class="
-            editField === 'text'
+            field === 'text'
               ? 'bg-stone-400 text-stone-800'
               : 'bg-stone-600 bg-lines-light selection-light text-stone-300'
           "
@@ -67,7 +67,7 @@
         </div>
         <div class="w-[330px] flex gap-2 text-stone-400 justify-end">
           <PrettyNum :number="getTokens(getPrompt('memoryRaw'))" theme="dark" />
-          <p class="cursor-default">make memory</p>
+          <p class="cursor-default">memoryRaw</p>
           <ButtonLight
             @click="emit('copy', 'memoryRaw')"
             :disabled="isLocked.copy.memoryRaw"
@@ -84,11 +84,10 @@
       </div>
       <div class="flex p-3 justify-between">
         <div class="flex">
-          <!-- 📜 i want to rename focusedEditField to focusedField and editField to field -->
           <Switch
-            v-model="editField"
-            :states="editFields"
-            @change="emit('update-app-state', 'focusedEditField', editField)"
+            v-model="field"
+            :states="fields"
+            @change="emit('update-app-state', 'focusedField', field)"
           />
           <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
             <PrettyNum :number="getTokens(getPrompt('name'))" theme="dark" />
@@ -114,13 +113,7 @@
 </template>
 
 <script setup>
-const props = defineProps([
-  "event",
-  "editField",
-  "editFields",
-  "isLocked",
-  "getPrompt",
-])
+const props = defineProps(["event", "field", "fields", "isLocked", "getPrompt"])
 const emit = defineEmits([
   "update-event",
   "remove-event",
@@ -148,17 +141,17 @@ const textareaEl = ref(null)
 
 // v-model
 const name = ref(props.event?.name || "")
-const editField = ref(props.editField) // to switch
-const textarea = ref(props.event?.[props.editField])
+const field = ref(props.field) // to switch
+const textarea = ref(props.event?.[props.field])
 
 watch(
-  () => props.editField,
-  (newValue) => (editField.value = newValue)
+  () => props.field,
+  (newValue) => (field.value = newValue)
 )
 watch(
   () => props.event,
   (newValue) => {
-    textarea.value = newValue[props.editField]
+    textarea.value = newValue[props.field]
     name.value = newValue.name
   },
   { deep: true }
@@ -173,7 +166,7 @@ defineExpose({
 const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
 
 function onTextareaInput(event) {
-  dEmitUpdateEvent(editField.value, event.target.value)
+  dEmitUpdateEvent(field.value, event.target.value)
   adjustScrollTop(textareaEl)
 }
 </script>

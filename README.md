@@ -39,7 +39,7 @@ memoryRaw string must be parsed as valid JSON. it consists of topics, each topic
 {
   "focusedIndex": 0,
   "focusedIndex": 0,
-  "focusedEditField": "text"
+  "focusedField": "text"
 }
 ```
 

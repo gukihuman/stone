@@ -12,11 +12,11 @@
       />
       <FocusedEvent
         v-if="getFocusedEvent()"
-        :key="`focused-event-${appState.focusedIndex}-${appState.focusedEditField}`"
+        :key="`focused-event-${appState.focusedIndex}-${appState.focusedField}`"
         ref="focusedRef"
         :event="getFocusedEvent()"
-        :edit-field="appState.focusedEditField"
-        :edit-fields="['text', 'memoryRaw']"
+        :field="appState.focusedField"
+        :fields="['text', 'memoryRaw']"
         :is-locked="isLocked"
         :get-prompt="getPrompt"
         @update-event="updateFocusedEvent"
@@ -95,8 +95,8 @@ const hotkeys = {
   g: () => scrollToBot(focusedRef.value?.textareaEl),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
 
-  h: () => appState.upsertDBSync("focusedEditField", "text"),
-  t: () => appState.upsertDBSync("focusedEditField", "memoryRaw"),
+  h: () => appState.upsertDBSync("focusedField", "text"),
+  t: () => appState.upsertDBSync("focusedField", "memoryRaw"),
   l: () => onCopy("memoryRaw"),
   y: () => onCopy("text"),
 }
@@ -119,7 +119,7 @@ function newEvent() {
     memoryRaw: "",
   })
   toggleEventFocus(events.length - 1)
-  appState.upsertDBSync("focusedEditField", "text")
+  appState.upsertDBSync("focusedField", "text")
   nextTick(() => focusedRef.value?.focusBot())
 }
 function toggleEventFocus(i) {

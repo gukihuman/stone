@@ -2,7 +2,7 @@ import { openDB } from "idb"
 
 export default function useDatabase() {
   const DB_VERSION = 1
-  const DEFAULT_APP_FIELDS = { focusedEditField: "text", selectedTopics: [] }
+  const DEFAULT_APP_FIELDS = { focusedField: "text", selectedTopics: [] }
 
   const events = reactive([]) // sorted by date
   const topics = reactive([])
