@@ -12,7 +12,7 @@ export default function (events, topics, selectedTopics, focusedEvent) {
   const topicsPart = selectedTopics.reduce((topicAcc, level, i) => {
     const eventsPart = events.reduce((eventAcc, event) => {
       try {
-        const memory = JSON.parse(event.memoryRaw)
+        const memory = JSON.parse(event.memory)
         if (memory[topics[i]]?.[level]) {
           eventAcc.push(
             [

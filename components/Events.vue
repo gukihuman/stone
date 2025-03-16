@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-[250px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
+    class="w-[230px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
   >
     <!-- # top menu ----------------------------------------------------------->
     <div class="flex">

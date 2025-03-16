@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[280px] flex flex-col gap-3 flex-shrink-0">
+  <div class="w-[290px] flex flex-col gap-3 flex-shrink-0">
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
@@ -23,8 +23,13 @@
         >
           new
         </button>
+        <PrettyNum
+          :number="getTokensTotal()"
+          theme="dark"
+          class="cursor-default w-14 h-full"
+        />
         <!-- ## circles top menu ---------------------------------------------->
-        <div v-if="selected.length" class="flex px-[10px]">
+        <div v-if="selected.length" class="flex pl-2 pr-[10px]">
           <div
             v-for="level in [0, 1, null]"
             class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
@@ -114,10 +119,18 @@ function getMemories(topic) {
     const topicIndex = props.topics.indexOf(topic)
     try {
       const memory = JSON.parse(event.memory)
-      const topicMemory = memory[topic]?.[props.selected[topicIndex]]
-      if (topicMemory) acc = [acc, topicMemory].join("\n\n")
+      const level = props.selected[topicIndex]
+      const topicMemory = memory[topic]?.[level]
+      const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
+      if (topicMemory) acc = [acc, eventLine, topicMemory].join("\n\n")
     } catch (e) {}
     return acc
   }, "")
+}
+function getTokensTotal() {
+  return props.topics.reduce((acc, topic) => {
+    acc += getTokens(getMemories(topic))
+    return acc
+  }, 0)
 }
 </script>

@@ -49,7 +49,6 @@
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700">
       <div class="flex p-3 gap-8 border-b-[3px] border-dashed border-stone-600">
-        <PrettyNum :number="getTokens(getPrompt('text'))" theme="dark" />
         <div class="flex w-full justify-between">
           <CopyGen
             v-for="field in ['text', 'name', 'memory']"
@@ -60,21 +59,26 @@
             @gen="(field) => emit('gen', field)"
           />
         </div>
+        <PrettyNum
+          :number="getTokens(getPrompt('text'))"
+          theme="dark"
+          class="cursor-default pt-[1px] w-[70px] justify-end"
+        />
       </div>
       <div class="flex p-3 justify-between">
-        <div class="flex">
+        <div class="flex gap-2">
           <Switch
             v-model="field"
             :states="fields"
             @change="emit('update-app-state', 'focusedField', field)"
           />
+          <ButtonLight
+            @click="emit('update-app-state', 'focusedField', null)"
+            :disabled="!field"
+          >
+            pretty memory
+          </ButtonLight>
         </div>
-        <ButtonLight
-          @click="emit('update-app-state', 'focusedField', null)"
-          :disabled="!field"
-        >
-          pretty memory
-        </ButtonLight>
         <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>
     </div>
@@ -116,6 +120,13 @@ const textarea = ref(props.field ? props.event[props.field] : getPrettyMemory())
 watch(
   () => props.field,
   (newValue) => (field.value = newValue)
+)
+watch(
+  props.event, // for gen
+  (newValue) => {
+    name.value = newValue.name
+    textarea.value = newValue[props.field] || getPrettyMemory()
+  }
 )
 defineExpose({
   textareaEl,

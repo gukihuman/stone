@@ -1,7 +1,7 @@
 const CONFIG = {
-  text: { start: "", end: "", include: true },
-  name: { start: '["', end: '"]', include: false },
-  memory: { start: "{", end: "}", include: true },
+  text: { erase: false, start: "", end: "", include: true },
+  name: { erase: true, start: '["', end: '"]', include: false },
+  memory: { erase: true, start: "{", end: "}", include: true },
 }
 export default async function ({
   model,
@@ -37,7 +37,7 @@ export default async function ({
 
     // logic for finding the start position
     if (!capturing) {
-      // for jsonStringParsed, we need to match ["
+      // for name, we need to match ["
       // for other types, we match the entire start at once
       let searchStartPos = 0
 
@@ -48,6 +48,8 @@ export default async function ({
             // we found the complete start symbol
             capturing = true
             const captureStartPos = searchStartPos - startIndex + 1
+
+            if (config.erase) event[field] = ""
 
             // if we should include the symbols, start from the beginning of the symbol, otherwise, start after the symbol
             const sliceStartPos = config.include
