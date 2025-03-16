@@ -16,7 +16,7 @@
         ref="focusedRef"
         :event="getFocusedEvent()"
         :field="appState.focusedField"
-        :fields="['text', 'memoryRaw']"
+        :fields="['text', 'memory']"
         :is-locked="isLocked"
         :get-prompt="getPrompt"
         @update-event="updateFocusedEvent"
@@ -80,8 +80,8 @@ const focusedRef = ref(null)
 
 // reactive
 const isLocked = reactive({
-  copy: { text: false, name: false, memoryRaw: false },
-  gen: { text: false, name: false, memoryRaw: false },
+  copy: { text: false, name: false, memory: false },
+  gen: { text: false, name: false, memory: false },
 })
 
 // regular
@@ -96,9 +96,10 @@ const hotkeys = {
   i: () => scrollToTop(focusedRef.value?.textareaEl),
 
   h: () => appState.upsertDBSync("focusedField", "text"),
-  t: () => appState.upsertDBSync("focusedField", "memoryRaw"),
-  l: () => onCopy("memoryRaw"),
+  t: () => appState.upsertDBSync("focusedField", "memory"),
   y: () => onCopy("text"),
+  m: () => onCopy("name"),
+  l: () => onCopy("memory"),
 }
 
 onMounted(() => {
@@ -116,7 +117,7 @@ function newEvent() {
     date: new Date().toISOString(),
     name: "now",
     text: "",
-    memoryRaw: "",
+    memory: "",
   })
   toggleEventFocus(events.length - 1)
   appState.upsertDBSync("focusedField", "text")
@@ -228,7 +229,7 @@ function getPrompt(field) {
   let prompt
   if (field === "text") prompt = promptText
   else if (field === "name") prompt = promptName
-  else if (field === "memoryRaw") prompt = promptMemoryRaw
+  else if (field === "memory") prompt = promptMemory
   return prompt(events, topics, appState.selectedTopics, getFocusedEvent())
 }
 // function getPromptNow() {

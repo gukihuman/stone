@@ -48,38 +48,17 @@
     </div>
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700">
-      <div class="flex p-3 border-b-[3px] border-dashed border-stone-600">
-        <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
-          <PrettyNum :number="getTokens(getPrompt('text'))" theme="dark" />
-          <p class="cursor-default">text</p>
-          <ButtonLight
-            @click="emit('copy', 'text')"
-            :disabled="isLocked.copy.text"
-          >
-            copy
-          </ButtonLight>
-          <ButtonLight
-            @click="emit('gen', 'text')"
-            :disabled="isLocked.gen.text"
-          >
-            gen
-          </ButtonLight>
-        </div>
-        <div class="w-[330px] flex gap-2 text-stone-400 justify-end">
-          <PrettyNum :number="getTokens(getPrompt('memoryRaw'))" theme="dark" />
-          <p class="cursor-default">memoryRaw</p>
-          <ButtonLight
-            @click="emit('copy', 'memoryRaw')"
-            :disabled="isLocked.copy.memoryRaw"
-          >
-            copy
-          </ButtonLight>
-          <ButtonLight
-            @click="emit('gen', 'memoryRaw')"
-            :disabled="isLocked.gen.memoryRaw"
-          >
-            gen
-          </ButtonLight>
+      <div class="flex p-3 gap-8 border-b-[3px] border-dashed border-stone-600">
+        <PrettyNum :number="getTokens(getPrompt('text'))" theme="dark" />
+        <div class="flex w-full justify-between">
+          <CopyGen
+            v-for="field in ['text', 'name', 'memory']"
+            :key="`field-${field}`"
+            :field="field"
+            :is-locked="isLocked"
+            @copy="(field) => emit('copy', field)"
+            @gen="(field) => emit('gen', field)"
+          />
         </div>
       </div>
       <div class="flex p-3 justify-between">
@@ -89,22 +68,6 @@
             :states="fields"
             @change="emit('update-app-state', 'focusedField', field)"
           />
-          <div class="w-[260px] flex gap-2 text-stone-400 justify-end">
-            <PrettyNum :number="getTokens(getPrompt('name'))" theme="dark" />
-            <p class="cursor-default">name</p>
-            <ButtonLight
-              @click="emit('copy', 'name')"
-              :disabled="isLocked.copy.name"
-            >
-              copy
-            </ButtonLight>
-            <ButtonLight
-              @click="emit('gen', 'name')"
-              :disabled="isLocked.gen.name"
-            >
-              gen
-            </ButtonLight>
-          </div>
         </div>
         <ButtonLight @click="emit('remove-event')"> remove</ButtonLight>
       </div>

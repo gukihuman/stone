@@ -1,7 +1,7 @@
 const CONFIG = {
   text: { start: "", end: "", include: true },
   name: { start: '["', end: '"]', include: false },
-  memoryRaw: { start: "{", end: "}", include: true },
+  memory: { start: "{", end: "}", include: true },
 }
 export default async function ({
   model,

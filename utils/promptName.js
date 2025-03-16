@@ -2,13 +2,12 @@ export default function (events, topics, selectedTopics, focusedEvent) {
   const instruction = `your task is to name a given event. existing memories are for context only. name the text presented as given event. name should be lowercase, no special symbols, even commas, and most importantly short. use existing even names as reference. deeply reason about names first, then provide a json as an array with one string item. so the output is like:
   
   deep reasoning monologue text
-  ["final name"]
-  `
+  ["final name"]`
 
   const topicsPart = selectedTopics.reduce((topicAcc, level, i) => {
     const eventsPart = events.reduce((eventAcc, event) => {
       try {
-        const memory = JSON.parse(event.memoryRaw)
+        const memory = JSON.parse(event.memory)
         if (memory[topics[i]]?.[level]) {
           eventAcc.push(
             [

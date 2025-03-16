@@ -113,7 +113,7 @@ function getMemories(topic) {
   return props.events.reduce((acc, event) => {
     const topicIndex = props.topics.indexOf(topic)
     try {
-      const memory = JSON.parse(event.memoryRaw)
+      const memory = JSON.parse(event.memory)
       const topicMemory = memory[topic]?.[props.selected[topicIndex]]
       if (topicMemory) acc = [acc, topicMemory].join("\n\n")
     } catch (e) {}
