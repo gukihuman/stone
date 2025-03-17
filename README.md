@@ -10,7 +10,7 @@ npm run build
 
 ## data structure
 
-first class data, stored in indexedDB
+stored in indexedDB
 
 ### events
 
@@ -35,22 +35,13 @@ memory string must be parsed as valid JSON. it consists of topics, each topic ha
 
 ### appState
 
+indecies of the selected topics identical to topics. values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics
+
 ```json
 {
   "focusedIndex": 0,
   "focusedIndex": 0,
-  "focusedField": "text"
+  "focusedField": "text",
+  "selectedTopics": [0, 1, null, 1]
 }
 ```
-
-## dynamic app structure
-
-### selected topics
-
-indecies identical to topics. values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics
-
-```json
-[0, 1, null, 1]
-```
-
-### tokens

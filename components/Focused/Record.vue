@@ -11,9 +11,8 @@
     <div
       class="w-full min-h-[76px] flex-shrink-0 rounded-b-lg p-8 pt-5 scroll-light bg-lines text-xl bg-stone-400 text-stone-800 flex flex-col cursor-default"
       :style="{ backgroundPositionY: `${LINE_OFFSET}px` }"
-    >
-      {{ text }}
-    </div>
+      v-html="text"
+    />
   </div>
 </template>
 <script setup>

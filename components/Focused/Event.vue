@@ -141,7 +141,7 @@ const topicParts = computed(() => {
   try {
     const memory = JSON.parse(props.event.memory)
     Object.entries(memory).forEach(([topic, memories]) => {
-      result.push([topic, [memories[0], memories[1]].join("\n\n")])
+      result.push([topic, [memories[0], `<br><br>`, memories[1]].join("\n\n")])
     })
   } catch (e) {}
   return result
