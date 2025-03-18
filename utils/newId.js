@@ -1,3 +1,3 @@
 export default function () {
-  return Math.random().toString().slice(2, 18)
+  return Math.random().toString(36).slice(2, 10)
 }
