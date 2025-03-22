@@ -1,6 +1,6 @@
 <template>
   <button
-    class="px-4 pb-1 rounded-lg"
+    class="px-3 pb-1 rounded-lg min-w-[60px]"
     :class="
       theme === 'darker'
         ? disabled

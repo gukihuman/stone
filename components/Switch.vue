@@ -4,7 +4,7 @@
       v-for="(state, index) in states"
       :key="state"
       @click="handleClick(state)"
-      class="flex justify-between min-w-[120px]"
+      class="flex justify-between min-w-[90px]"
       :class="[
         state === modelValue
           ? 'cursor-default bg-stone-500 text-stone-200'

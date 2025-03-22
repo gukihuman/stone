@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[290px] flex flex-col gap-3 flex-shrink-0">
+  <div class="w-[290px] flex flex-col gap-3 flex-1">
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
@@ -60,7 +60,7 @@
           <div
             class="flex max-w-full"
             v-for="(topic, i) in topics"
-            :key="`topic${i}`"
+            :key="`topic-${i}`"
           >
             <ButtonList
               :active="focusedIndex === i"

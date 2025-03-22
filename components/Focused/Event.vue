@@ -4,8 +4,14 @@
   >
     <!-- # top ---------------------------------------------------------------->
     <div
-      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden"
+      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-2"
     >
+      <CopyGen
+        field="name"
+        :is-locked="isLocked"
+        @copy="(field) => emit('copy', field)"
+        @gen="(field) => emit('gen', field)"
+      />
       <input
         ref="nameEl"
         type="text"
@@ -23,8 +29,8 @@
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
-      class="w-full relative flex-grow p-3 overflow-hidden"
-      :class="[isTextareaFocused ? 'bg-stone-700' : '']"
+      class="w-full relative flex-grow overflow-hidden"
+      :class="{ 'bg-stone-700': isTextareaFocused, 'p-3': field }"
     >
       <div
         v-if="field"
@@ -47,13 +53,10 @@
           :style="{ backgroundPositionY: linesOffset }"
         />
       </div>
-      <div
-        v-else
-        class="relative overflow-auto rounded-xl scroll-light h-full max-h-full"
-      >
+      <div v-else class="relative overflow-auto h-full max-h-full">
         <div
           ref="textareaEl"
-          class="w-full h-full flex flex-col gap-4 scroll-light overflow-auto items-center rounded-lg bg-stone-450"
+          class="w-full h-full p-3 flex flex-col gap-4 overflow-y-scroll auto items-center"
         >
           <FocusedRecord
             v-for="([topic, topicMemory], i) in topicParts"
@@ -66,37 +69,39 @@
     </div>
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700 flex-shrink-0">
-      <div class="flex p-3 gap-8 border-b-[3px] border-dashed border-stone-600">
-        <div class="flex w-full justify-between">
+      <div class="flex p-3 justify-between gap-5">
+        <div class="flex gap-3 flex-grow justify-between">
           <CopyGen
-            v-for="field in ['text', 'name', 'memory']"
-            :key="`field-${field}`"
-            :field="field"
+            field="text"
             :is-locked="isLocked"
             @copy="(field) => emit('copy', field)"
             @gen="(field) => emit('gen', field)"
           />
-        </div>
-        <PrettyNum
-          :number="getTokens(getPrompt('text'))"
-          theme="dark"
-          class="cursor-default pt-[1px] w-[70px] justify-end"
-        />
-      </div>
-      <div class="flex p-3 justify-between">
-        <div class="flex gap-2">
-          <Switch
-            v-model="field"
-            :states="fields"
-            @change="emit('update-app-state', 'focusedField', field)"
+          <div class="flex gap-1">
+            <Switch
+              v-model="field"
+              :states="fields"
+              @change="emit('update-app-state', 'focusedField', field)"
+            />
+            <ButtonLight
+              @click="emit('update-app-state', 'focusedField', null)"
+              :disabled="!field"
+              theme="darker"
+            >
+              pretty
+            </ButtonLight>
+          </div>
+          <CopyGen
+            field="memory"
+            :is-locked="isLocked"
+            @copy="(field) => emit('copy', field)"
+            @gen="(field) => emit('gen', field)"
           />
-          <ButtonLight
-            @click="emit('update-app-state', 'focusedField', null)"
-            :disabled="!field"
-            theme="darker"
-          >
-            pretty memory
-          </ButtonLight>
+          <PrettyNum
+            :number="getTokens(getPrompt('text'))"
+            theme="dark"
+            class="cursor-default pt-[1px] w-[60px] justify-end"
+          />
         </div>
         <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>

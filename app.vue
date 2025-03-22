@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col bg-stone-600 h-screen gap-3 p-1 pb-8">
+  <div class="flex flex-col bg-stone-600 h-screen gap-4 p-1 pb-8">
     <!-- # mid ---------------------------------------------------------------->
-    <div class="flex overflow-hidden justify-between gap-3 flex-grow">
+    <div class="flex overflow-hidden justify-between gap-2 flex-grow">
       <Events
         :events="events"
         :focused-index="
@@ -28,9 +28,9 @@
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
       <FocusedTopic
+        ref="focusedRef"
         v-else-if="getFocusedTopic() !== null"
         :key="`topic-${appState.focusedIndex}-${getFocusedTopicLevel()}`"
-        ref="focusedRef"
         :topic="getFocusedTopic()"
         :level="getFocusedTopicLevel()"
         :events="events"
@@ -39,20 +39,44 @@
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
       />
-      <Topics
-        :topics="topics"
-        :events="events"
-        :selected="appState.selectedTopics || []"
-        :focused-index="
-          appState.focusedList === 'topics' ? appState.focusedIndex : null
-        "
-        @new-topic="newTopic"
-        @toggle-focus="toggleTopicFocus"
-        @toggle-select="toggleTopicSelect"
-        @toggle-select-all="toggleSelectAllTopics"
-        @sort-up="sortTopic(1)"
-        @sort-down="sortTopic(-1)"
+      <FocusedFile
+        ref="focusedRef"
+        v-else-if="getFocusedFile() !== null"
+        :key="`file-${appState.focusedIndex}`"
+        :file="getFocusedFile()"
       />
+      <div class="flex flex-col gap-2 h-full">
+        <Topics
+          :topics="topics"
+          :events="events"
+          :selected="appState.selectedTopics || []"
+          :focused-index="
+            appState.focusedList === 'topics' ? appState.focusedIndex : null
+          "
+          @new-topic="newTopic"
+          @toggle-focus="toggleTopicFocus"
+          @toggle-select="toggleTopicSelect"
+          @toggle-select-all="toggleSelectAllTopics"
+          @sort-up="sortTopic(1)"
+          @sort-down="sortTopic(-1)"
+        />
+        <Files
+          ref="filesRef"
+          v-if="files"
+          :files="files"
+          :path="appState.filesPath"
+          :selected="appState.selectedFiles || []"
+          :focused-index="
+            appState.focusedList === 'files' ? appState.focusedIndex : null
+          "
+          @update-path="updateFilePath"
+          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          @toggle-focus="toggleFileFocus"
+          @toggle-select="toggleFileSelect"
+          @toggle-select-all="toggleSelectAllFiles"
+        />
+      </div>
     </div>
     <!-- # bot ---------------------------------------------------------------->
     <div
@@ -79,8 +103,10 @@ const { events, topics, appState } = useDatabase()
 
 // els refs
 const focusedRef = ref(null)
+const filesRef = ref(null)
 
 // reactive
+const files = ref(null)
 const isLocked = reactive({
   copy: { text: false, name: false, memory: false },
   gen: { text: false, name: false, memory: false },
@@ -90,33 +116,66 @@ const isLocked = reactive({
 let lastRemovedEvent = null
 let cleanupHotkeys
 const hotkeys = {
-  w: () => toggleEventFocus(events.length - 1),
-  "{": toggleDown,
-  "}": toggleUp,
+  // left hand
+  w: () => onCopy("name"),
+  y: () => toggleEventFocus(events.length - 1),
   u: () => focusedRef.value?.focusName(),
-  o: () => focusedRef.value?.focusBot(),
   e: () => focusedRef.value?.focusTop(),
+  o: () => focusedRef.value?.focusBot(),
   g: () => scrollToBot(focusedRef.value?.textareaEl),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
 
+  // right hand
   h: () => appState.upsertDBSync("focusedField", "text"),
   t: () => appState.upsertDBSync("focusedField", "memory"),
   n: () => appState.upsertDBSync("focusedField", null),
-  y: () => onCopy("text"),
-  m: () => onCopy("name"),
+  m: () => onCopy("text"),
   l: () => onCopy("memory"),
+  s: () => filesRef.value?.focusPath(),
   p: () => toggleTopicFocus(topics.length - 1),
+
+  // both hands
+  "{": toggleDown,
+  "}": toggleUp,
 }
 
-onMounted(() => {
+onMounted(async () => {
   events.loadFromDB()
   topics.loadFromDB()
-  appState.loadFromDB()
+  await appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
+  getFiles()
 })
 onUnmounted(cleanupHotkeys)
 
-/////////////////////////////////// event //////////////////////////////////////
+/////////////////////////////////// files //////////////////////////////////////
+function updateFilePath(path) {
+  appState.upsertDBSync("filesPath", path)
+  getFiles()
+}
+async function getFiles() {
+  files.value = await apiGetFiles({
+    path: appState.filesPath,
+    ignore: [
+      ".nuxt",
+      ".output",
+      ".vscode",
+      "node_modules",
+      "public",
+      ".env",
+      ".gitignore",
+      "package-lock.json",
+    ],
+  })
+}
+function toggleFileFocus(i) {
+  const same = appState.focusedList === "files" && appState.focusedIndex === i
+  appState.upsertDBSync("focusedIndex", same ? null : i)
+  appState.upsertDBSync("focusedList", same ? null : "files")
+}
+function toggleFileSelect() {}
+function toggleSelectAllFiles() {}
+/////////////////////////////////// events /////////////////////////////////////
 function newEvent() {
   events.upsertDBSync({
     id: newId(),
@@ -151,7 +210,7 @@ function restoreEvent() {
 function newTopic() {
   topics.insertDBSync("topic")
   toggleTopicFocus(topics.length - 1)
-  appState.selectedTopics.push(1)
+  appState.selectedTopics.push(0)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function toggleTopicFocus(i) {
@@ -198,7 +257,7 @@ function onCopy(field) {
   copyToClipboard({ input: getPrompt(field), locked: isLocked.copy, field })
 }
 async function onGen(field) {
-  await gen({
+  await apiGen({
     model: field === "name" ? "gemini-2.0-flash" : "gemini-2.0-pro-exp-02-05",
     input: getPrompt(field),
     event: getFocusedEvent(),
@@ -238,13 +297,18 @@ function getPrompt(field) {
   else if (field === "memory") prompt = promptMemory
   return prompt(events, topics, appState.selectedTopics, getFocusedEvent())
 }
+function getFocusedEvent() {
+  if (appState.focusedList !== "events") return null
+  return events[appState.focusedIndex] || null
+}
 function getFocusedTopic() {
   if (appState.focusedList !== "topics") return null
   return topics[appState.focusedIndex]
 }
-function getFocusedEvent() {
-  if (appState.focusedList !== "events") return null
-  return events[appState.focusedIndex] || null
+function getFocusedFile() {
+  if (!files.value) return null
+  if (appState.focusedList !== "files") return null
+  return files.value[appState.focusedIndex] || null
 }
 function getFocusedTopicLevel() {
   const topicIndex = topics.indexOf(getFocusedTopic())

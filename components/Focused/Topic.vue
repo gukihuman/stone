@@ -17,11 +17,11 @@
       />
     </div>
     <!-- # mid --------------------------------------------------------------->
-    <div class="w-full p-3 overflow-hidden flex-grow">
-      <div class="overflow-hidden h-full rounded-lg">
+    <div class="w-full overflow-hidden flex-grow">
+      <div class="overflow-hidden h-full">
         <div
           ref="textareaEl"
-          class="w-full h-full flex flex-col gap-4 scroll-light overflow-auto items-center rounded-lg bg-stone-450"
+          class="w-full p-3 h-full flex flex-col gap-4 overflow-y-scroll items-center"
         >
           <FocusedRecord
             v-for="([eventName, eventDate, eventMemory], i) in eventData"
@@ -49,8 +49,6 @@ const emit = defineEmits([
   "remove-topic",
   "lock-hotkeys",
   "unlock-hotkeys",
-  "focus",
-  "blur",
 ])
 
 const { focusName } = useFocused()

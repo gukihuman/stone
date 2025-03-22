@@ -8,9 +8,9 @@ npm run dev
 npm run build
 ```
 
-## data structure
+## persistent data structure
 
-stored in indexedDB
+persistent data stored in indexedDB
 
 ### events
 
@@ -41,7 +41,20 @@ indecies of the selected topics identical to topics. values are levels of abstra
 {
   "focusedIndex": 0,
   "focusedIndex": 0,
-  "focusedField": "text",
+  "focusedField": "text", // text, memory
+  "focusedList": "events", // events, topics, files
   "selectedTopics": [0, 1, null, 1]
+}
+```
+
+## dynamic data structure
+
+formed on the client only during session
+
+### files
+
+```json
+{
+  "C:/projects/stone/app.vue": "<template>\n  <div..."
 }
 ```
