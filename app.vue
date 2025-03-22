@@ -62,7 +62,7 @@
         />
         <Files
           ref="filesRef"
-          v-if="files"
+          v-if="files.length"
           :files="files"
           :path="appState.filesPath"
           :selected="appState.selectedFiles || []"
@@ -76,6 +76,7 @@
           @toggle-select="toggleFileSelect"
           @toggle-select-all="toggleSelectAllFiles"
         />
+        <div v-else class="flex-1" />
       </div>
     </div>
     <!-- # bot ---------------------------------------------------------------->
@@ -106,7 +107,7 @@ const focusedRef = ref(null)
 const filesRef = ref(null)
 
 // reactive
-const files = ref(null)
+const files = ref([])
 const isLocked = reactive({
   copy: { text: false, name: false, memory: false },
   gen: { text: false, name: false, memory: false },
@@ -153,6 +154,8 @@ function updateFilePath(path) {
   appState.upsertDBSync("filesPath", path)
   appState.upsertDBSync("focusedIndex", null)
   getFiles()
+  appState.selectedFiles = Array(files.value.length).fill(false)
+  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
 }
 async function getFiles() {
   files.value = await apiGetFiles({
@@ -174,7 +177,10 @@ function toggleFileFocus(i) {
   appState.upsertDBSync("focusedIndex", same ? null : i)
   appState.upsertDBSync("focusedList", same ? null : "files")
 }
-function toggleFileSelect() {}
+function toggleFileSelect(i, state) {
+  appState.selectedFiles[i] = state
+  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
+}
 function toggleSelectAllFiles() {}
 /////////////////////////////////// events /////////////////////////////////////
 function newEvent() {
@@ -258,6 +264,7 @@ function onCopy(field) {
   copyToClipboard({ input: getPrompt(field), locked: isLocked.copy, field })
 }
 async function onGen(field) {
+  await getFiles()
   await apiGen({
     model: field === "name" ? "gemini-2.0-flash" : "gemini-2.0-pro-exp-02-05",
     input: getPrompt(field),
@@ -296,7 +303,7 @@ function getPrompt(field) {
   if (field === "text") prompt = promptText
   else if (field === "name") prompt = promptName
   else if (field === "memory") prompt = promptMemory
-  return prompt(events, topics, appState.selectedTopics, getFocusedEvent())
+  return prompt(events, topics, files.value, appState)
 }
 function getFocusedEvent() {
   if (appState.focusedList !== "events") return null

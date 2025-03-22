@@ -1,4 +1,5 @@
-export default function (events, topics, selectedTopics, focusedEvent) {
+export default function (events, topics, files, appState) {
+  const focusedEvent = events[appState.focusedIndex]
   const instruction = `you expirience different events, you have a memory system that allows to remember them. you must make memory from your own point of view. make memory of an event focusing on a topic perspective. what it means? it is when you thinking about the topic and recollecting only memories that are valuable for the topic. existing memories must be the perspective. you may recollect an old event, that happened long ago and you just return to it to refresh memory about it. event might existing in memory in that case, so first question you must ask yourself, is the given event new or old? new event must be remembered with attention to new, surprising info, as you see it for the first time. old event must be analyzed from existing memories, just reflected on, with acknowledged contradictions of more recent info, and updated with only relevant to today info. how existing memory change the perspective on the event, if its old?
   
   memories must be separated in two levels of abstraction. first level is very detailed, consist of all valuable to the topic information presented in the event as it is, factual and with no loss of info: that means it should absolutely clearly capture all the facts, all the details with no loss. only exception is date, no need to mention date in memories because it is handled by memory system itself. second level is highly abstract, a vague recollection of what happened in general. acknowledge who you are by yourself from an event. output memory in a json format as one object, where fields are topics, values are arrays with two string items corresponding to memory texts: at 0 index is first level of abstraction and at 1 index is the second level. and one last thing, you can pick only relevant topics, if a topic completely irrelevant, just skip creating memories for it completely.
@@ -9,7 +10,7 @@ export default function (events, topics, selectedTopics, focusedEvent) {
   { "topic name": [ "no loss long text", "short vague abstraction text" ] }
   `
 
-  const topicsPart = selectedTopics.reduce((topicAcc, level, i) => {
+  const topicsPart = appState.selectedTopics.reduce((topicAcc, level, i) => {
     const eventsPart = events.reduce((eventAcc, event) => {
       try {
         const memory = JSON.parse(event.memory)
@@ -29,12 +30,28 @@ export default function (events, topics, selectedTopics, focusedEvent) {
     }
     return topicAcc
   }, [])
+  const filesPart = files.reduce((fileAcc, file, fileIndex) => {
+    if (appState.selectedFiles[fileIndex]) {
+      fileAcc.push(`### ${file.path}\n\n${file.content}`)
+    }
+    return fileAcc
+  }, [])
+  const allFilesList = files.map((file) => file.path).join(", ")
 
   return [
-    `# instruction`,
+    `# context`,
     instruction,
-    ...(topicsPart.length ? [`## existing memories by topics`] : []),
-    ...topicsPart,
+    ...(topicsPart.length
+      ? [`## existing memories by topics`, ...topicsPart]
+      : []),
+    ...(filesPart.length
+      ? [
+          `## files from folder ${appState.filesPath}`,
+          `${allFilesList}`,
+          `all files listed here are the most relevant, latest versions, directly from file system. other file references appearing in ongoing event, if any, might be outdated. some of them might be selected and their content gonna be presented below. all of them here is simply to understand broader concept of current folder. also it can be suggested to select a file / files if needed during event`,
+          ...filesPart,
+        ]
+      : []),
     `## event to make memory from`,
     `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
     focusedEvent.text,

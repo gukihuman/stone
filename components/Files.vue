@@ -11,7 +11,7 @@
         @input="dEmitUpdatePath"
         @focus="emit('lock-hotkeys')"
         @blur="emit('unlock-hotkeys')"
-        class="min-h-9 focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-lg text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
+        class="min-h-9 max-h-9 focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-lg text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
       />
       <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
         <div class="flex flex-col">
@@ -27,6 +27,26 @@
               <span class="truncate">{{ path }}</span>
               <PrettyNum :number="getTokens(content)" theme="light" />
             </ButtonList>
+            <!-- ## circles list ---------------------------------------------->
+            <div class="flex pr-[2px]">
+              <div
+                v-for="state in [true, false]"
+                class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
+                @click="emit('toggle-select', i, state)"
+              >
+                <div
+                  class="flex items-center justify-center rounded-full size-5 bg-stone-550"
+                >
+                  <div
+                    class="rounded-full size-3"
+                    :class="{
+                      'bg-stone-300': state && selected[i],
+                      'bg-stone-500': !state && !selected[i],
+                    }"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
