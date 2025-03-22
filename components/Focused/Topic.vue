@@ -21,7 +21,7 @@
       <div class="overflow-hidden h-full">
         <div
           ref="textareaEl"
-          class="w-full p-3 h-full flex flex-col gap-4 overflow-y-scroll items-center"
+          class="w-full px-3 py-2 h-full flex flex-col gap-4 overflow-y-scroll items-center"
         >
           <FocusedRecord
             v-for="([eventName, eventDate, eventMemory], i) in eventData"

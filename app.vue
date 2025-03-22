@@ -45,7 +45,7 @@
         :key="`file-${appState.focusedIndex}`"
         :file="getFocusedFile()"
       />
-      <div class="flex flex-col gap-2 h-full">
+      <div class="flex flex-col gap-2">
         <Topics
           :topics="topics"
           :events="events"
@@ -151,6 +151,7 @@ onUnmounted(cleanupHotkeys)
 /////////////////////////////////// files //////////////////////////////////////
 function updateFilePath(path) {
   appState.upsertDBSync("filesPath", path)
+  appState.upsertDBSync("focusedIndex", null)
   getFiles()
 }
 async function getFiles() {

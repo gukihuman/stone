@@ -30,7 +30,7 @@
     <!-- # mid ---------------------------------------------------------------->
     <div
       class="w-full relative flex-grow overflow-hidden"
-      :class="{ 'bg-stone-700': isTextareaFocused, 'p-3': field }"
+      :class="{ 'bg-stone-700': isTextareaFocused, 'px-3 py-2': field }"
     >
       <div
         v-if="field"
@@ -56,7 +56,7 @@
       <div v-else class="relative overflow-auto h-full max-h-full">
         <div
           ref="textareaEl"
-          class="w-full h-full p-3 flex flex-col gap-4 overflow-y-scroll auto items-center"
+          class="w-full h-full px-3 py-2 flex flex-col gap-4 overflow-y-scroll auto items-center"
         >
           <FocusedRecord
             v-for="([topic, topicMemory], i) in topicParts"
