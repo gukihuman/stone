@@ -26,7 +26,7 @@
         <PrettyNum
           :number="getTokensTotal()"
           theme="dark"
-          class="cursor-default w-14 h-full"
+          class="cursor-default w-14 pt-[2px]"
         />
         <div v-if="selected.length" class="flex pl-2 pr-2">
           <Circles
@@ -41,7 +41,7 @@
       <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
         <div class="flex flex-col-reverse">
           <div
-            class="flex max-w-full"
+            class="flex max-w-full gap-1"
             v-for="(topic, i) in topics"
             :key="`topic-${i}`"
           >

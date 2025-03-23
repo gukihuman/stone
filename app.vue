@@ -12,6 +12,7 @@
         @toggle-focus="toggleEventFocus"
         @toggle-select="toggleEventSelect"
         @toggle-select-all="toggleSelectAllEvents"
+        class="w-[255px]"
       />
       <FocusedEvent
         v-if="getFocusedEvent()"
@@ -155,7 +156,9 @@ onUnmounted(cleanupHotkeys)
 /////////////////////////////////// files //////////////////////////////////////
 async function updateFilePath(path) {
   appState.upsertDBSync("filesPath", path)
-  appState.upsertDBSync("focusedIndex", null)
+  if (appState.focusedList === "files") {
+    appState.upsertDBSync("focusedIndex", null)
+  }
   await getFiles()
   appState.selectedFiles = Array(files.value.length).fill(false)
   appState.upsertDBSync("selectedFiles", appState.selectedFiles)

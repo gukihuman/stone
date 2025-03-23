@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-[230px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
+    class="overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
   >
     <!-- # top menu ----------------------------------------------------------->
     <div class="flex gap-2 pr-2 bg-stone-700">
@@ -13,7 +13,7 @@
       <PrettyNum
         :number="getTokensTotal()"
         theme="dark"
-        class="cursor-default w-14 h-full"
+        class="cursor-default w-14 pt-[2px]"
       />
       <div v-if="selected.length" class="flex">
         <Circles
@@ -30,7 +30,7 @@
         <div
           v-for="({ name, text }, i) in events"
           :key="`event-${i}`"
-          class="flex"
+          class="flex gap-1"
         >
           <ButtonList
             :active="focusedIndex === i"

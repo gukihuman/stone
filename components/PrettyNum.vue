@@ -1,20 +1,20 @@
 <template>
-  <div class="flex h-6 pb-1 pr-[1px] flex-shrink-0 justify-end">
+  <div class="flex h-6 pb-1 gap-1 pr-[1px] flex-shrink-0 justify-end">
     <div
       v-for="(group, i) in groups"
       :key="i"
-      class="w-7 h-6 flex justify-end items-center font-semibold"
+      class="h-6 flex justify-end items-center font-semibold text-sm font-fira-code"
       :class="
         theme === 'light'
           ? [
-              i === groups.length - 3 ? 'text-lg text-stone-350' : '',
-              i === groups.length - 2 ? 'text-[15px] text-stone-350' : '',
-              i === groups.length - 1 ? 'text-sm pt-[1px] text-stone-400' : '',
+              i === groups.length - 3 ? 'text-stone-350' : '',
+              i === groups.length - 2 ? 'text-stone-350' : '',
+              i === groups.length - 1 ? 'text-stone-400' : '',
             ]
           : [
-              i === groups.length - 3 ? 'text-lg text-stone-400' : '',
-              i === groups.length - 2 ? 'text-[15px] text-stone-400' : '',
-              i === groups.length - 1 ? 'text-sm pt-[1px] text-stone-450' : '',
+              i === groups.length - 3 ? 'text-stone-400' : '',
+              i === groups.length - 2 ? 'text-stone-400' : '',
+              i === groups.length - 1 ? 'text-stone-450' : '',
             ]
       "
     >

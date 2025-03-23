@@ -4,8 +4,8 @@
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
       <!-- # top -------------------------------------------------------------->
-      <div class="flex justify-between pr-2 bg-stone-700">
-        <div class="flex-1 overflow-hidden">
+      <div class="flex justify-between gap-2 pr-2 bg-stone-700">
+        <div class="flex-grow overflow-hidden">
           <input
             ref="pathEl"
             type="text"
@@ -13,14 +13,15 @@
             @input="dEmitUpdatePath"
             @focus="emit('lock-hotkeys')"
             @blur="emit('unlock-hotkeys')"
-            class="min-h-9 max-h-9 focus:bg-stone-800 flex-shrink pb-1 bg-stone-700 pl-3 text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
+            class="min-h-9 max-h-9 w-full focus:bg-stone-800 flex-shrink pb-1 bg-stone-700 pl-3 text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
           />
         </div>
         <div class="flex gap-2">
           <PrettyNum
+            v-if="getTokensTotal()"
             :number="getTokensTotal()"
             theme="light"
-            class="pt-[5px] w-14"
+            class="pt-[5px]"
           />
           <Circles
             v-if="files.length"
@@ -31,26 +32,40 @@
           <div v-else class="w-[50px]" />
         </div>
       </div>
-      <!-- # list -->
-      <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
-        <div class="flex flex-col">
+      <!-- # list ------------------------------------------------------------->
+      <div
+        ref="listEl"
+        class="overflow-y-scroll pb-2 flex-grow flex flex-col gap-3 pt-2"
+      >
+        <div
+          v-for="(group, groupIndex) in groupedFiles"
+          :key="`group-${groupIndex}`"
+          class="flex flex-col"
+        >
           <div
-            class="flex max-w-full"
-            v-for="({ path, content }, i) in files"
-            :key="`file-${i}`"
+            class="flex items-end pl-3 text-stone-350 text-sm cursor-default"
+          >
+            {{ group.folder }}
+          </div>
+          <div
+            class="flex max-w-full gap-1"
+            v-for="{ file, index } in group.files"
+            :key="`file-${index}`"
           >
             <ButtonList
-              :active="focusedIndex === i"
-              @click="emit('toggle-focus', i)"
+              :active="focusedIndex === index"
+              @click="emit('toggle-focus', index)"
             >
-              <span class="truncate text-sm">{{ path }}</span>
-              <PrettyNum :number="getTokens(content)" theme="light" />
+              <span class="truncate">
+                {{ getParts(file.path).file }}
+              </span>
+              <PrettyNum :number="getTokens(file.content)" theme="light" />
             </ButtonList>
             <Circles
               :selected="selected"
-              :index="i"
+              :index="index"
               :states="[true, false]"
-              @toggle="(state) => emit('toggle-select', i, state)"
+              @toggle="(state) => emit('toggle-select', index, state)"
             />
           </div>
         </div>
@@ -72,22 +87,39 @@ const emit = defineEmits([
 // els refs
 const pathEl = ref(null)
 
-// v-model
+// reactive
 const path = ref(props.path)
+
+const groupedFiles = computed(() => {
+  const groups = {}
+  props.files.forEach((file, index) => {
+    const { folder } = getParts(file.path)
+    if (!groups[folder]) groups[folder] = { folder, files: [] }
+    groups[folder].files.push({ file, index })
+  })
+  return Object.values(groups)
+})
 
 defineExpose({ focusPath: () => focusPath(pathEl) })
 
 ////////////////////////////////////////////////////////////////////////////////
-const dEmitUpdatePath = debounce(() => emit("update-path", path.value))
+const dEmitUpdatePath = debounce(() => emit("update-path", path.value), 1000)
 
-function focusPath(pathEl) {
-  pathEl.value.focus()
-  pathEl.value.setSelectionRange(0, pathEl.value.value.length)
-}
 function getTokensTotal() {
   return props.files.reduce((acc, file, i) => {
     if (props.selected[i]) acc += getTokens(file.content)
     return acc
   }, 0)
+}
+function focusPath(pathEl) {
+  pathEl.value.focus()
+  pathEl.value.setSelectionRange(0, pathEl.value.value.length)
+}
+function getParts(path) {
+  const parts = path.split("\\")
+  const file = parts.pop()
+  let folder = parts.join("\\")
+  if (folder) folder += `\\`
+  return { folder, file }
 }
 </script>
