@@ -62,7 +62,7 @@
         />
         <Files
           ref="filesRef"
-          v-if="files.length"
+          v-if="files"
           :files="files"
           :path="appState.filesPath"
           :selected="appState.selectedFiles || []"
@@ -107,7 +107,7 @@ const focusedRef = ref(null)
 const filesRef = ref(null)
 
 // reactive
-const files = ref([])
+const files = ref(null)
 const isLocked = reactive({
   copy: { text: false, name: false, memory: false },
   gen: { text: false, name: false, memory: false },
@@ -150,10 +150,10 @@ onMounted(async () => {
 onUnmounted(cleanupHotkeys)
 
 /////////////////////////////////// files //////////////////////////////////////
-function updateFilePath(path) {
+async function updateFilePath(path) {
   appState.upsertDBSync("filesPath", path)
   appState.upsertDBSync("focusedIndex", null)
-  getFiles()
+  await getFiles()
   appState.selectedFiles = Array(files.value.length).fill(false)
   appState.upsertDBSync("selectedFiles", appState.selectedFiles)
 }
@@ -181,7 +181,10 @@ function toggleFileSelect(i, state) {
   appState.selectedFiles[i] = state
   appState.upsertDBSync("selectedFiles", appState.selectedFiles)
 }
-function toggleSelectAllFiles() {}
+function toggleSelectAllFiles(state) {
+  appState.selectedFiles = appState.selectedFiles.map(() => state)
+  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
+}
 /////////////////////////////////// events /////////////////////////////////////
 function newEvent() {
   events.upsertDBSync({
