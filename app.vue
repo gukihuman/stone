@@ -45,7 +45,7 @@
         :key="`file-${appState.focusedIndex}`"
         :file="getFocusedFile()"
       />
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2 w-[310px]">
         <Topics
           :topics="topics"
           :events="events"
@@ -302,6 +302,7 @@ async function onFileLoad() {
 }
 ///////////////////////////////// helpers //////////////////////////////////////
 function getPrompt(field) {
+  if (!files.value) return ""
   let prompt
   if (field === "text") prompt = promptText
   else if (field === "name") prompt = promptName

@@ -2,8 +2,18 @@
   <div
     class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
   >
+    <!-- # top ---------------------------------------------------------------->
+    <div
+      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-2"
+    >
+      <div
+        class="h-full focus:bg-stone-800 flex-grow px-7 bg-stone-700 text-center text-xl text-stone-300 truncate cursor-default pt-[6px]"
+      >
+        {{ file.path }}
+      </div>
+    </div>
     <div class="w-full relative flex-grow overflow-hidden">
-      <div class="relative overflow-hidden rounded-xl scroll-light h-full">
+      <div class="relative overflow-hidden rounded-b-xl scroll-light h-full">
         <textarea
           ref="textareaEl"
           v-model="textarea"

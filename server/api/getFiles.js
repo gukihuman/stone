@@ -1,4 +1,4 @@
-import fs from "node:fs/promises" // Use promises version for async/await
+import fs from "node:fs/promises"
 import path from "node:path"
 
 export default defineEventHandler(async (event) => {
@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const allowedExtensions = [".js", ".vue", ".css", ".ts", ".json", ".md"]
-
     const filesData = []
 
     async function walk(dir) {
@@ -22,19 +21,25 @@ export default defineEventHandler(async (event) => {
       try {
         files = await fs.readdir(dir, { withFileTypes: true })
       } catch (err) {
-        console.error(`Error reading directory ${dir}:`, err) //Log and skip
+        console.error(`Error reading directory ${dir}:`, err)
         return
       }
+
+      // Sort entries: directories first, then files, both alphabetically
+      files.sort((a, b) => {
+        if (a.isDirectory() && !b.isDirectory()) return -1 // Directories before files
+        if (!a.isDirectory() && b.isDirectory()) return 1 // Files after directories
+        return a.name.localeCompare(b.name) // Alphabetical within each group
+      })
 
       for (const file of files) {
         const fullPath = path.join(dir, file.name)
         const relativePath = path.relative(rootPath, fullPath)
 
-        // Check if the file or directory should be ignored
         if (ignore.includes(file.name)) continue
 
         if (file.isDirectory()) {
-          await walk(fullPath) // Recurse into subdirectories
+          await walk(fullPath) // Recurse into subdirectories first
         } else if (
           file.isFile() &&
           allowedExtensions.includes(path.extname(file.name))
@@ -43,19 +48,18 @@ export default defineEventHandler(async (event) => {
             const fileContent = await fs.readFile(fullPath, "utf-8")
             filesData.push({ path: relativePath, content: fileContent })
           } catch (err) {
-            console.error(`Error reading file ${fullPath}:`, err) //Log and skip
+            console.error(`Error reading file ${fullPath}:`, err)
           }
         }
       }
     }
 
     await walk(rootPath)
-    return filesData // Return the object directly, Nuxt handles JSON serialization
+    return filesData
   } catch (error) {
-    // Centralized error handling
     console.error("Error in /api/getFiles:", error)
     throw createError({
-      statusCode: 400, // Or 500 depending on the error type
+      statusCode: 400,
       statusMessage: error.message,
     })
   }

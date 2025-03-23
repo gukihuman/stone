@@ -1,12 +1,18 @@
 <template>
-  <div class="flex gap-1 text-stone-400 justify-end">
+  <div class="flex gap-1 text-stone-400 justify-end items-center">
     <!-- <p class="cursor-default">{{ field }}</p> -->
-    <ButtonLight @click="emit('copy', field)" :disabled="isLocked.copy[field]">
+    <ButtonLightSmall
+      @click="emit('copy', field)"
+      :disabled="isLocked.copy[field]"
+    >
       copy
-    </ButtonLight>
-    <ButtonLight @click="emit('gen', field)" :disabled="isLocked.gen[field]">
+    </ButtonLightSmall>
+    <ButtonLightSmall
+      @click="emit('gen', field)"
+      :disabled="isLocked.gen[field]"
+    >
       gen
-    </ButtonLight>
+    </ButtonLightSmall>
   </div>
 </template>
 <script setup>

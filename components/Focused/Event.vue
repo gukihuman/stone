@@ -69,8 +69,8 @@
     </div>
     <!-- # bot ---------------------------------------------------------------->
     <div class="flex flex-col w-full bg-stone-700 flex-shrink-0">
-      <div class="flex p-3 justify-between gap-5">
-        <div class="flex gap-3 flex-grow justify-between">
+      <div class="flex p-3 justify-between gap-3">
+        <div class="flex gap-3 flex-grow">
           <CopyGen
             field="text"
             :is-locked="isLocked"
@@ -100,7 +100,7 @@
           <PrettyNum
             :number="getTokens(getPrompt('text'))"
             theme="dark"
-            class="cursor-default pt-[1px] w-[60px] justify-end"
+            class="cursor-default pt-[1px] w-14 justify-end"
           />
         </div>
         <ButtonLight @click="emit('remove-event')">remove</ButtonLight>

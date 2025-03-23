@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[290px] flex flex-col flex-1 overflow-y-auto">
+  <div class="flex flex-col flex-1 overflow-y-auto">
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
@@ -13,14 +13,14 @@
             @input="dEmitUpdatePath"
             @focus="emit('lock-hotkeys')"
             @blur="emit('unlock-hotkeys')"
-            class="min-h-9 max-h-9 focus:bg-stone-800 flex-shrink pb-1 bg-stone-700 pl-3 text-lg text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
+            class="min-h-9 max-h-9 focus:bg-stone-800 flex-shrink pb-1 bg-stone-700 pl-3 text-stone-400 truncate hover:bg-stone-800 focus:text-stone-300 hover:text-stone-300"
           />
         </div>
         <div class="flex gap-2">
           <PrettyNum
             :number="getTokensTotal()"
             theme="light"
-            class="pt-[5px]"
+            class="pt-[5px] w-14"
           />
           <!-- ## circles top --------------------------------------------------->
           <div class="flex pr-[2px] flex-shrink-0">
@@ -56,7 +56,7 @@
               :active="focusedIndex === i"
               @click="emit('toggle-focus', i)"
             >
-              <span class="truncate">{{ path }}</span>
+              <span class="truncate text-sm">{{ path }}</span>
               <PrettyNum :number="getTokens(content)" theme="light" />
             </ButtonList>
             <!-- ## circles list ---------------------------------------------->
