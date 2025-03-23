@@ -69,7 +69,7 @@ export default function (events, topics, files, appState) {
       ? [
           `## files from folder ${appState.filesPath}`,
           `${allFilesList}`,
-          `all files listed here are the most relevant, latest versions, directly from file system. other file references appearing in ongoing event, if any, might be outdated. some of them might be selected and their content gonna be presented below. all of them here is simply to understand broader concept of current folder. also it can be suggested to select a file / files if needed during event`,
+          `all files listed here are the most relevant, latest versions, directly from file system. other file references appearing in ongoing event, if any, might be outdated. some of this latest relevant files might be selected and their content gonna be presented below. all of them here is simply to understand broader concept of current folder. also it can be suggested to select a file / files if needed during event`,
           ...filesPart,
         ]
       : []),

@@ -16,7 +16,7 @@
       />
       <FocusedEvent
         v-if="getFocusedEvent()"
-        :key="`event-${appState.focusedIndex}-${appState.focusedField}`"
+        :key="`event-${appState.focusedIndex}-${appState.focusedField}-${updateFocused}`"
         ref="focusedRef"
         :event="getFocusedEvent()"
         :field="appState.focusedField"
@@ -116,6 +116,7 @@ const isLocked = reactive({
   copy: { text: false, name: false, memory: false },
   gen: { text: false, name: false, memory: false },
 })
+const updateFocused = ref(0)
 
 // regular
 let lastRemovedEvent = null
@@ -299,6 +300,8 @@ async function onFileSave() {
 }
 async function onFileLoad() {
   fileLoad(async (loadedData) => {
+    appState.upsertDBSync("focusedIndex", null)
+
     events.clearDBSync()
     await Promise.all(loadedData.events.map((e) => events.upsertDBSync(e)))
 
@@ -306,13 +309,10 @@ async function onFileLoad() {
     await Promise.all(loadedData.topics.map((t) => topics.insertDBSync(t)))
 
     const entries = Object.entries(loadedData.appState)
-    console.log(loadedData.appState)
     await Promise.all(entries.map(([key, v]) => appState.upsertDBSync(key, v)))
     console.log(`⏬ data loaded from file [${timestamp()}]`)
 
-    // not react to same focused after load, reset cleaner for now
-    appState.upsertDBSync("focusedIndex", null)
-    appState.upsertDBSync("focusedList", null)
+    updateFocused.value++
   })
 }
 ///////////////////////////////// helpers //////////////////////////////////////
