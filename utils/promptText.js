@@ -1,5 +1,26 @@
 export default function (events, topics, files, appState) {
   const focusedEvent = events[appState.focusedIndex]
+
+  const eventsPart = events.reduce((eventAcc, event, eventIndex) => {
+    if (
+      appState.focusedList === "events" &&
+      eventIndex === appState.focusedIndex
+    ) {
+      return eventAcc
+    }
+    if (appState.selectedEvents[eventIndex]) {
+      eventAcc.push(
+        [`### ${event.name} ${event.date.substring(0, 10)}`, event.text].join(
+          "\n\n"
+        )
+      )
+    }
+    return eventAcc
+  }, [])
+  const allEventsList = events
+    .map((event) => `${event.name} ${event.date.substring(0, 10)}`)
+    .join("\n")
+
   const topicsPart = appState.selectedTopics.reduce((topicAcc, level, i) => {
     const eventsPart = events.reduce((eventAcc, event) => {
       try {
@@ -42,7 +63,15 @@ export default function (events, topics, files, appState) {
           ...filesPart,
         ]
       : []),
-    `## ongoing current event`,
+    ...(eventsPart.length
+      ? [
+          `## events that happened by order they happened`,
+          `${allEventsList}`,
+          `events listed here are direct records of what already happened. some are present below, its important to understand, that its only records. experience them again fully is like watching a video recording. if they were selected to be present below, they important for current context`,
+          ...eventsPart,
+        ]
+      : []),
+    `## ongoing current event, happening right now`,
     `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
     focusedEvent.text,
   ].join("\n\n")

@@ -28,29 +28,12 @@
           theme="dark"
           class="cursor-default w-14 h-full"
         />
-        <!-- ## circles top menu ---------------------------------------------->
-        <div v-if="selected.length" class="flex pl-2 pr-[10px]">
-          <div
-            v-for="level in [0, 1, null]"
-            class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-            @click="emit('toggle-select-all', level)"
-          >
-            <div
-              class="flex items-center justify-center rounded-full size-5 bg-stone-600"
-            >
-              <div
-                class="rounded-full size-3"
-                :class="{
-                  'bg-stone-300':
-                    level === 0 && selected.every((is) => is === 0),
-                  'bg-stone-400':
-                    level === 1 && selected.every((is) => is === 1),
-                  'bg-stone-500':
-                    level === null && selected.every((is) => is === null),
-                }"
-              />
-            </div>
-          </div>
+        <div v-if="selected.length" class="flex pl-2 pr-2">
+          <Circles
+            :selected="selected"
+            :states="[0, 1, null]"
+            @toggle="(state) => emit('toggle-select-all', state)"
+          />
         </div>
         <div v-else class="w-[82px]" />
       </div>
@@ -72,27 +55,12 @@
                 theme="light"
               />
             </ButtonList>
-            <!-- ## circles list ---------------------------------------------->
-            <div class="flex pr-[2px]">
-              <div
-                v-for="level in [0, 1, null]"
-                class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-                @click="emit('toggle-select', i, level)"
-              >
-                <div
-                  class="flex items-center justify-center rounded-full size-5 bg-stone-550"
-                >
-                  <div
-                    class="rounded-full size-3"
-                    :class="{
-                      'bg-stone-300': level === 0 && selected[i] === 0,
-                      'bg-stone-400': level === 1 && selected[i] === 1,
-                      'bg-stone-500': level === null && selected[i] === null,
-                    }"
-                  />
-                </div>
-              </div>
-            </div>
+            <Circles
+              :selected="selected"
+              :index="i"
+              :states="[0, 1, null]"
+              @toggle="(state) => emit('toggle-select', i, state)"
+            />
           </div>
         </div>
       </div>

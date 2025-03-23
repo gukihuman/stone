@@ -40,18 +40,19 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
 
 ### appState
 
-indecies of the selected topics identical to topics. values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics.
+indecies of the selected events / topics / files identical to their content lists. for events for topics values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics.
 
 files itself not stored in db, they always directly taken, but their selection preserved while path dosnt change
 
 ```json
 {
   "filesPath": "C:\\projects\\stone",
-  "focusedField": "text", // text, memory
-  "focusedIndex": 0,
   "focusedList": "events", // events, topics, files
-  "selectedFiles": [true, false, true, true],
-  "selectedTopics": [0, 1, null, 1] // 0, 1, null
+  "focusedIndex": 0,
+  "focusedField": "text", // text, memory
+  "selectedEvents": [false, true, true],
+  "selectedTopics": [0, 1, null, 1], // 0, 1, null
+  "selectedFiles": [true, false, true, true]
 }
 ```
 

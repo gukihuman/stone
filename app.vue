@@ -7,8 +7,11 @@
         :focused-index="
           appState.focusedList === 'events' ? appState.focusedIndex : null
         "
+        :selected="appState.selectedEvents || []"
         @new-event="newEvent"
-        @toggle-event-focus="toggleEventFocus"
+        @toggle-focus="toggleEventFocus"
+        @toggle-select="toggleEventSelect"
+        @toggle-select-all="toggleSelectAllEvents"
       />
       <FocusedEvent
         v-if="getFocusedEvent()"
@@ -196,6 +199,7 @@ function newEvent() {
   })
   toggleEventFocus(events.length - 1)
   appState.upsertDBSync("focusedField", "text")
+  appState.selectedEvents.push(null)
   nextTick(() => focusedRef.value?.focusBot())
 }
 function toggleEventFocus(i) {
@@ -206,6 +210,14 @@ function toggleEventFocus(i) {
 function updateFocusedEvent([key, value]) {
   getFocusedEvent()[key] = value
   events.upsertDBSync(getFocusedEvent())
+}
+function toggleEventSelect(i, state) {
+  appState.selectedEvents[i] = state
+  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
+}
+function toggleSelectAllEvents(state) {
+  appState.selectedEvents = appState.selectedEvents.map(() => state)
+  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
 }
 function removeFocusedEvent() {
   lastRemovedEvent = getFocusedEvent()

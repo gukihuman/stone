@@ -22,26 +22,13 @@
             theme="light"
             class="pt-[5px] w-14"
           />
-          <!-- ## circles top --------------------------------------------------->
-          <div class="flex pr-[2px] flex-shrink-0">
-            <div
-              v-for="state in [true, false]"
-              class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-              @click="emit('toggle-select-all', state)"
-            >
-              <div
-                class="flex items-center justify-center rounded-full size-5 bg-stone-550"
-              >
-                <div
-                  class="rounded-full size-3"
-                  :class="{
-                    'bg-stone-300': state && selected.every((is) => is),
-                    'bg-stone-500': !state && selected.every((is) => !is),
-                  }"
-                />
-              </div>
-            </div>
-          </div>
+          <Circles
+            v-if="files.length"
+            :selected="selected"
+            :states="[true, false]"
+            @toggle="(state) => emit('toggle-select-all', state)"
+          />
+          <div v-else class="w-[50px]" />
         </div>
       </div>
       <!-- # list -->
@@ -59,26 +46,12 @@
               <span class="truncate text-sm">{{ path }}</span>
               <PrettyNum :number="getTokens(content)" theme="light" />
             </ButtonList>
-            <!-- ## circles list ---------------------------------------------->
-            <div class="flex pr-[2px]">
-              <div
-                v-for="state in [true, false]"
-                class="flex-shrink-0 px-[2px] flex items-center justify-center cursor-pointer"
-                @click="emit('toggle-select', i, state)"
-              >
-                <div
-                  class="flex items-center justify-center rounded-full size-5 bg-stone-550"
-                >
-                  <div
-                    class="rounded-full size-3"
-                    :class="{
-                      'bg-stone-300': state && selected[i],
-                      'bg-stone-500': !state && !selected[i],
-                    }"
-                  />
-                </div>
-              </div>
-            </div>
+            <Circles
+              :selected="selected"
+              :index="i"
+              :states="[true, false]"
+              @toggle="(state) => emit('toggle-select', i, state)"
+            />
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@
   >
     <!-- # top ---------------------------------------------------------------->
     <div
-      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-2"
+      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3"
     >
       <CopyGen
         field="name"

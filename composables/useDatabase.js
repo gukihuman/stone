@@ -52,6 +52,8 @@ export default function useDatabase() {
   events.removeDBSync = async function (event) {
     const index = events.findIndex((e) => e.id === event.id)
     if (index >= 0) events.splice(index, 1)
+    appState.selectedEvents.splice(index, 1)
+    appState.upsertDBSync("selectedEvents", appState.selectedEvents)
     appState.upsertDBSync("focusedIndex", null)
     appState.upsertDBSync("focusedList", null)
 

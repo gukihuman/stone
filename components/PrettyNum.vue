@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-6 pb-1 pr-[1px] flex-shrink-0">
+  <div class="flex h-6 pb-1 pr-[1px] flex-shrink-0 justify-end">
     <div
       v-for="(group, i) in groups"
       :key="i"

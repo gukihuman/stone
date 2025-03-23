@@ -3,25 +3,52 @@
     class="w-[230px] overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
   >
     <!-- # top menu ----------------------------------------------------------->
-    <div class="flex">
+    <div class="flex gap-2 pr-2 bg-stone-700">
       <button
         @click="onClickNew"
-        class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
+        class="flex-grow text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
       >
         new
       </button>
+      <PrettyNum
+        :number="getTokensTotal()"
+        theme="dark"
+        class="cursor-default w-14 h-full"
+      />
+      <div v-if="selected.length" class="flex">
+        <Circles
+          :selected="selected"
+          :states="[true, false]"
+          @toggle="(state) => emit('toggle-select-all', state)"
+        />
+      </div>
+      <div v-else class="w-[50px]" />
     </div>
     <!-- # list --------------------------------------------------------------->
     <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
       <div class="flex flex-col-reverse">
-        <div v-for="({ name, text }, index) in events" :key="`event-${index}`">
+        <div
+          v-for="({ name, text }, i) in events"
+          :key="`event-${i}`"
+          class="flex"
+        >
           <ButtonList
-            :active="focusedIndex === index"
-            @click="emit('toggle-event-focus', index)"
+            :active="focusedIndex === i"
+            @click="emit('toggle-focus', i)"
           >
             <span class="truncate">{{ name }}</span>
             <PrettyNum :number="getTokens(text)" theme="light" />
           </ButtonList>
+          <Circles
+            :selected="selected"
+            :index="i"
+            :states="[true, false]"
+            :focused="focusedIndex === i"
+            @toggle="
+              (state) =>
+                focusedIndex !== i ? emit('toggle-select', i, state) : {}
+            "
+          />
         </div>
       </div>
     </div>
@@ -29,8 +56,13 @@
 </template>
 
 <script setup>
-const props = defineProps(["events", "focusedIndex"])
-const emit = defineEmits(["new-event", "toggle-event-focus"])
+const props = defineProps(["events", "focusedIndex", "selected"])
+const emit = defineEmits([
+  "new-event",
+  "toggle-focus",
+  "toggle-select",
+  "toggle-select-all",
+])
 
 const listEl = ref(null)
 
@@ -38,5 +70,11 @@ const listEl = ref(null)
 function onClickNew() {
   scrollToTop(listEl.value)
   emit("new-event")
+}
+function getTokensTotal() {
+  return props.events.reduce((acc, event, i) => {
+    if (props.selected[i]) acc += getTokens(event.text)
+    return acc
+  }, 0)
 }
 </script>
