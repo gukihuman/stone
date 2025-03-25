@@ -124,8 +124,9 @@ let lastRemovedEvent = null
 let cleanupHotkeys
 const hotkeys = {
   // left hand
-  w: () => onCopy("name"),
-  y: () => toggleEventFocus(events.length - 1),
+  w: () => toggleEventFocus(events.length - 1),
+  c: () => onCopy("name"),
+  j: () => filesRef.value?.focusPath(),
   u: () => focusedRef.value?.focusName(),
   e: () => focusedRef.value?.focusTop(),
   o: () => focusedRef.value?.focusBot(),
@@ -138,8 +139,7 @@ const hotkeys = {
   n: () => appState.upsertDBSync("focusedField", null),
   m: () => onCopy("text"),
   l: () => onCopy("memory"),
-  s: () => filesRef.value?.focusPath(),
-  p: () => toggleTopicFocus(topics.length - 1),
+  f: () => toggleTopicFocus(topics.length - 1),
 
   // both hands
   "{": toggleDown,
