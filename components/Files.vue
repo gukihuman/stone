@@ -59,7 +59,11 @@
               <span class="truncate">
                 {{ getParts(file.path).file }}
               </span>
-              <PrettyNum :number="getTokens(file.content)" theme="light" />
+              <PrettyNum
+                v-if="selected[index]"
+                :number="getTokens(file.content)"
+                theme="light"
+              />
             </ButtonList>
             <Circles
               :selected="selected"

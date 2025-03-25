@@ -2,18 +2,36 @@
   <div class="flex flex-col bg-stone-600 h-screen gap-4 p-1 pb-8">
     <!-- # mid ---------------------------------------------------------------->
     <div class="flex overflow-hidden justify-between gap-2 flex-grow">
-      <Events
-        :events="events"
-        :focused-index="
-          appState.focusedList === 'events' ? appState.focusedIndex : null
-        "
-        :selected="appState.selectedEvents || []"
-        @new-event="newEvent"
-        @toggle-focus="toggleEventFocus"
-        @toggle-select="toggleEventSelect"
-        @toggle-select-all="toggleSelectAllEvents"
-        class="w-[255px]"
-      />
+      <div class="flex flex-col gap-2 w-[255px] flex-shrink-0">
+        <Events
+          :events="events"
+          :focused-index="
+            appState.focusedList === 'events' ? appState.focusedIndex : null
+          "
+          :selected="appState.selectedEvents || []"
+          @new-event="newEvent"
+          @toggle-focus="toggleEventFocus"
+          @toggle-select="toggleEventSelect"
+          @toggle-select-all="toggleSelectAllEvents"
+        />
+        <Files
+          ref="filesRef"
+          v-if="files"
+          :files="files"
+          :path="appState.filesPath"
+          :selected="appState.selectedFiles || []"
+          :focused-index="
+            appState.focusedList === 'files' ? appState.focusedIndex : null
+          "
+          @update-path="updateFilePath"
+          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          @toggle-focus="toggleFileFocus"
+          @toggle-select="toggleFileSelect"
+          @toggle-select-all="toggleSelectAllFiles"
+        />
+        <div v-else class="flex-1" />
+      </div>
       <FocusedEvent
         v-if="getFocusedEvent()"
         :key="`event-${appState.focusedIndex}-${appState.focusedField}-${updateFocused}`"
@@ -64,23 +82,6 @@
           @sort-up="sortTopic(1)"
           @sort-down="sortTopic(-1)"
         />
-        <Files
-          ref="filesRef"
-          v-if="files"
-          :files="files"
-          :path="appState.filesPath"
-          :selected="appState.selectedFiles || []"
-          :focused-index="
-            appState.focusedList === 'files' ? appState.focusedIndex : null
-          "
-          @update-path="updateFilePath"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-          @toggle-focus="toggleFileFocus"
-          @toggle-select="toggleFileSelect"
-          @toggle-select-all="toggleSelectAllFiles"
-        />
-        <div v-else class="flex-1" />
       </div>
     </div>
     <!-- # bot ---------------------------------------------------------------->

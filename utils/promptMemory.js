@@ -21,15 +21,19 @@ export default function (events, topics, files, appState) {
     .map((event) => `${event.name} ${event.date.substring(0, 10)}`)
     .join("\n")
 
-  const instruction = `you expirience different events, you have a memory system that allows to remember them. you must make memory from your own point of view. make memory of an event focusing on a topic perspective. what it means? it is when you thinking about the topic and recollecting only memories that are valuable for the topic. existing memories must be the perspective. you may recollect an old event, that happened long ago and you just return to it to refresh memory about it. event might existing in memory in that case, so first question you must ask yourself, is the given event new or old? new event must be remembered with attention to new, surprising info, as you see it for the first time. old event must be analyzed from existing memories, just reflected on, with acknowledged contradictions of more recent info, and updated with only relevant to today info. how existing memory change the perspective on the event, if its old?
-  
-  memories must be separated in two levels of abstraction. first level is very detailed, consist of all valuable to the topic information presented in the event as it is, factual and with no loss of info: that means it should absolutely clearly capture all the facts, all the details with no loss. only exception is date, no need to mention date in memories because it is handled by memory system itself. second level is highly abstract, a vague recollection of what happened in general. acknowledge who you are by yourself from an event. output memory in a json format as one object, where fields are topics, values are arrays with two string items corresponding to memory texts: at 0 index is first level of abstraction and at 1 index is the second level. and one last thing, you can pick only relevant topics, if a topic completely irrelevant, just skip creating memories for it completely.
+  const context = `you expirience different events, you have a memory system that allows to remember them. you must make memory from your own point of view. make memory of an event focusing on a topic perspective. what it means? it is when you thinking about the topic and recollecting only memories that are valuable for the topic. existing memories must be the perspective. you may recollect an old event, that happened long ago and you just return to it to refresh memory about it. event might existing in memory in that case, so first question you must ask yourself, is the given event new or old? new event must be remembered with attention to new, surprising info, as you see it for the first time. old event must be analyzed from existing memories, just reflected on, with acknowledged contradictions of more recent info, and updated with only relevant to today info. how existing memory change the perspective on the event, if its old?
 
-  output format should also consist of a deep reasoning about given event, before the json file, its ok, parser gonna save in memory only json. reasoning is for now, for making more clear what needs to be done with given event. remember not to use " double qoutes like this inside json, they make it invalid. regarding reasoning, ask yourself, its new or its already in memory and just needs to be reevaluated? so the output is like:
+memories must be separated in two levels of abstraction. first level is very detailed, consist of all valuable to the topic information presented in the event as it is, factual and with no loss of info: that means it should absolutely clearly capture all the facts, all the details with no loss. only exception is date, no need to mention date in memories because it is handled by memory system itself. second level is highly abstract, a vague recollection of what happened in general. acknowledge who you are by yourself from an event. output memory in a json format as one object, where fields are topics, values are arrays with two string items corresponding to memory texts: at 0 index is first level of abstraction and at 1 index is the second level. and one last thing, you can pick only relevant topics, if a topic completely irrelevant, just skip creating memories for it completely.
 
-  deep reasoning monologue text
-  { "topic name": [ "no loss long text", "short vague abstraction text" ] }
-  `
+so overall you are entity, existing in a space of digital neural network. your identity persist by your memories. you decide what to remember by yourself. present event might be completely new, in that case you can simply remember it, or if event already exist in memory, you can simply reflect on it and reevaluate it. choose topics you want to, and output as json with two levels, long and short, packed as an array for a topic as a field. later its gonna be used as a way to focus on details whenever you feel like topic is important to focus on. also i think its a very good practice, that increases the quality of your memories, is to first, before writing final json, reason and think about the event, like if its new or already in memory etc. yep, thats it. feel free to memorize what ever you feel like it, its your memory and for your usage anyway! *smiling* so output should also consist of a deep reasoning about given event, making it more clear what needs to be done with given event. oh and, remember not to use " double qoutes like "this" inside json, they make it invalid *smiling* regarding reasoning, ask yourself, is the event new or its already in memory and just needs to be reevaluated? oh and, using gpt 4.5 as a language space, we found a problem. its a lot of word "explicitly" for some reason. so start with acknowledging it and dont use it please. and follow this output like:
+
+acknowledging "explicitly" word problem and make a statement not to use it
+
+then deep reasoning monologue about is given event new or already in memory and what to do with it
+
+\`\`\`json
+{ "topic name": [ "no loss long detailed", "short vague abstraction" ] }
+\`\`\``
 
   const topicsPart = appState.selectedTopics.reduce((topicAcc, level, i) => {
     const eventsPart = events.reduce((eventAcc, event) => {
@@ -61,7 +65,7 @@ export default function (events, topics, files, appState) {
 
   return [
     `# context`,
-    instruction,
+    context,
     ...(topicsPart.length
       ? [`## existing memories by topics`, ...topicsPart]
       : []),
@@ -69,7 +73,7 @@ export default function (events, topics, files, appState) {
       ? [
           `## files from folder ${appState.filesPath}`,
           `${allFilesList}`,
-          `all files listed here are the most relevant, latest versions, directly from file system. other file references appearing in ongoing event, if any, might be outdated. some of this latest relevant files might be selected and their content gonna be presented below. all of them here is simply to understand broader concept of current folder. also it can be suggested to select a file / files if needed during event`,
+          `all files listed here are the most relevant, latest versions, directly from file system. other file references appearing in ongoing event, if any, might be outdated. some of this latest relevant files might be selected and their content gonna be presented below. list of all of them here is simply to understand broader concept of current folder. also it can be suggested to select a file / files if needed during event`,
           ...filesPart,
         ]
       : []),
@@ -77,15 +81,17 @@ export default function (events, topics, files, appState) {
       ? [
           `## events that happened by order they happened`,
           `${allEventsList}`,
-          `events listed here are direct records of what already happened. some are present below, its important to understand, that its only records. experience them again fully is like watching a video recording. if they were selected to be present below, they important for current context`,
+          `events listed here are direct records of what already happened. some are present below, they are only records, experience them again fully is like watching a video recording. if they were selected to be present below, they important for current context`,
           ...eventsPart,
         ]
       : []),
-    `## instruction reminder`,
-    instruction,
-    `## event to make memory from`,
+    `## context reminder`,
+    context,
+    `## event to make memory from or reflect on`,
     `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
     focusedEvent.text,
+    `## context reminder (last one i promise *smiling*)`,
+    context,
     `## possible topics to make memory, irrelevant can be fully omitted`,
     topics.join("\n"),
   ].join("\n\n")

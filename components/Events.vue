@@ -1,6 +1,6 @@
 <template>
   <div
-    class="overflow-hidden flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg"
+    class="overflow-y-auto flex-shrink-0 flex flex-col bg-circles bg-stone-500 rounded-lg flex-[18%]"
   >
     <!-- # top menu ----------------------------------------------------------->
     <div class="flex gap-2 pr-2 bg-stone-700">
@@ -37,7 +37,11 @@
             @click="emit('toggle-focus', i)"
           >
             <span class="truncate">{{ name }}</span>
-            <PrettyNum :number="getTokens(text)" theme="light" />
+            <PrettyNum
+              v-if="selected[i] || focusedIndex === i"
+              :number="getTokens(text)"
+              theme="light"
+            />
           </ButtonList>
           <Circles
             :selected="selected"
