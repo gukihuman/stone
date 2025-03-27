@@ -147,8 +147,10 @@ const hotkeys = {
   o: () => focusedRef.value?.focusBot(),
   g: () => scrollToBot(focusedRef.value?.textareaEl),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
+  a: () => appState.upsertDBSync("focusedEntity", "jane"),
 
   // right hand
+  r: () => appState.upsertDBSync("focusedEntity", "rox"),
   h: () => appState.upsertDBSync("focusedField", "text"),
   t: () => appState.upsertDBSync("focusedField", "memory"),
   n: () => appState.upsertDBSync("focusedField", null),

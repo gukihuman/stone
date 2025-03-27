@@ -28,15 +28,21 @@
     <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
       <div class="flex flex-col-reverse">
         <div
-          v-for="({ name, text }, i) in events"
+          v-for="({ name, text, memory }, i) in events"
           :key="`event-${i}`"
           class="flex gap-1"
         >
           <ButtonList
             :active="focusedIndex === i"
             @click="emit('toggle-focus', i)"
+            theme="sm-padding"
           >
-            <span class="truncate">{{ name }}</span>
+            <div class="flex overflow-hidden gap-1">
+              <div class="min-w-4">
+                {{ getPrefix(memory) }}
+              </div>
+              <span class="truncate"> {{ name }}</span>
+            </div>
             <PrettyNum
               v-if="selected[i] || focusedIndex === i"
               :number="getTokens(text)"
@@ -80,5 +86,12 @@ function getTokensTotal() {
     if (props.selected[i]) acc += getTokens(event.text)
     return acc
   }, 0)
+}
+function getPrefix(memory) {
+  console.log(memory)
+  if (memory.jane && memory.rox) return "▷░"
+  if (memory.jane) return "░ "
+  if (memory.rox) return "▷ "
+  return ""
 }
 </script>
