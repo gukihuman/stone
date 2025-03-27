@@ -10,6 +10,7 @@ export default async function ({
   field,
   locked,
   onNextChunk,
+  focusedEntity,
 }) {
   locked[field] = true
 
@@ -35,11 +36,16 @@ export default async function ({
     const chunk = new TextDecoder().decode(value)
 
     if (chunk.startsWith("ERROR: ")) {
-      event[field] += `${chunk.substring(7)}`
+      if (field === memory) {
+        event.memory[focusedEntity] += `${chunk.substring(7)}`
+      } else {
+        event[field] += `${chunk.substring(7)}`
+      }
       break
     }
 
     buffer += chunk
+    console.log(chunk)
 
     // logic for finding the start position
     if (!capturing) {
@@ -55,7 +61,11 @@ export default async function ({
             capturing = true
             const captureStartPos = searchStartPos - startIndex + 1
 
-            if (config.erase) event[field] = ""
+            if (config.erase && field === "memory") {
+              event.memory[focusedEntity] = ""
+            } else if (config.erase) {
+              event[field] = ""
+            }
 
             // if we should include the symbols, start from the beginning of the symbol, otherwise, start after the symbol
             const sliceStartPos = config.include
@@ -98,14 +108,23 @@ export default async function ({
             ? buffer.substring(0, endPos + config.end.length)
             : buffer.substring(0, endPos)
 
-          event[field] += finalChunk
+          if (field === "memory") {
+            event.memory[focusedEntity] += finalChunk
+          } else {
+            event[field] += finalChunk
+          }
           onNextChunk(event)
           break // Stop processing further chunks
         }
       }
 
       // if no end symbol found or it's not complete yet, add the entire buffer
-      event[field] += buffer
+      if (field === "memory") {
+        event.memory[focusedEntity] += buffer
+      } else {
+        event[field] += buffer
+      }
+
       onNextChunk(event)
       buffer = ""
     }

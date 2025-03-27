@@ -6,7 +6,11 @@
       @click="handleClick(state)"
       class="flex justify-between min-w-[90px]"
       :class="[
-        state === modelValue
+        theme === 'dark'
+          ? state === modelValue
+            ? 'cursor-default bg-stone-500 text-stone-200'
+            : 'bg-stone-700  text-stone-400 hover:bg-stone-500 hover:text-stone-200'
+          : state === modelValue
           ? 'cursor-default bg-stone-500 text-stone-200'
           : 'bg-stone-600  text-stone-400 hover:bg-stone-500 hover:text-stone-200',
         index === 0 ? 'rounded-l-lg' : '',
@@ -24,7 +28,7 @@
   </div>
 </template>
 <script setup>
-const props = defineProps(["modelValue", "states"])
+const props = defineProps(["modelValue", "states", "theme"])
 const emit = defineEmits(["update:modelValue", "change"])
 
 ////////////////////////////////////////////////////////////////////////////////

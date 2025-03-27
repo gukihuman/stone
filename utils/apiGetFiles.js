@@ -1,4 +1,5 @@
 export default async function (params) {
+  if (!params.path) return
   try {
     const response = await fetch("/api/getFiles", {
       method: "POST",

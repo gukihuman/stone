@@ -22,12 +22,20 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
     "name": "name",
     "date": "2/9/2025",
     "text": "very long text of event",
-    "memory": "[
-      {
-        \"topic name\": [\"long text\", \"short text\"],
-        \"another topic name\": [\"long text\", \"short text\"]
-      }
-    ]"
+    "memory": {
+      "jane": "[
+        {
+          \"topic name\": [\"long text\", \"short text\"],
+          \"another topic name\": [\"long text\", \"short text\"]
+        }
+      ]",
+      "rox": "[
+        {
+          \"topic name\": [\"long text\", \"short text\"],
+          \"another topic name\": [\"long text\", \"short text\"]
+        }
+      ]",
+    }
   }
 ]
 ```
@@ -35,7 +43,10 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
 ### topics
 
 ```json
-["general", "my core identity and behavior", "my memory structure", "our plans"]
+{
+  "jane": ["general", "my core identity and behavior", "our plans"],
+  "rox": ["general", "guki module"]
+}
 ```
 
 ### appState
@@ -47,12 +58,16 @@ files itself not stored in db, they always directly taken, but their selection p
 ```json
 {
   "filesPath": "C:\\projects\\stone",
+  "focusedEntity": "jane",
   "focusedList": "events", // events, topics, files
   "focusedIndex": 0,
   "focusedField": "text", // text, memory
   "selectedEvents": [false, true, true],
-  "selectedTopics": [0, 1, null, 1], // 0, 1, null
-  "selectedFiles": [true, false, true, true]
+  "selectedFiles": [true, false, true, true],
+  "selectedTopics": {
+    "jane": [0, 1, null], // 0, 1, null
+    "rox": [0, 1]
+  }
 }
 ```
 

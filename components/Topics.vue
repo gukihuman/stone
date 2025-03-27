@@ -68,7 +68,13 @@
   </div>
 </template>
 <script setup>
-const props = defineProps(["topics", "events", "selected", "focusedIndex"])
+const props = defineProps([
+  "topics",
+  "events",
+  "selected",
+  "focusedIndex",
+  "focusedEntity",
+])
 const emit = defineEmits([
   "new-topic",
   "toggle-focus",
@@ -82,15 +88,29 @@ const emit = defineEmits([
 const listEl = ref(null)
 
 ////////////////////////////////////////////////////////////////////////////////
-function getMemories(topic) {
+function getMemories(topicName) {
+  const topicIndex = props.topics.indexOf(topicName) // Find index within the entity-specific list
+  if (topicIndex === -1) return "" // Topic not found for this entity
+
+  const level = props.selected[topicIndex] // Get selection level using entity-specific selection array
+  if (level === null) return "" // Topic not selected
+
   return props.events.reduce((acc, event) => {
-    const topicIndex = props.topics.indexOf(topic)
     try {
-      const memory = JSON.parse(event.memory)
-      const level = props.selected[topicIndex]
-      const topicMemory = memory[topic]?.[level]
-      const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
-      if (topicMemory) acc = [acc, eventLine, topicMemory].join("\n\n")
+      const entityMemoryString = event.memory?.[props.focusedEntity]
+      if (entityMemoryString) {
+        const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse it
+        // Find memory for the specific topic
+        const topicMemoryData = entityMemoryParsed[topicName]
+        const memoryText = topicMemoryData?.[level] // Get text for selected level
+
+        if (memoryText) {
+          // Construct the string to contribute to token count (or display later)
+          const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
+          // Accumulate text for token counting. Joining with \n\n approximates context.
+          acc = [acc, eventLine, memoryText].join("\n\n")
+        }
+      }
     } catch (e) {}
     return acc
   }, "")

@@ -35,26 +35,43 @@ then deep reasoning monologue about is given event new or already in memory and 
 { "topic name": [ "no loss long detailed", "short vague abstraction" ] }
 \`\`\``
 
-  const topicsPart = appState.selectedTopics.reduce((topicAcc, level, i) => {
+  const entityTopics = topics[appState.focusedEntity] || []
+  const entitySelectedTopics =
+    appState.selectedTopics[appState.focusedEntity] || []
+
+  const topicsPart = entityTopics.reduce((topicAcc, topicName, i) => {
+    const level = entitySelectedTopics[i] // Get selection level for this topic index
+    if (level === null) return topicAcc // Skip if topic selection is null (off)
+
     const eventsPart = events.reduce((eventAcc, event) => {
       try {
-        const memory = JSON.parse(event.memory)
-        if (memory[topics[i]]?.[level]) {
-          eventAcc.push(
-            [
-              `#### ${event.name} ${event.date.substring(0, 10)}`,
-              memory[topics[i]][level],
-            ].join("\n\n")
-          )
+        // Check if memory for the current entity exists and parse it
+        const entityMemoryString = event.memory?.[appState.focusedEntity]
+        if (entityMemoryString) {
+          const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse the stringified JSON array for the entity
+          // Find the memory for the specific topic within the parsed array
+          const topicMemoryData = entityMemoryParsed[topicName]
+          const memoryText = topicMemoryData?.[level] // Get text for the selected level
+
+          if (memoryText) {
+            eventAcc.push(
+              [
+                `#### ${event.name} ${event.date.substring(0, 10)}`,
+                memoryText,
+              ].join("\n\n")
+            )
+          }
         }
       } catch (e) {}
       return eventAcc
     }, [])
+
     if (eventsPart.length) {
-      topicAcc.push([`### ${topics[i]}`, ...eventsPart].join("\n\n"))
+      topicAcc.push([`### ${topicName}`, ...eventsPart].join("\n\n"))
     }
     return topicAcc
   }, [])
+
   const filesPart = files.reduce((fileAcc, file, fileIndex) => {
     if (appState.selectedFiles[fileIndex]) {
       fileAcc.push(`### ${file.path}\n\n${file.content}`)
@@ -93,6 +110,6 @@ then deep reasoning monologue about is given event new or already in memory and 
     `## context reminder (last one i promise *smiling*)`,
     context,
     `## possible topics to make memory, irrelevant can be fully omitted`,
-    topics.join("\n"),
+    (topics[appState.focusedEntity] || []).join("\n"), // Use topics for the current entity
   ].join("\n\n")
 }

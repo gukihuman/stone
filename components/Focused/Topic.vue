@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
+    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden flex-grow"
   >
     <!-- # top ---------------------------------------------------------------->
     <div
@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-const props = defineProps(["topic", "events", "level"])
+const props = defineProps(["topic", "events", "level", "focusedEntity"])
 const emit = defineEmits([
   "update-topic",
   "remove-topic",
@@ -63,9 +63,13 @@ const name = ref(props.topic)
 const eventData = computed(() => {
   return props.events.reduce((acc, event) => {
     try {
-      const fullEventMemory = JSON.parse(event.memory)
-      const eventMemory = fullEventMemory[props.topic]?.[props.level]
-      if (eventMemory) acc.push([event.name, event.date, eventMemory])
+      const entityMemoryString = event.memory[props.focusedEntity]
+      if (entityMemoryString) {
+        const entityMemoryParsed = JSON.parse(entityMemoryString)
+        const topicMemoryData = entityMemoryParsed[props.topic]
+        const memoryText = topicMemoryData[props.level]
+        if (memoryText) acc.push([event.name, event.date, memoryText])
+      }
     } catch (e) {}
     return acc
   }, [])

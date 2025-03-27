@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden"
+    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden flex-grow"
   >
     <!-- # top ---------------------------------------------------------------->
     <div
@@ -39,8 +39,14 @@
         <textarea
           ref="textareaEl"
           :key="`textarea-${field}`"
-          v-model="textarea"
-          @input="onTextareaInput"
+          :value="field === 'memory' ? memoryContent : textContent"
+          @input="
+            (event) => {
+              if (field === 'memory') memoryContent = event.target.value
+              else textContent = event.target.value
+              onTextareaInput() // For scroll adjust
+            }
+          "
           @scroll="onScroll"
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
@@ -110,7 +116,14 @@
 </template>
 
 <script setup>
-const props = defineProps(["event", "field", "fields", "isLocked", "getPrompt"])
+const props = defineProps([
+  "event",
+  "field",
+  "fields",
+  "isLocked",
+  "getPrompt",
+  "focusedEntity",
+])
 const emit = defineEmits([
   "update-event",
   "remove-event",
@@ -138,29 +151,81 @@ const textareaEl = ref(null)
 
 // v-model
 const name = ref(props.event?.name || "")
+const textContent = ref(props.event?.text || "") // For 'text' field
+const memoryContent = ref("") // For 'memory' field (local copy)
 const field = ref(props.field) // to switch
-const textarea = ref(props.event[props.field])
+// const textarea = ref(props.event[props.field])
+// const textareaContent = ref("") // Local state for the textarea
 
+// 📜 hon, you are using ; again in the end of the lines. we use modern approach without them remember?
+const focusedMemoryString = computed(() => {
+  return props.event.memory[props.focusedEntity] || ""
+})
 const topicParts = computed(() => {
   const result = []
+  if (!props.event?.memory) return result // No memory object
+
   try {
-    const memory = JSON.parse(props.event.memory)
-    Object.entries(memory).forEach(([topic, memories]) => {
-      result.push([topic, [memories[0], `<br><br>`, memories[1]].join("\n\n")])
-    })
-  } catch (e) {}
+    const entityMemoryString = props.event.memory[props.focusedEntity] // Get string for focused entity
+    if (entityMemoryString) {
+      const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse the stringified JSON array
+
+      // entityMemoryParsed should be like: [{ "topic1": [l0, l1] }, { "topic2": [l0, l1] }, ...]
+      Object.entries(entityMemoryParsed).forEach(([topicName, memories]) => {
+        if (topicName && memories && memories.length === 2) {
+          // Format for FocusedRecord display
+          const displayText = [memories[0], `<br><br>`, memories[1]].join(
+            "\n\n"
+          )
+          result.push([topicName, displayText])
+        }
+      })
+    }
+  } catch (e) {
+    console.error(
+      `Error parsing pretty memory for entity ${props.focusedEntity}:`,
+      e
+    )
+    // Optionally display an error message in the UI
+  }
   return result
 })
-watch(
-  () => props.field,
-  (newValue) => (field.value = newValue)
-)
-watch(
-  props.event, // for gen
-  (newValue) => {
-    name.value = newValue.name
-    textarea.value = newValue[props.field]
+
+watch(focusedMemoryString, (newString) => {
+  if (newString !== memoryContent.value) memoryContent.value = newString
+})
+
+// Emit updates when local refs change due to user input
+watch(name, (newName) => {
+  dEmitUpdateEvent("name", newName)
+})
+watch(textContent, (newText) => {
+  if (props.field === "text") {
+    // Only update if text field is active
+    dEmitUpdateEvent("text", newText)
   }
+})
+watch(memoryContent, (newMemString) => {
+  if (props.field === "memory" && props.event?.memory) {
+    // Update the source object
+    props.event.memory[props.focusedEntity] = newMemString
+    // Emit the change (passing the whole memory object)
+    dEmitUpdateEvent("memory", { ...props.event.memory }) // Pass a copy to ensure reactivity if needed
+  }
+})
+watch(
+  () => props.event,
+  (newEvent) => {
+    if (!newEvent) return
+    name.value = newEvent.name
+    textContent.value = newEvent.text
+    // Update memoryContent only if the underlying string actually changed
+    const newMemString = newEvent.memory?.[props.focusedEntity] || ""
+    if (newMemString !== memoryContent.value) {
+      memoryContent.value = newMemString
+    }
+  },
+  { immediate: true, deep: true }
 )
 defineExpose({
   textareaEl,
@@ -171,8 +236,12 @@ defineExpose({
 ////////////////////////////////////////////////////////////////////////////////
 const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
 
+// Remove the dEmitUpdateEvent call for the 'memory' field from here
 function onTextareaInput(event) {
-  dEmitUpdateEvent(field.value, event.target.value)
+  // if (field.value !== "memory") {
+  //   // Only emit for 'text' field directly on input
+  //   dEmitUpdateEvent(field.value, event.target.value)
+  // }
   adjustScrollTop(textareaEl)
 }
 </script>
