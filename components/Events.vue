@@ -88,7 +88,6 @@ function getTokensTotal() {
   }, 0)
 }
 function getPrefix(memory) {
-  console.log(memory)
   if (memory.jane && memory.rox) return "▷░"
   if (memory.jane) return "░ "
   if (memory.rox) return "▷ "

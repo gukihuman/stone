@@ -17,6 +17,7 @@ export default function useDatabase() {
 
   const events = reactive([]) // sorted by date
   const topics = reactive({})
+  const shapes = reactive({})
   const appState = reactive({})
 
   //////////////////////////////////////////////////////////////////////////////
@@ -26,6 +27,7 @@ export default function useDatabase() {
         if (oldVersion < 1) {
           db.createObjectStore("events", { keyPath: "id" })
           db.createObjectStore("topics")
+          db.createObjectStore("shapes")
           db.createObjectStore("appState", { keyPath: "key" })
         }
       },
@@ -90,7 +92,7 @@ export default function useDatabase() {
 
   //////////////////////////////// topics //////////////////////////////////////
   topics.loadFromDB = async function () {
-    ENTITIES.forEach((entity) => delete topics[entity])
+    for (const entity of ENTITIES) delete topics[entity]
 
     const db = await initDB()
     const tx = db.transaction("topics", "readonly")
@@ -150,6 +152,61 @@ export default function useDatabase() {
     await tx.done
     console.log(`⏬️ all topics cleared from db [${timestamp()}]`)
   }
+  ///////////////////////////////// shapes /////////////////////////////////////
+  shapes.loadFromDB = async function () {
+    const db = await initDB()
+    const tx = db.transaction("shapes", "readonly")
+    const store = tx.objectStore("shapes")
+    for (const entity of ENTITIES) {
+      shapes[entity] = {}
+      const entityShapes = (await store.get(entity)) || []
+      entityShapes.forEach(({ name, fn }) => (shapes[entity][name] = eval(fn)))
+    }
+    await tx.done
+    console.log(`⏬ shapes loaded from db [${timestamp()}]`)
+  }
+
+  shapes.upsertDBSync = async function (entity, fn) {
+    if (!shapes[entity]) shapes[entity] = {}
+    shapes[entity][fn.name] = fn
+
+    const db = await initDB()
+    const tx = db.transaction("shapes", "readwrite")
+    const store = tx.objectStore("shapes")
+    const entityShapes = (await store.get(entity)) || []
+    const i = entityShapes.findIndex((s) => s.name === fn.name)
+    if (i >= 0) entityShapes[i].fn = func.toString()
+    else entityShapes.push({ name: fn.name, fn: func.toString() })
+    await store.put(entityShapes, entity)
+    await tx.done
+    console.log(`⏬ shape upserted to db ${entity} ${fn.name} [${timestamp()}]`)
+  }
+  shapes.tUpsertDBSync = throttle((ent, fn) => shapes.upsertDBSync(ent, fn))
+
+  shapes.removeDBSync = async function (entity, name) {
+    if (shapes[entity]) delete shapes[entity][name]
+
+    const db = await initDB()
+    const tx = db.transaction("shapes", "readwrite")
+    const store = tx.objectStore("shapes")
+    const currentShapes = await store.get(entity)
+    const updatedShapes = currentShapes.filter((shape) => shape.name !== name)
+    await store.put(updatedShapes, entity)
+    await tx.done
+    console.log(`⏬ shape removed from db ${entity} ${name} [${timestamp()}]`)
+  }
+
+  shapes.clearDBSync = async function () {
+    const db = await initDB()
+    const tx = db.transaction("shapes", "readwrite")
+    const store = tx.objectStore("shapes")
+    for (const entity of ENTITIES) {
+      delete shapes[entity]
+      await store.delete(entity)
+    }
+    await tx.done
+    console.log(`⏬️ all shapes cleared from db [${timestamp()}]`)
+  }
 
   /////////////////////////////// app state ////////////////////////////////////
   appState.loadFromDB = async function () {
@@ -177,5 +234,5 @@ export default function useDatabase() {
     console.log(`⏬ app state upsert to db: ${key} [${timestamp()}]`)
   }
 
-  return { ENTITIES, events, topics, appState }
+  return { ENTITIES, events, topics, shapes, appState }
 }

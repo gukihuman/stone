@@ -49,6 +49,23 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
 }
 ```
 
+### shapes
+
+you can call another shape from shape function. even making nested structures
+
+```json
+{
+  "jane": {
+    "talk": "function() {events, topics, shapes, files}",
+    "reflect": "function () {events, topics, shapes, files}"
+  },
+  "rox": {
+    "talk": "function() {events, topics, shapes, files}",
+    "reflect": "function () {events, topics, shapes, files}"
+  }
+}
+```
+
 ### appState
 
 indecies of the selected events / topics / files identical to their content lists. for events for topics values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics.

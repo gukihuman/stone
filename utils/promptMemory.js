@@ -1,4 +1,4 @@
-export default function (events, topics, files, appState) {
+export default function (events, topics, shapes, files, appState) {
   const focusedEvent = events[appState.focusedIndex]
 
   const eventsPart = events.reduce((eventAcc, event, eventIndex) => {

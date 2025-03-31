@@ -120,7 +120,7 @@
 
 <script setup>
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
-const { ENTITIES, events, topics, appState } = useDatabase()
+const { ENTITIES, events, topics, shapes, appState } = useDatabase()
 
 // els refs
 const focusedRef = ref(null)
@@ -166,6 +166,7 @@ const hotkeys = {
 onMounted(async () => {
   events.loadFromDB()
   topics.loadFromDB()
+  shapes.loadFromDB()
   await appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
   getFiles()
@@ -377,7 +378,7 @@ function getPrompt(field) {
   if (field === "text") prompt = promptText
   else if (field === "name") prompt = promptName
   else if (field === "memory") prompt = promptMemory
-  return prompt(events, topics, files.value, appState)
+  return prompt(events, topics, shapes, files.value, appState)
 }
 function getFocusedEvent() {
   if (appState.focusedList !== "events") return null
