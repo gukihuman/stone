@@ -351,7 +351,7 @@ function onEntitySwitch(value) {
 ////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
-  fileSave(filename, { events, topics, appState })
+  fileSave(filename, { events, topics, shapes, appState })
 }
 async function onFileLoad() {
   fileLoad(async (loadedData) => {
@@ -363,6 +363,15 @@ async function onFileLoad() {
     await topics.clearDBSync()
     ENTITIES.forEach((entity) => (topics[entity] = loadedData.topics[entity]))
     await topics.updateDBSync()
+
+    await shapes.clearDBSync()
+    for (const entity of ENTITIES) {
+      if (!loadedData.shapes[entity]) loadedData.shapes[entity] = []
+      const shapePromises = loadedData.shapes[entity].map((shape) => {
+        return shapes.upsertDBSync(entity, shape.name, eval(shape.fn))
+      })
+      await Promise.all(shapePromises)
+    }
 
     const entries = Object.entries(loadedData.appState)
     await Promise.all(entries.map(([key, v]) => appState.upsertDBSync(key, v)))

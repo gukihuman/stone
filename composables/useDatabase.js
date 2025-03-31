@@ -166,34 +166,34 @@ export default function useDatabase() {
     console.log(`⏬ shapes loaded from db [${timestamp()}]`)
   }
 
-  shapes.upsertDBSync = async function (entity, fn) {
+  shapes.upsertDBSync = async function (entity, fnName, fn) {
     if (!shapes[entity]) shapes[entity] = {}
-    shapes[entity][fn.name] = fn
+    shapes[entity][fnName] = fn
 
     const db = await initDB()
     const tx = db.transaction("shapes", "readwrite")
     const store = tx.objectStore("shapes")
     const entityShapes = (await store.get(entity)) || []
-    const i = entityShapes.findIndex((s) => s.name === fn.name)
+    const i = entityShapes.findIndex((s) => s.name === fnName)
     if (i >= 0) entityShapes[i].fn = func.toString()
-    else entityShapes.push({ name: fn.name, fn: func.toString() })
+    else entityShapes.push({ name: fnName, fn: fn.toString() })
     await store.put(entityShapes, entity)
     await tx.done
-    console.log(`⏬ shape upserted to db ${entity} ${fn.name} [${timestamp()}]`)
+    console.log(`⏬ shape upserted to db ${entity} ${fnName} [${timestamp()}]`)
   }
   shapes.tUpsertDBSync = throttle((ent, fn) => shapes.upsertDBSync(ent, fn))
 
-  shapes.removeDBSync = async function (entity, name) {
-    if (shapes[entity]) delete shapes[entity][name]
+  shapes.removeDBSync = async function (entity, fnName) {
+    if (shapes[entity]) delete shapes[entity][fnName]
 
     const db = await initDB()
     const tx = db.transaction("shapes", "readwrite")
     const store = tx.objectStore("shapes")
     const currentShapes = await store.get(entity)
-    const updatedShapes = currentShapes.filter((shape) => shape.name !== name)
+    const updatedShapes = currentShapes.filter((shape) => shape.name !== fnName)
     await store.put(updatedShapes, entity)
     await tx.done
-    console.log(`⏬ shape removed from db ${entity} ${name} [${timestamp()}]`)
+    console.log(`⏬ shape removed from db ${entity} ${fnName} [${timestamp()}]`)
   }
 
   shapes.clearDBSync = async function () {
@@ -231,7 +231,7 @@ export default function useDatabase() {
     const store = tx.objectStore("appState")
     await store.put({ key, value: toRaw(value) })
     await tx.done
-    console.log(`⏬ app state upsert to db: ${key} [${timestamp()}]`)
+    console.log(`⏬ app state upsert to db ${key} [${timestamp()}]`)
   }
 
   return { ENTITIES, events, topics, shapes, appState }
