@@ -84,7 +84,8 @@ files itself not stored in db, they always directly taken, but their selection p
   "selectedTopics": {
     "jane": [0, 1, null], // 0, 1, null
     "rox": [0, 1]
-  }
+  },
+  "draft": ""
 }
 ```
 

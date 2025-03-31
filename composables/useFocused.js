@@ -34,16 +34,11 @@ export default function useFocusedItem() {
     nameEl.value.focus()
     nameEl.value.setSelectionRange(0, nameEl.value.value.length)
   }
-  function focusBot(textareaEl) {
+  function focus(textareaEl) {
     textareaEl.value.focus()
     const length = textareaEl.value.value.length
     textareaEl.value.setSelectionRange(length, length)
     scrollToBot(textareaEl.value, "auto")
-  }
-  function focusTop(textareaEl) {
-    textareaEl.value.focus()
-    textareaEl.value.setSelectionRange(0, 0)
-    scrollToTop(textareaEl.value, "auto")
   }
   return {
     LINES_OFFSET,
@@ -54,7 +49,6 @@ export default function useFocusedItem() {
     onScroll,
     adjustScrollTop,
     focusName,
-    focusBot,
-    focusTop,
+    focus,
   }
 }

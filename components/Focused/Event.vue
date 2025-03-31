@@ -141,8 +141,7 @@ const {
   onScroll,
   adjustScrollTop,
   focusName,
-  focusBot,
-  focusTop,
+  focus,
 } = useFocused()
 
 // els refs
@@ -154,10 +153,7 @@ const name = ref(props.event?.name || "")
 const textContent = ref(props.event?.text || "") // For 'text' field
 const memoryContent = ref("") // For 'memory' field (local copy)
 const field = ref(props.field) // to switch
-// const textarea = ref(props.event[props.field])
-// const textareaContent = ref("") // Local state for the textarea
 
-// 📜 hon, you are using ; again in the end of the lines. we use modern approach without them remember?
 const focusedMemoryString = computed(() => {
   return props.event.memory[props.focusedEntity] || ""
 })
@@ -170,10 +166,8 @@ const topicParts = computed(() => {
     if (entityMemoryString) {
       const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse the stringified JSON array
 
-      // entityMemoryParsed should be like: [{ "topic1": [l0, l1] }, { "topic2": [l0, l1] }, ...]
       Object.entries(entityMemoryParsed).forEach(([topicName, memories]) => {
         if (topicName && memories && memories.length === 2) {
-          // Format for FocusedRecord display
           const displayText = [memories[0], `<br><br>`, memories[1]].join(
             "\n\n"
           )
@@ -181,13 +175,7 @@ const topicParts = computed(() => {
         }
       })
     }
-  } catch (e) {
-    console.error(
-      `Error parsing pretty memory for entity ${props.focusedEntity}:`,
-      e
-    )
-    // Optionally display an error message in the UI
-  }
+  } catch (e) {}
   return result
 })
 
@@ -195,22 +183,18 @@ watch(focusedMemoryString, (newString) => {
   if (newString !== memoryContent.value) memoryContent.value = newString
 })
 
-// Emit updates when local refs change due to user input
 watch(name, (newName) => {
   dEmitUpdateEvent("name", newName)
 })
 watch(textContent, (newText) => {
   if (props.field === "text") {
-    // Only update if text field is active
     dEmitUpdateEvent("text", newText)
   }
 })
 watch(memoryContent, (newMemString) => {
   if (props.field === "memory" && props.event?.memory) {
-    // Update the source object
     props.event.memory[props.focusedEntity] = newMemString
-    // Emit the change (passing the whole memory object)
-    dEmitUpdateEvent("memory", { ...props.event.memory }) // Pass a copy to ensure reactivity if needed
+    dEmitUpdateEvent("memory", { ...props.event.memory })
   }
 })
 watch(
@@ -219,7 +203,6 @@ watch(
     if (!newEvent) return
     name.value = newEvent.name
     textContent.value = newEvent.text
-    // Update memoryContent only if the underlying string actually changed
     const newMemString = newEvent.memory?.[props.focusedEntity] || ""
     if (newMemString !== memoryContent.value) {
       memoryContent.value = newMemString
@@ -230,18 +213,12 @@ watch(
 defineExpose({
   textareaEl,
   focusName: () => focusName(nameEl),
-  focusBot: () => focusBot(textareaEl),
-  focusTop: () => focusTop(textareaEl),
+  focus: () => focus(textareaEl),
 })
 ////////////////////////////////////////////////////////////////////////////////
 const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
 
-// Remove the dEmitUpdateEvent call for the 'memory' field from here
 function onTextareaInput(event) {
-  // if (field.value !== "memory") {
-  //   // Only emit for 'text' field directly on input
-  //   dEmitUpdateEvent(field.value, event.target.value)
-  // }
   adjustScrollTop(textareaEl)
 }
 </script>

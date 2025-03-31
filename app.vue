@@ -73,6 +73,15 @@
           :key="`file-${appState.focusedIndex}`"
           :file="getFocusedFile()"
         />
+        <FocusedDraft
+          ref="focusedDraftRef"
+          v-if="appState.draft !== undefined"
+          :modelValue="appState.draft"
+          @update:modelValue="(value) => appState.upsertDBSync('draft', value)"
+          @append="appendDraftToEvent"
+          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+        />
         <div class="flex gap-4 items-center justify-between">
           <Switch
             :model-value="appState.focusedEntity"
@@ -124,6 +133,7 @@ const { ENTITIES, events, topics, shapes, appState } = useDatabase()
 
 // els refs
 const focusedRef = ref(null)
+const focusedDraftRef = ref(null)
 const filesRef = ref(null)
 
 // reactive
@@ -140,11 +150,11 @@ let cleanupHotkeys
 const hotkeys = {
   // left hand
   w: () => toggleEventFocus(events.length - 1),
-  c: () => onCopy("name"),
+  c: () => appendDraftToEvent(),
   j: () => filesRef.value?.focusPath(),
   u: () => focusedRef.value?.focusName(),
-  e: () => focusedRef.value?.focusTop(),
-  o: () => focusedRef.value?.focusBot(),
+  e: () => focusedRef.value?.focus(),
+  o: () => focusedDraftRef.value?.focus(),
   g: () => scrollToBot(focusedRef.value?.textareaEl),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
   a: () => onEntitySwitch("jane"),
@@ -220,17 +230,13 @@ function newEvent() {
     text: "",
     memory: {},
   })
-  toggleEventFocus(events.length - 1) // Focus the new event
+  toggleEventFocus(events.length - 1)
   appState.upsertDBSync("focusedField", "text")
-
-  // Ensure selectedEvents array exists and matches length
   if (!appState.selectedEvents) appState.selectedEvents = []
   while (appState.selectedEvents.length < events.length) {
-    // 📜 yep should be false, good catch honey! null was working i guess , but false defenetly best practise!
-    appState.selectedEvents.push(false) // Default to not selected
+    appState.selectedEvents.push(false)
   }
-  appState.upsertDBSync("selectedEvents", appState.selectedEvents) // Save updated array
-
+  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
   nextTick(() => focusedRef.value?.focusBot())
 }
 function toggleEventFocus(i) {
@@ -419,5 +425,18 @@ function toggleUp() {
   let i = appState.focusedIndex === null ? 0 : appState.focusedIndex + 1
   if (i > list.length - 1) return
   appState.focusedList === "topics" ? toggleTopicFocus(i) : toggleEventFocus(i)
+}
+/////////////////////////////////// new shit ///////////////////////////////////
+function appendDraftToEvent() {
+  const currentEvent = getFocusedEvent()
+  if (!currentEvent || !appState.draft) return
+  currentEvent.text = [
+    currentEvent.text,
+    `${useRuntimeConfig().public.human}\n${appState.draft}`,
+    `${capitalize(appState.focusedEntity)}\n`,
+  ].join("\n\n")
+  updateFocusedEvent(["text", currentEvent.text])
+  appState.upsertDBSync("draft", "")
+  nextTick(() => scrollToBot(focusedRef.value?.textareaEl))
 }
 </script>

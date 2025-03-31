@@ -3,4 +3,5 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ["@nuxtjs/tailwindcss"],
   css: ["./main.css"],
+  runtimeConfig: { public: { human: process.env.HUMAN || "Human" } },
 })

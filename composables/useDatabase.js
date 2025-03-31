@@ -13,6 +13,7 @@ export default function useDatabase() {
     selectedTopics: {},
     focusedIndex: null,
     focusedList: null,
+    draft: "",
   }
 
   const events = reactive([]) // sorted by date
