@@ -372,10 +372,9 @@ async function onFileLoad() {
 
     await shapes.clearDBSync()
     for (const entity of ENTITIES) {
-      if (!loadedData.shapes[entity]) loadedData.shapes[entity] = []
-      const shapePromises = loadedData.shapes[entity].map((shape) => {
-        return shapes.upsertDBSync(entity, shape.name, eval(shape.fn))
-      })
+      const shapePromises = Object.entries(loadedData.shapes[entity]).map(
+        ([name, fn]) => shapes.upsertDBSync(entity, name, eval(fn))
+      )
       await Promise.all(shapePromises)
     }
 
