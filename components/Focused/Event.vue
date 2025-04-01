@@ -44,7 +44,7 @@
             (event) => {
               if (field === 'memory') memoryContent = event.target.value
               else textContent = event.target.value
-              onTextareaInput() // For scroll adjust
+              onTextareaInput()
             }
           "
           @scroll="onScroll"
@@ -150,9 +150,9 @@ const textareaEl = ref(null)
 
 // v-model
 const name = ref(props.event?.name || "")
-const textContent = ref(props.event?.text || "") // For 'text' field
-const memoryContent = ref("") // For 'memory' field (local copy)
-const field = ref(props.field) // to switch
+const textContent = ref(props.event?.text || "")
+const memoryContent = ref("")
+const field = ref(props.field)
 
 const focusedMemoryString = computed(() => {
   return props.event.memory[props.focusedEntity] || ""
@@ -187,9 +187,7 @@ watch(name, (newName) => {
   dEmitUpdateEvent("name", newName)
 })
 watch(textContent, (newText) => {
-  if (props.field === "text") {
-    dEmitUpdateEvent("text", newText)
-  }
+  if (props.field === "text") dEmitUpdateEvent("text", newText)
 })
 watch(memoryContent, (newMemString) => {
   if (props.field === "memory" && props.event?.memory) {

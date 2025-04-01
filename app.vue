@@ -85,7 +85,7 @@
         <div class="flex gap-4 items-center justify-between">
           <Switch
             :model-value="appState.focusedEntity"
-            :states="ENTITIES"
+            :states="entities"
             @update:modelValue="onEntitySwitch"
             theme="dark"
           />
@@ -129,7 +129,7 @@
 
 <script setup>
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
-const { ENTITIES, events, topics, shapes, appState } = useDatabase()
+const { entities, events, topics, shapes, appState } = useDatabase()
 
 // els refs
 const focusedRef = ref(null)
@@ -367,11 +367,11 @@ async function onFileLoad() {
     await Promise.all(loadedData.events.map((e) => events.upsertDBSync(e)))
 
     await topics.clearDBSync()
-    ENTITIES.forEach((entity) => (topics[entity] = loadedData.topics[entity]))
+    entities.forEach((entity) => (topics[entity] = loadedData.topics[entity]))
     await topics.updateDBSync()
 
     await shapes.clearDBSync()
-    for (const entity of ENTITIES) {
+    for (const entity of entities) {
       const shapePromises = Object.entries(loadedData.shapes[entity]).map(
         ([name, fn]) => shapes.upsertDBSync(entity, name, eval(fn))
       )
@@ -431,7 +431,7 @@ function appendDraftToEvent() {
   if (!currentEvent || !appState.draft) return
   currentEvent.text = [
     currentEvent.text,
-    `${useRuntimeConfig().public.human}\n${appState.draft}`,
+    `${capitalize(useRuntimeConfig().public.human)}\n${appState.draft}`,
     `${capitalize(appState.focusedEntity)}\n`,
   ].join("\n\n")
   updateFocusedEvent(["text", currentEvent.text])

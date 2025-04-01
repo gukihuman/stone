@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden h-[200px]"
+    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden h-[200px] flex-shrink-0"
   >
     <div
       class="w-full relative flex-grow overflow-hidden"

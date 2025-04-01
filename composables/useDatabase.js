@@ -2,8 +2,6 @@ import { openDB } from "idb"
 
 export default function useDatabase() {
   const DB_VERSION = 1
-  const ENTITIES = ["jane", "rox"]
-
   const DEFAULT_APP_FIELDS = {
     focusedField: "text",
     focusedEntity: "jane",
@@ -16,6 +14,7 @@ export default function useDatabase() {
     draft: "",
   }
 
+  const entities = useRuntimeConfig().public.entities
   const events = reactive([]) // sorted by date
   const topics = reactive({})
   const shapes = reactive({})
@@ -93,12 +92,12 @@ export default function useDatabase() {
 
   //////////////////////////////// topics //////////////////////////////////////
   topics.loadFromDB = async function () {
-    for (const entity of ENTITIES) delete topics[entity]
+    for (const entity of entities) delete topics[entity]
 
     const db = await initDB()
     const tx = db.transaction("topics", "readonly")
     const store = tx.objectStore("topics")
-    for (const entity of ENTITIES) topics[entity] = await store.get(entity)
+    for (const entity of entities) topics[entity] = await store.get(entity)
     await tx.done
     console.log(`⏬ topics loaded from db by entity [${timestamp()}]`)
   }
@@ -146,7 +145,7 @@ export default function useDatabase() {
     const db = await initDB()
     const tx = db.transaction("topics", "readwrite")
     const store = tx.objectStore("topics")
-    for (const entity of ENTITIES) {
+    for (const entity of entities) {
       await store.delete(entity)
       delete topics[entity]
     }
@@ -158,7 +157,7 @@ export default function useDatabase() {
     const db = await initDB()
     const tx = db.transaction("shapes", "readonly")
     const store = tx.objectStore("shapes")
-    for (const entity of ENTITIES) {
+    for (const entity of entities) {
       shapes[entity] = {}
       const entityShapes = (await store.get(entity)) || []
       entityShapes.forEach(({ name, fn }) => (shapes[entity][name] = eval(fn)))
@@ -201,7 +200,7 @@ export default function useDatabase() {
     const db = await initDB()
     const tx = db.transaction("shapes", "readwrite")
     const store = tx.objectStore("shapes")
-    for (const entity of ENTITIES) {
+    for (const entity of entities) {
       delete shapes[entity]
       await store.delete(entity)
     }
@@ -235,5 +234,5 @@ export default function useDatabase() {
     console.log(`⏬ app state upsert to db ${key} [${timestamp()}]`)
   }
 
-  return { ENTITIES, events, topics, shapes, appState }
+  return { entities, events, topics, shapes, appState }
 }

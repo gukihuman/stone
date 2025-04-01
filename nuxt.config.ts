@@ -3,5 +3,10 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ["@nuxtjs/tailwindcss"],
   css: ["./main.css"],
-  runtimeConfig: { public: { human: process.env.HUMAN || "Human" } },
+  runtimeConfig: {
+    public: {
+      human: process.env.HUMAN || "Human",
+      entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
+    },
+  },
 })
