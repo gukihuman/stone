@@ -82,6 +82,18 @@
           @lock-hotkeys="() => (hotkeysLockedByInput = true)"
           @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
         />
+        <FocusedShape
+          ref="focusedShapeRef"
+          :events="events"
+          :topics="topics"
+          :shapes="shapes"
+          :files="files"
+          :app-state="appState"
+          :focused-entity="appState.focusedEntity"
+          @execute-shape="onExecuteShape"
+          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+        />
         <div class="flex gap-4 items-center justify-between">
           <Switch
             :model-value="appState.focusedEntity"
@@ -134,6 +146,7 @@ const { entities, events, topics, shapes, appState } = useDatabase()
 // els refs
 const focusedRef = ref(null)
 const focusedDraftRef = ref(null)
+const focusedShapeRef = ref(null)
 const filesRef = ref(null)
 
 // reactive
@@ -150,23 +163,28 @@ let cleanupHotkeys
 const hotkeys = {
   // left hand
   w: () => toggleEventFocus(events.length - 1),
-  c: () => appendDraftToEvent(),
-  j: () => filesRef.value?.focusPath(),
-  u: () => focusedRef.value?.focusName(),
-  e: () => focusedRef.value?.focus(),
-  o: () => focusedDraftRef.value?.focus(),
+  a: () => onEntitySwitch("jane"),
+
+  q: () => appendDraftToEvent(),
+  c: () => focusedRef.value?.focusName(),
+  u: () => focusedRef.value?.focus(),
+  e: () => focusedDraftRef.value?.focus(),
+  o: () => focusedShapeRef.value?.focus(),
+
+  b: () => filesRef.value?.focusPath(),
   g: () => scrollToBot(focusedRef.value?.textareaEl),
   i: () => scrollToTop(focusedRef.value?.textareaEl),
-  a: () => onEntitySwitch("jane"),
 
   // right hand
   r: () => onEntitySwitch("rox"),
+
   h: () => appState.upsertDBSync("focusedField", "text"),
   t: () => appState.upsertDBSync("focusedField", "memory"),
   n: () => appState.upsertDBSync("focusedField", null),
+  f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
+
   m: () => onCopy("text"),
   l: () => onCopy("memory"),
-  f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
 
   // both hands
   "{": toggleDown,
@@ -428,6 +446,19 @@ function toggleUp() {
   appState.focusedList === "topics" ? toggleTopicFocus(i) : toggleEventFocus(i)
 }
 /////////////////////////////////// new shit ///////////////////////////////////
+function onExecuteShape(codeString) {
+  const shapeFn = new Function(
+    "events",
+    "topics",
+    "shapes",
+    "files",
+    "appState",
+    codeString
+  )
+  shapeFn(events, topics, shapes, files, appState)
+  console.log("✅ Shape executed successfully.")
+}
+
 function appendDraftToEvent() {
   const currentEvent = getFocusedEvent()
   if (!currentEvent || !appState.draft) return

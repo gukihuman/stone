@@ -13,7 +13,6 @@
         @focus="onFocus(emit)"
         @blur="onBlur(emit)"
         @scroll="onScroll"
-        placeholder="Draft your thoughts here..."
         class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-400 text-stone-800"
         :style="{ backgroundPositionY: linesOffset }"
       />
