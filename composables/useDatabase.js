@@ -153,9 +153,11 @@ export default function useDatabase() {
     const tx = db.transaction("shapes", "readonly")
     const store = tx.objectStore("shapes")
     for (const entity of entities) {
-      shapes[entity] = {}
+      if (!shapes[entity]) shapes[entity] = {}
       const entityShapes = (await store.get(entity)) || []
-      entityShapes.forEach(({ name, fn }) => (shapes[entity][name] = eval(fn)))
+      entityShapes.forEach(({ name, fn }) => {
+        shapes[entity][name] = new Function("return " + fn)()
+      })
     }
     await tx.done
     console.log(`⏬ shapes loaded from db [${timestamp()}]`)
@@ -170,13 +172,13 @@ export default function useDatabase() {
     const store = tx.objectStore("shapes")
     const entityShapes = (await store.get(entity)) || []
     const i = entityShapes.findIndex((s) => s.name === fnName)
-    if (i >= 0) entityShapes[i].fn = func.toString()
+    if (i >= 0) entityShapes[i].fn = fn.toString()
     else entityShapes.push({ name: fnName, fn: fn.toString() })
     await store.put(entityShapes, entity)
     await tx.done
     console.log(`⏬ shape upserted to db ${entity} ${fnName} [${timestamp()}]`)
   }
-  shapes.tUpsertDBSync = throttle((ent, fn) => shapes.upsertDBSync(ent, fn))
+  shapes.tUpsertDBSync = throttle((e, n, fn) => shapes.upsertDBSync(e, n, fn))
 
   shapes.removeDBSync = async function (entity, fnName) {
     if (shapes[entity]) delete shapes[entity][fnName]

@@ -103,3 +103,16 @@ formed on the client only during session
   }
 ]
 ```
+
+## save / load json
+
+shapes become shapesRaw with functions saved as strings
+
+```json
+{
+  "events": [],
+  "topics": {},
+  "shapesRaw": {},
+  "appState": {}
+}
+```
