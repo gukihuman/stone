@@ -270,6 +270,8 @@ function newTopic() {
   topics[appState.focusedEntity].push("topic")
   topics.updateDBSync()
   toggleTopicFocus(topics[appState.focusedEntity].length - 1)
+
+  if (!appState.selectedTopics[entity]) appState.selectedTopics[entity] = []
   appState.selectedTopics[appState.focusedEntity].push(0)
   appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }

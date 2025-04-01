@@ -103,19 +103,14 @@ export default function useDatabase() {
   }
 
   topics.updateDBSync = async function () {
-    const entity = appState.focusedEntity
     const db = await initDB()
     const tx = db.transaction("topics", "readwrite")
     const store = tx.objectStore("topics")
-    await store.put(toRaw(topics[entity]), entity)
-    await tx.done
-    console.log(`⏬ topic inserted for entity ${entity} [${timestamp()}]`)
-
-    if (!appState.selectedTopics[entity]) {
-      appState.selectedTopics[entity] = []
-      appState.selectedTopics[entity].push(0)
+    for (const entity of entities) {
+      await store.put(toRaw(topics[entity]), entity)
     }
-    appState.upsertDBSync("selectedTopics", appState.selectedTopics)
+    await tx.done
+    console.log(`⏬ topic updated [${timestamp()}]`)
   }
 
   topics.removeDBSync = async function (topic) {
