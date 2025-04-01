@@ -163,7 +163,7 @@ let cleanupHotkeys
 const hotkeys = {
   // left hand
   w: () => toggleEventFocus(events.length - 1),
-  a: () => onEntitySwitch("jane"),
+  y: () => switchToNextEntity(),
 
   q: () => appendDraftToEvent(),
   c: () => focusedRef.value?.focusName(),
@@ -176,8 +176,6 @@ const hotkeys = {
   i: () => scrollToTop(focusedRef.value?.textareaEl),
 
   // right hand
-  r: () => onEntitySwitch("rox"),
-
   h: () => appState.upsertDBSync("focusedField", "text"),
   t: () => appState.upsertDBSync("focusedField", "memory"),
   n: () => appState.upsertDBSync("focusedField", null),
@@ -478,5 +476,11 @@ function appendDraftToEvent() {
   updateFocusedEvent(["text", currentEvent.text])
   appState.upsertDBSync("draft", "")
   nextTick(() => scrollToBot(focusedRef.value?.textareaEl))
+}
+function switchToNextEntity() {
+  let index = entities.findIndex((e) => e === appState.focusedEntity)
+  index += 1
+  if (index === entities.length) index = 0
+  onEntitySwitch(entities[index])
 }
 </script>
