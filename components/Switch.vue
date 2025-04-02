@@ -4,7 +4,7 @@
       v-for="(state, index) in states"
       :key="state"
       @click="handleClick(state)"
-      class="flex justify-between min-w-[90px]"
+      class="flex justify-between min-w-[90px] w-full"
       :class="[
         theme === 'dark'
           ? state === modelValue

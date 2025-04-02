@@ -118,31 +118,39 @@
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
         </div>
-        <div class="flex gap-4 items-center justify-between">
-          <Switch
-            :model-value="appState.focusedEntity"
-            :states="entities"
-            @update:modelValue="onEntitySwitch"
-            theme="dark"
-          />
-          <div
-            class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
-          >
-            <div class="rounded-lg overflow-hidden">
-              <ButtonDark @click="onFileSave"> save </ButtonDark>
-              <ButtonDark @click="onFileLoad" theme="dark"> load </ButtonDark>
+      </div>
+      <div class="flex flex-col gap-2 w-[310px] flex-shrink-0">
+        <Switch
+          :model-value="appState.focusedEntity"
+          :states="entities"
+          @update:modelValue="onEntitySwitch"
+          theme="dark"
+          class="w-full"
+        />
+        <div
+          class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
+        >
+          <div class="flex rounded-lg overflow-hidden w-full">
+            <div class="flex-grow">
+              <ButtonDark @click="onFileSave" class="w-full"> save </ButtonDark>
+            </div>
+            <div class="flex-grow">
+              <ButtonDark @click="onFileLoad" class="w-full" theme="dark">
+                load
+              </ButtonDark>
+            </div>
+            <div class="flex-grow">
               <ButtonDark
                 @click="restoreEvent"
                 theme="dark"
                 :disabled="!lastRemovedEvent"
+                class="w-full"
               >
                 restore
               </ButtonDark>
             </div>
           </div>
         </div>
-      </div>
-      <div class="flex flex-col gap-2 w-[310px] flex-shrink-0">
         <Topics
           :topics="topics[appState.focusedEntity] || []"
           :events="events"
