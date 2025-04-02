@@ -1,24 +1,26 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden h-[200px] flex-shrink-0"
+    class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden flex-[10%] flex-shrink-0 -mt-2"
   >
+    <!-- <div class="flex h-full p-3 bg-stone-700 justify-center flex-shrink-0">
+      <ButtonLight @click="emit('append')"> append </ButtonLight>
+    </div> -->
     <div
-      class="w-full relative flex-grow overflow-hidden"
+      class="w-full h-full relative flex-grow overflow-hidden p-3 py-2"
       :class="{ 'bg-stone-700': isTextareaFocused }"
     >
-      <textarea
-        ref="textareaEl"
-        :value="textarea"
-        @input="onInput"
-        @focus="onFocus(emit)"
-        @blur="onBlur(emit)"
-        @scroll="onScroll"
-        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-400 text-stone-800"
-        :style="{ backgroundPositionY: linesOffset }"
-      />
-    </div>
-    <div class="flex w-full p-3 bg-stone-700 justify-center flex-shrink-0">
-      <ButtonLight @click="emit('append')"> append </ButtonLight>
+      <div class="relative overflow-hidden rounded-xl scroll-light h-full">
+        <textarea
+          ref="textareaEl"
+          :value="textarea"
+          @input="onInput"
+          @focus="onFocus(emit)"
+          @blur="onBlur(emit)"
+          @scroll="onScroll"
+          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-400 text-stone-800 rounded-lg"
+          :style="{ backgroundPositionY: linesOffset }"
+        />
+      </div>
     </div>
   </div>
 </template>

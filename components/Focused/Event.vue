@@ -1,31 +1,69 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden flex-grow"
+    class="flex w-full flex-col items-center bg-circles rounded-t-lg bg-stone-500 overflow-hidden flex-grow flex-shrink-0"
   >
     <!-- # top ---------------------------------------------------------------->
-    <div
-      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3"
-    >
-      <CopyGen
-        field="name"
-        :is-locked="isLocked"
-        @copy="(field) => emit('copy', field)"
-        @gen="(field) => emit('gen', field)"
-      />
-      <input
-        ref="nameEl"
-        type="text"
-        v-model="name"
-        @input="dEmitUpdateEvent('name', name)"
-        @focus="emit('lock-hotkeys')"
-        @blur="emit('unlock-hotkeys')"
-        class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
-      />
-      <p
-        class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
+    <div class="w-full flex flex-col gap-2 bg-stone-700 flex-shrink-0">
+      <div
+        class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3 border-stone-600 border-b-[3px] border-dashed"
       >
-        {{ event.date.substring(0, 10) }}
-      </p>
+        <CopyGen
+          field="name"
+          :is-locked="isLocked"
+          @copy="(field) => emit('copy', field)"
+          @gen="(field) => emit('gen', field)"
+        />
+        <input
+          ref="nameEl"
+          type="text"
+          v-model="name"
+          @input="dEmitUpdateEvent('name', name)"
+          @focus="emit('lock-hotkeys')"
+          @blur="emit('unlock-hotkeys')"
+          class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+        />
+        <p
+          class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
+        >
+          {{ event.date.substring(0, 10) }}
+        </p>
+      </div>
+      <div class="flex p-3 py-0 pb-2 justify-between gap-3">
+        <div class="flex gap-3">
+          <CopyGen
+            field="text"
+            :is-locked="isLocked"
+            @copy="(field) => emit('copy', field)"
+            @gen="(field) => emit('gen', field)"
+          />
+          <div class="flex gap-1">
+            <Switch
+              v-model="field"
+              :states="fields"
+              @change="emit('update-app-state', 'focusedField', field)"
+            />
+            <ButtonLight
+              @click="emit('update-app-state', 'focusedField', null)"
+              :disabled="!field"
+              theme="darker"
+            >
+              pretty
+            </ButtonLight>
+          </div>
+          <CopyGen
+            field="memory"
+            :is-locked="isLocked"
+            @copy="(field) => emit('copy', field)"
+            @gen="(field) => emit('gen', field)"
+          />
+          <PrettyNum
+            :number="getTokens(getPrompt('text'))"
+            theme="dark"
+            class="cursor-default pt-[1px] w-14 justify-end"
+          />
+        </div>
+        <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
+      </div>
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
@@ -71,45 +109,6 @@
             :text="topicMemory"
           />
         </div>
-      </div>
-    </div>
-    <!-- # bot ---------------------------------------------------------------->
-    <div class="flex flex-col w-full bg-stone-700 flex-shrink-0">
-      <div class="flex p-3 justify-between gap-3">
-        <div class="flex gap-3 flex-grow">
-          <CopyGen
-            field="text"
-            :is-locked="isLocked"
-            @copy="(field) => emit('copy', field)"
-            @gen="(field) => emit('gen', field)"
-          />
-          <div class="flex gap-1">
-            <Switch
-              v-model="field"
-              :states="fields"
-              @change="emit('update-app-state', 'focusedField', field)"
-            />
-            <ButtonLight
-              @click="emit('update-app-state', 'focusedField', null)"
-              :disabled="!field"
-              theme="darker"
-            >
-              pretty
-            </ButtonLight>
-          </div>
-          <CopyGen
-            field="memory"
-            :is-locked="isLocked"
-            @copy="(field) => emit('copy', field)"
-            @gen="(field) => emit('gen', field)"
-          />
-          <PrettyNum
-            :number="getTokens(getPrompt('text'))"
-            theme="dark"
-            class="cursor-default pt-[1px] w-14 justify-end"
-          />
-        </div>
-        <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>
     </div>
   </div>

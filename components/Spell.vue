@@ -1,9 +1,9 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden flex-shrink-0"
+    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[10%] flex-shrink-0 h-full -mt-2"
   >
     <div
-      class="w-full relative flex-grow overflow-hidden min-h-[100px]"
+      class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
       :class="{ 'bg-stone-700': isTextareaFocused }"
     >
       <textarea
@@ -18,26 +18,31 @@
         @focus="onFocus(emit)"
         @blur="onBlur(emit)"
         @scroll="onScroll"
-        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code"
+        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
         :style="{ backgroundPositionY: linesOffset }"
       />
-    </div>
-    <div
-      class="flex w-full p-3 bg-stone-700 justify-center gap-2 flex-shrink-0"
-    >
-      <ButtonLight @click="onContext" :disabled="isContextLocked">
-        context
-      </ButtonLight>
-      <ButtonLight
-        @click="
-          () => {
-            emit('cast', textarea)
-            textarea = ''
-          }
-        "
+      <div
+        class="flex flex-col gap-2 items-center justify-end flex-shrink-0 h-full"
       >
-        cast
-      </ButtonLight>
+        <ButtonLight
+          @click="onContext"
+          :disabled="isContextLocked"
+          class="w-full"
+        >
+          context
+        </ButtonLight>
+        <ButtonLight
+          @click="
+            () => {
+              emit('cast', textarea)
+              textarea = ''
+            }
+          "
+          class="w-full"
+        >
+          cast
+        </ButtonLight>
+      </div>
     </div>
   </div>
 </template>

@@ -17,7 +17,7 @@
       class="w-full relative flex-grow overflow-hidden"
       :class="{ 'bg-stone-700': isTextareaFocused }"
     >
-      <div class="relative overflow-hidden rounded-b-xl scroll-light h-full">
+      <div class="relative overflow-hidden rounded-b-lg scroll-light h-full">
         <textarea
           ref="textareaEl"
           :value="textarea"

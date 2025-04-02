@@ -33,77 +33,83 @@
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div class="flex w-full gap-2">
-      <div class="flex flex-col flex-grow gap-2 justify-end">
-        <FocusedEvent
-          v-if="getFocusedEvent()"
-          :key="`event-${appState.focusedIndex}-${appState.focusedField}-${appState.focusedEntity}-${updateFocused}`"
-          ref="focusedRef"
-          :event="getFocusedEvent()"
-          :field="appState.focusedField"
-          :fields="['text', 'memory']"
-          :is-locked="isLocked"
-          :get-prompt="getPrompt"
-          :focused-entity="appState.focusedEntity"
-          @update-event="updateFocusedEvent"
-          @remove-event="removeFocusedEvent"
-          @update-app-state="(key, value) => appState.upsertDBSync(key, value)"
-          @copy="onCopy"
-          @gen="onGen"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-        />
-        <FocusedTopic
-          ref="focusedRef"
-          v-else-if="getFocusedTopic() !== null"
-          :key="`topic-${appState.focusedIndex}-${
-            appState.focusedEntity
-          }-${getFocusedTopicLevel()}`"
-          :topic="getFocusedTopic()"
-          :level="getFocusedTopicLevel()"
-          :events="events"
-          :focused-entity="appState.focusedEntity"
-          @update-topic="updateFocusedTopic"
-          @remove-topic="removeFocusedTopic"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-        />
-        <FocusedFile
-          ref="focusedRef"
-          v-else-if="getFocusedFile() !== null"
-          :key="`file-${appState.focusedIndex}`"
-          :file="getFocusedFile()"
-        />
-        <FocusedShape
-          ref="focusedRef"
-          v-else-if="appState.focusedList === 'shapes' && getFocusedShape()"
-          :key="`focused-shape-${appState.focusedIndex}-${appState.focusedEntity}`"
-          :shapeName="getFocusedShape().name"
-          :shapeDefinition="getFocusedShape().definition"
-          @update-shape="handleUpdateShape"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-        />
-        <Draft
-          ref="focusedDraftRef"
-          v-if="appState.draft !== undefined"
-          :modelValue="appState.draft"
-          @update:modelValue="(value) => appState.upsertDBSync('draft', value)"
-          @append="appendDraftToEvent"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-        />
-        <Spell
-          ref="focusedSpellRef"
-          :events="events"
-          :topics="topics"
-          :shapes="shapes"
-          :files="files"
-          :app-state="appState"
-          :focused-entity="appState.focusedEntity"
-          @cast="onCast"
-          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
-          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
-        />
+      <div class="flex flex-col gap-2 flex-grow justify-end">
+        <div class="flex flex-col h-full">
+          <FocusedEvent
+            v-if="getFocusedEvent()"
+            :key="`event-${appState.focusedIndex}-${appState.focusedField}-${appState.focusedEntity}-${updateFocused}`"
+            ref="focusedRef"
+            :event="getFocusedEvent()"
+            :field="appState.focusedField"
+            :fields="['text', 'memory']"
+            :is-locked="isLocked"
+            :get-prompt="getPrompt"
+            :focused-entity="appState.focusedEntity"
+            @update-event="updateFocusedEvent"
+            @remove-event="removeFocusedEvent"
+            @update-app-state="
+              (key, value) => appState.upsertDBSync(key, value)
+            "
+            @copy="onCopy"
+            @gen="onGen"
+            @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+            @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          />
+          <FocusedTopic
+            ref="focusedRef"
+            v-else-if="getFocusedTopic() !== null"
+            :key="`topic-${appState.focusedIndex}-${
+              appState.focusedEntity
+            }-${getFocusedTopicLevel()}`"
+            :topic="getFocusedTopic()"
+            :level="getFocusedTopicLevel()"
+            :events="events"
+            :focused-entity="appState.focusedEntity"
+            @update-topic="updateFocusedTopic"
+            @remove-topic="removeFocusedTopic"
+            @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+            @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          />
+          <FocusedFile
+            ref="focusedRef"
+            v-else-if="getFocusedFile() !== null"
+            :key="`file-${appState.focusedIndex}`"
+            :file="getFocusedFile()"
+          />
+          <FocusedShape
+            ref="focusedRef"
+            v-else-if="appState.focusedList === 'shapes' && getFocusedShape()"
+            :key="`focused-shape-${appState.focusedIndex}-${appState.focusedEntity}`"
+            :shapeName="getFocusedShape().name"
+            :shapeDefinition="getFocusedShape().definition"
+            @update-shape="handleUpdateShape"
+            @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+            @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          />
+          <Draft
+            ref="focusedDraftRef"
+            v-if="appState.draft !== undefined"
+            :modelValue="appState.draft"
+            @update:modelValue="
+              (value) => appState.upsertDBSync('draft', value)
+            "
+            @append="appendDraftToEvent"
+            @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+            @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          />
+          <Spell
+            ref="focusedSpellRef"
+            :events="events"
+            :topics="topics"
+            :shapes="shapes"
+            :files="files"
+            :app-state="appState"
+            :focused-entity="appState.focusedEntity"
+            @cast="onCast"
+            @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+            @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+          />
+        </div>
         <div class="flex gap-4 items-center justify-between">
           <Switch
             :model-value="appState.focusedEntity"
