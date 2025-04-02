@@ -62,9 +62,7 @@ you can call another shape from shape function. even making nested structures
 
 ### appState
 
-indecies of the selected events / topics / files identical to their content lists. for events for topics values are levels of abstraction in descending order: 0 is the most detailed, they also indecies of memory topics.
-
-files itself not stored in db, they always directly taken, but their selection preserved while path dosnt change
+files itself not stored in db, they always directly taken from system
 
 ```json
 {
@@ -73,12 +71,6 @@ files itself not stored in db, they always directly taken, but their selection p
   "focusedList": "events", // events, topics, files
   "focusedIndex": 0,
   "focusedField": "text", // text, memory
-  "selectedEvents": [false, true, true],
-  "selectedFiles": [true, false, true, true],
-  "selectedTopics": {
-    "jane": [0, 1, null], // 0, 1, null
-    "rox": [0, 1]
-  },
   "draft": ""
 }
 ```

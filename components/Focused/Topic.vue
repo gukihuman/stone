@@ -23,13 +23,13 @@
           ref="textareaEl"
           class="w-full px-3 py-2 h-full flex flex-col gap-4 overflow-y-scroll items-center"
         >
-          <FocusedRecord
+          <!-- <FocusedRecord
             v-for="([eventName, eventDate, eventMemory], i) in eventData"
             :key="`event-memory-${i}`"
             :name="eventName"
             :date="eventDate"
             :text="eventMemory"
-          />
+          /> -->
         </div>
       </div>
     </div>
@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-const props = defineProps(["topic", "events", "level", "focusedEntity"])
+const props = defineProps(["topic", "events", "focusedEntity"])
 const emit = defineEmits([
   "update-topic",
   "remove-topic",
@@ -60,20 +60,20 @@ const textareaEl = ref(null)
 // v-model
 const name = ref(props.topic)
 
-const eventData = computed(() => {
-  return props.events.reduce((acc, event) => {
-    try {
-      const entityMemoryString = event.memory[props.focusedEntity]
-      if (entityMemoryString) {
-        const entityMemoryParsed = JSON.parse(entityMemoryString)
-        const topicMemoryData = entityMemoryParsed[props.topic]
-        const memoryText = topicMemoryData[props.level]
-        if (memoryText) acc.push([event.name, event.date, memoryText])
-      }
-    } catch (e) {}
-    return acc
-  }, [])
-})
+// const eventData = computed(() => {
+//   return props.events.reduce((acc, event) => {
+//     try {
+//       const entityMemoryString = event.memory[props.focusedEntity]
+//       if (entityMemoryString) {
+//         const entityMemoryParsed = JSON.parse(entityMemoryString)
+//         const topicMemoryData = entityMemoryParsed[props.topic]
+//         const memoryText = topicMemoryData[props.level]
+//         if (memoryText) acc.push([event.name, event.date, memoryText])
+//       }
+//     } catch (e) {}
+//     return acc
+//   }, [])
+// })
 
 defineExpose({ textareaEl, focusName: () => focusName(nameEl) })
 

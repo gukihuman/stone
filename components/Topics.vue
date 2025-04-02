@@ -4,7 +4,7 @@
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
       <!-- # top menu --------------------------------------------------------->
-      <div class="flex bg-stone-700">
+      <div class="flex bg-stone-700 pr-4">
         <ButtonArrow
           @click="emit('sort-down')"
           :disabled="focusedIndex === null || focusedIndex === 0"
@@ -23,19 +23,11 @@
         >
           new
         </button>
-        <PrettyNum
+        <!-- <PrettyNum
           :number="getTokensTotal()"
           theme="dark"
           class="cursor-default w-14 pt-[2px]"
-        />
-        <div v-if="selected.length" class="flex pl-2 pr-2">
-          <Circles
-            :selected="selected"
-            :states="[0, 1, null]"
-            @toggle="(state) => emit('toggle-select-all', state)"
-          />
-        </div>
-        <div v-else class="w-[82px]" />
+        /> -->
       </div>
       <!-- # list ------------------------------------------------------------->
       <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
@@ -50,17 +42,11 @@
               @click="emit('toggle-focus', i)"
             >
               <span class="truncate">{{ topic }}</span>
-              <PrettyNum
+              <!-- <PrettyNum
                 :number="getTokens(getMemories(topic))"
                 theme="light"
-              />
+              /> -->
             </ButtonList>
-            <Circles
-              :selected="selected"
-              :index="i"
-              :states="[0, 1, null]"
-              @toggle="(state) => emit('toggle-select', i, state)"
-            />
           </div>
         </div>
       </div>
@@ -68,13 +54,7 @@
   </div>
 </template>
 <script setup>
-const props = defineProps([
-  "topics",
-  "events",
-  "selected",
-  "focusedIndex",
-  "focusedEntity",
-])
+const props = defineProps(["topics", "events", "focusedIndex", "focusedEntity"])
 const emit = defineEmits([
   "new-topic",
   "toggle-focus",
@@ -88,37 +68,37 @@ const emit = defineEmits([
 const listEl = ref(null)
 
 ////////////////////////////////////////////////////////////////////////////////
-function getMemories(topicName) {
-  const topicIndex = props.topics.indexOf(topicName) // Find index within the entity-specific list
-  if (topicIndex === -1) return "" // Topic not found for this entity
+// function getMemories(topicName) {
+//   const topicIndex = props.topics.indexOf(topicName) // Find index within the entity-specific list
+//   if (topicIndex === -1) return "" // Topic not found for this entity
 
-  const level = props.selected[topicIndex] // Get selection level using entity-specific selection array
-  if (level === null) return "" // Topic not selected
+//   const level = props.selected[topicIndex] // Get selection level using entity-specific selection array
+//   if (level === null) return "" // Topic not selected
 
-  return props.events.reduce((acc, event) => {
-    try {
-      const entityMemoryString = event.memory?.[props.focusedEntity]
-      if (entityMemoryString) {
-        const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse it
-        // Find memory for the specific topic
-        const topicMemoryData = entityMemoryParsed[topicName]
-        const memoryText = topicMemoryData?.[level] // Get text for selected level
+//   return props.events.reduce((acc, event) => {
+//     try {
+//       const entityMemoryString = event.memory?.[props.focusedEntity]
+//       if (entityMemoryString) {
+//         const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse it
+//         // Find memory for the specific topic
+//         const topicMemoryData = entityMemoryParsed[topicName]
+//         const memoryText = topicMemoryData?.[level] // Get text for selected level
 
-        if (memoryText) {
-          // Construct the string to contribute to token count (or display later)
-          const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
-          // Accumulate text for token counting. Joining with \n\n approximates context.
-          acc = [acc, eventLine, memoryText].join("\n\n")
-        }
-      }
-    } catch (e) {}
-    return acc
-  }, "")
-}
-function getTokensTotal() {
-  return props.topics.reduce((acc, topic) => {
-    acc += getTokens(getMemories(topic))
-    return acc
-  }, 0)
-}
+//         if (memoryText) {
+//           // Construct the string to contribute to token count (or display later)
+//           const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
+//           // Accumulate text for token counting. Joining with \n\n approximates context.
+//           acc = [acc, eventLine, memoryText].join("\n\n")
+//         }
+//       }
+//     } catch (e) {}
+//     return acc
+//   }, "")
+// }
+// function getTokensTotal() {
+//   return props.topics.reduce((acc, topic) => {
+//     acc += getTokens(getMemories(topic))
+//     return acc
+//   }, 0)
+// }
 </script>

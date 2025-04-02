@@ -6,9 +6,6 @@ export default function useDatabase() {
     focusedField: "text",
     focusedEntity: "jane",
     filesPath: "",
-    selectedEvents: [],
-    selectedFiles: [],
-    selectedTopics: {},
     focusedIndex: null,
     focusedList: null,
     draft: "",
@@ -65,8 +62,6 @@ export default function useDatabase() {
   events.removeDBSync = async function (event) {
     const index = events.findIndex((e) => e.id === event.id)
     if (index >= 0) events.splice(index, 1)
-    appState.selectedEvents.splice(index, 1)
-    appState.upsertDBSync("selectedEvents", appState.selectedEvents)
     appState.upsertDBSync("focusedIndex", null)
     appState.upsertDBSync("focusedList", null)
 
@@ -79,8 +74,6 @@ export default function useDatabase() {
   }
   events.clearDBSync = async function () {
     events.length = 0
-    appState.selectedEvents.length = 0
-    appState.upsertDBSync("selectedEvents", appState.selectedEvents)
 
     const db = await initDB()
     const tx = db.transaction("events", "readwrite")
@@ -118,8 +111,6 @@ export default function useDatabase() {
     const index = topics[entity].indexOf(topic)
     if (index < 0) return // topic not found
     topics[entity].splice(index, 1)
-    appState.selectedTopics[entity].splice(index, 1)
-    appState.upsertDBSync("selectedTopics", appState.selectedTopics)
     appState.upsertDBSync("focusedIndex", null)
     appState.upsertDBSync("focusedList", null)
 
@@ -132,11 +123,6 @@ export default function useDatabase() {
   }
 
   topics.clearDBSync = async function () {
-    Object.keys(appState.selectedTopics).forEach((key) => {
-      appState.selectedTopics[key] = []
-    })
-    appState.upsertDBSync("selectedTopics", appState.selectedTopics)
-
     const db = await initDB()
     const tx = db.transaction("topics", "readwrite")
     const store = tx.objectStore("topics")

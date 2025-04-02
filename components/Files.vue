@@ -4,7 +4,7 @@
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
       <!-- # top -------------------------------------------------------------->
-      <div class="flex justify-between gap-2 pr-2 bg-stone-700">
+      <div class="flex justify-between gap-2 pr-4 bg-stone-700">
         <div class="flex-grow overflow-hidden">
           <input
             ref="pathEl"
@@ -23,13 +23,6 @@
             theme="light"
             class="pt-[5px]"
           />
-          <Circles
-            v-if="files.length"
-            :selected="selected"
-            :states="[true, false]"
-            @toggle="(state) => emit('toggle-select-all', state)"
-          />
-          <div v-else class="w-[50px]" />
         </div>
       </div>
       <!-- # list ------------------------------------------------------------->
@@ -48,7 +41,7 @@
             {{ group.folder }}
           </div>
           <div
-            class="flex max-w-full gap-1"
+            class="flex max-w-full gap-1 pr-2"
             v-for="{ file, index } in group.files"
             :key="`file-${index}`"
           >
@@ -59,18 +52,8 @@
               <span class="truncate">
                 {{ getParts(file.path).file }}
               </span>
-              <PrettyNum
-                v-if="selected[index]"
-                :number="getTokens(file.content)"
-                theme="light"
-              />
+              <PrettyNum :number="getTokens(file.content)" theme="light" />
             </ButtonList>
-            <Circles
-              :selected="selected"
-              :index="index"
-              :states="[true, false]"
-              @toggle="(state) => emit('toggle-select', index, state)"
-            />
           </div>
         </div>
       </div>
@@ -78,11 +61,9 @@
   </div>
 </template>
 <script setup>
-const props = defineProps(["files", "path", "selected", "focusedIndex"])
+const props = defineProps(["files", "path", "focusedIndex"])
 const emit = defineEmits([
   "toggle-focus",
-  "toggle-select",
-  "toggle-select-all",
   "update-path",
   "lock-hotkeys",
   "unlock-hotkeys",
@@ -110,8 +91,8 @@ defineExpose({ focusPath: () => focusPath(pathEl) })
 const dEmitUpdatePath = debounce(() => emit("update-path", path.value), 1000)
 
 function getTokensTotal() {
-  return props.files.reduce((acc, file, i) => {
-    if (props.selected[i]) acc += getTokens(file.content)
+  return props.files.reduce((acc, file) => {
+    acc += getTokens(file.content)
     return acc
   }, 0)
 }

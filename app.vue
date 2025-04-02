@@ -1,24 +1,20 @@
 <template>
   <div class="flex bg-stone-600 h-screen gap-2 p-1">
     <!-- # left col events files ---------------------------------------------->
-    <div class="flex flex-col gap-2 w-[255px] flex-shrink-0">
+    <div class="flex flex-col gap-2 w-[250px] flex-shrink-0">
       <Events
         :events="events"
         :focused-index="
           appState.focusedList === 'events' ? appState.focusedIndex : null
         "
-        :selected="appState.selectedEvents || []"
         @new-event="newEvent"
         @toggle-focus="toggleEventFocus"
-        @toggle-select="toggleEventSelect"
-        @toggle-select-all="toggleSelectAllEvents"
       />
       <Files
         ref="filesRef"
         v-if="files"
         :files="files"
         :path="appState.filesPath"
-        :selected="appState.selectedFiles || []"
         :focused-i="
           appState.focusedList === 'files' ? appState.focusedIndex : null
         "
@@ -26,8 +22,6 @@
         @lock-hotkeys="() => (hotkeysLockedByInput = true)"
         @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
         @toggle-focus="toggleFileFocus"
-        @toggle-select="toggleFileSelect"
-        @toggle-select-all="toggleSelectAllFiles"
       />
       <div v-else class="flex-1" />
     </div>
@@ -63,11 +57,8 @@
           <FocusedTopic
             ref="focusedRef"
             v-else-if="getFocusedTopic() !== null"
-            :key="`topic-${appState.focusedIndex}-${
-              appState.focusedEntity
-            }-${getFocusedTopicLevel()}`"
+            :key="`topic-${appState.focusedIndex}-${appState.focusedEntity}`"
             :topic="getFocusedTopic()"
-            :level="getFocusedTopicLevel()"
             :events="events"
             :focused-entity="appState.focusedEntity"
             @update-topic="updateFocusedTopic"
@@ -118,33 +109,19 @@
             :files="files"
             :app-state="appState"
             :focused-entity="appState.focusedEntity"
-            @context="onContext"
+            :is-context-locked="isContextLocked"
+            @copy-context="onCopyContext"
             @cast="onCast"
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
         </div>
       </div>
-      <div class="flex flex-col gap-2 w-[310px] flex-shrink-0">
-        <Switch
-          :model-value="appState.focusedEntity"
-          :states="entities"
-          @update:modelValue="onEntitySwitch"
-          theme="dark"
-          class="w-full"
-        />
+      <div class="flex flex-col gap-2 w-[250px] flex-shrink-0">
         <div
           class="flex flex-col items-center rounded-lg overflow-hidden flex-shrink-0"
         >
           <div class="flex rounded-lg overflow-hidden w-full">
-            <div class="flex-grow">
-              <ButtonDark @click="onFileSave" class="w-full"> save </ButtonDark>
-            </div>
-            <div class="flex-grow">
-              <ButtonDark @click="onFileLoad" class="w-full" theme="dark">
-                load
-              </ButtonDark>
-            </div>
             <div class="flex-grow">
               <ButtonDark
                 @click="restoreEvent"
@@ -155,20 +132,32 @@
                 restore
               </ButtonDark>
             </div>
+            <div class="flex-grow">
+              <ButtonDark @click="onFileSave" class="w-full"> save </ButtonDark>
+            </div>
+            <div class="flex-grow">
+              <ButtonDark @click="onFileLoad" class="w-full" theme="dark">
+                load
+              </ButtonDark>
+            </div>
           </div>
         </div>
+        <Switch
+          :model-value="appState.focusedEntity"
+          :states="entities"
+          @update:modelValue="onEntitySwitch"
+          theme="dark"
+          class="w-full"
+        />
         <Topics
           :topics="topics[appState.focusedEntity] || []"
           :events="events"
-          :selected="appState.selectedTopics?.[appState.focusedEntity] || []"
           :focused-index="
             appState.focusedList === 'topics' ? appState.focusedIndex : null
           "
           :focused-entity="appState.focusedEntity"
           @new-topic="newTopic"
           @toggle-focus="toggleTopicFocus"
-          @toggle-select="toggleTopicSelect"
-          @toggle-select-all="toggleSelectAllTopics"
           @sort-up="sortTopic(1)"
           @sort-down="sortTopic(-1)"
         />
@@ -204,19 +193,7 @@ const isLocked = reactive({
   gen: { text: false, name: false, memory: false },
 })
 const updateFocused = ref(0)
-
-// computed
-const context = computed(() => {
-  return (
-    shapes[appState.focusedEntity]?.getContext(
-      events,
-      topics,
-      shapes,
-      files,
-      appState
-    ) || ""
-  )
-})
+const isContextLocked = ref(false)
 
 // regular
 let lastRemovedEvent = null
@@ -242,7 +219,7 @@ const hotkeys = {
   n: () => appState.upsertDBSync("focusedField", null),
   f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
 
-  m: () => onContext(),
+  m: () => onCopyContext(),
 
   // both hands
   "{": toggleDown,
@@ -266,8 +243,6 @@ async function updateFilePath(path) {
     appState.upsertDBSync("focusedIndex", null)
   }
   await getFiles()
-  appState.selectedFiles = Array(files.value.length).fill(false)
-  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
 }
 async function getFiles() {
   files.value = await apiGetFiles({
@@ -289,14 +264,6 @@ function toggleFileFocus(i) {
   appState.upsertDBSync("focusedIndex", same ? null : i)
   appState.upsertDBSync("focusedList", same ? null : "files")
 }
-function toggleFileSelect(i, state) {
-  appState.selectedFiles[i] = state
-  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
-}
-function toggleSelectAllFiles(state) {
-  appState.selectedFiles = appState.selectedFiles.map(() => state)
-  appState.upsertDBSync("selectedFiles", appState.selectedFiles)
-}
 /////////////////////////////////// events /////////////////////////////////////
 function newEvent() {
   events.upsertDBSync({
@@ -308,11 +275,6 @@ function newEvent() {
   })
   toggleEventFocus(events.length - 1)
   appState.upsertDBSync("focusedField", "text")
-  if (!appState.selectedEvents) appState.selectedEvents = []
-  while (appState.selectedEvents.length < events.length) {
-    appState.selectedEvents.push(false)
-  }
-  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
   nextTick(() => focusedRef.value?.focusBot())
 }
 function toggleEventFocus(i) {
@@ -323,14 +285,6 @@ function toggleEventFocus(i) {
 function updateFocusedEvent([key, value]) {
   getFocusedEvent()[key] = value
   events.upsertDBSync(getFocusedEvent())
-}
-function toggleEventSelect(i, state) {
-  appState.selectedEvents[i] = state
-  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
-}
-function toggleSelectAllEvents(state) {
-  appState.selectedEvents = appState.selectedEvents.map(() => state)
-  appState.upsertDBSync("selectedEvents", appState.selectedEvents)
 }
 function removeFocusedEvent() {
   lastRemovedEvent = getFocusedEvent()
@@ -346,10 +300,6 @@ function newTopic() {
   topics[appState.focusedEntity].push("topic")
   topics.updateDBSync()
   toggleTopicFocus(topics[appState.focusedEntity].length - 1)
-
-  if (!appState.selectedTopics[entity]) appState.selectedTopics[entity] = []
-  appState.selectedTopics[appState.focusedEntity].push(0)
-  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
 }
 function toggleTopicFocus(i) {
   const same = appState.focusedList === "topics" && appState.focusedIndex === i
@@ -367,25 +317,10 @@ function updateFocusedTopic(newTopicName) {
 function removeFocusedTopic() {
   topics.removeDBSync(getFocusedTopic())
 }
-function toggleTopicSelect(i, level) {
-  const entity = appState.focusedEntity
-  appState.selectedTopics[entity][i] = level
-  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
-}
-function toggleSelectAllTopics(level) {
-  const entity = appState.focusedEntity
-  if (appState.selectedTopics[entity]) {
-    appState.selectedTopics[entity] = appState.selectedTopics[entity].map(
-      () => level
-    )
-    appState.upsertDBSync("selectedTopics", appState.selectedTopics)
-  }
-}
 function sortTopic(direction) {
   const entityTopics = topics[appState.focusedEntity]
-  const entitySelectedTopics = appState.selectedTopics[appState.focusedEntity]
   const i = appState.focusedIndex
-  if (!entityTopics || !entitySelectedTopics || i === null) return
+  if (!entityTopics || i === null) return
   if (
     (direction > 0 && i === entityTopics.length - 1) ||
     (direction < 0 && i === 0)
@@ -398,38 +333,39 @@ function sortTopic(direction) {
   entityTopics.splice(i, 1)
   entityTopics.splice(newIndex, 0, topic)
 
-  const selectState = entitySelectedTopics[i]
-  entitySelectedTopics.splice(i, 1)
-  entitySelectedTopics.splice(newIndex, 0, selectState)
-
   topics.updateDBSync()
-  appState.upsertDBSync("selectedTopics", appState.selectedTopics)
-
   appState.upsertDBSync("focusedIndex", newIndex)
 }
-///////////////////////////////// copy gen /////////////////////////////////////
-async function onGen(field) {
+///////////////////////////////// context //////////////////////////////////////
+// async function onGen(field) {
+//   if (!getFocusedEvent()) return // hotkey case
+//   const getContext = shapes[appState.focusedEntity]?.getContext
+//   if (!getContext) return
+//   const input = getContext(events, topics, shapes, files, appState, getTokens)
+//   await getFiles()
+// await apiGen({
+//   model: "gemini-2.0-flash",
+//   input,
+//   event: getFocusedEvent(),
+//   locked: isContextGenLocked,
+//   field,
+//   focusedEntity: appState.focusedEntity,
+//   onNextChunk: events.tUpsertDBSync,
+// })
+// }
+async function onCopyContext() {
   if (!getFocusedEvent()) return // hotkey case
+  await getFiles()
   const getContext = shapes[appState.focusedEntity]?.getContext
   if (!getContext) return
-  const input = getContext(events, topics, shapes, files, appState)
-  await getFiles()
-  await apiGen({
-    model: "gemini-2.0-flash",
-    input,
-    event: getFocusedEvent(),
-    locked: isLocked.gen,
-    field,
-    focusedEntity: appState.focusedEntity,
-    onNextChunk: events.tUpsertDBSync,
-  })
-}
-async function onContext() {
-  if (!getFocusedEvent()) return // hotkey case
-  await getFiles()
-  const getContext = shapes[appState.focusedEntity]?.getContext
-  if (!getContext) return
-  const input = getContext(events, topics, shapes, files, appState)
+  const input = getContext(
+    events,
+    topics,
+    shapes,
+    files.value,
+    appState,
+    getTokens
+  )
   await clipboard({ input, locked: isContextLocked })
 }
 ////////////////////////////////// entity //////////////////////////////////////
@@ -443,7 +379,7 @@ function onEntitySwitch(value) {
 ////////////////////////////////// shapes //////////////////////////////////////
 function onCast(codeString) {
   eval(codeString)
-  console.log("✅ Shape executed successfully.")
+  console.log("✅ spell casted successfully")
 }
 function toggleShapeFocus(i) {
   const same = appState.focusedList === "shapes" && appState.focusedIndex === i
@@ -524,10 +460,6 @@ function getFocusedTopic() {
   if (appState.focusedList !== "topics") return null
   const entity = appState.focusedEntity
   return topics[entity][appState.focusedIndex]
-}
-function getFocusedTopicLevel() {
-  const entity = appState.focusedEntity
-  return appState.selectedTopics[entity][appState.focusedIndex]
 }
 function toggleDown() {
   const list = appState.focusedList === "topics" ? topics : events

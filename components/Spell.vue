@@ -25,7 +25,7 @@
         class="flex flex-col gap-2 items-center justify-end flex-shrink-0 h-full"
       >
         <ButtonLight
-          @click="emit('context')"
+          @click="emit('copy-context')"
           :disabled="isContextLocked"
           class="w-full"
         >
@@ -55,9 +55,15 @@ const props = defineProps([
   "files",
   "appState",
   "focusedEntity",
+  "isContextLocked",
 ])
 
-const emit = defineEmits(["context", "cast", "lock-hotkeys", "unlock-hotkeys"])
+const emit = defineEmits([
+  "copy-context",
+  "cast",
+  "lock-hotkeys",
+  "unlock-hotkeys",
+])
 
 const {
   isTextareaFocused,
@@ -74,7 +80,6 @@ const textareaEl = ref(null)
 
 // reactive
 const textarea = ref("")
-const isContextLocked = ref(false)
 
 defineExpose({ focus: () => focus(textareaEl) })
 </script>
