@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-lg bg-stone-500 overflow-hidden flex-grow"
+    class="flex w-full flex-col items-center bg-circles rounded-t-lg bg-stone-500 overflow-hidden flex-grow"
   >
     <!-- # top ---------------------------------------------------------------->
     <div
@@ -14,7 +14,7 @@
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
-      class="w-full relative flex-grow overflow-hidden"
+      class="w-full relative flex-grow overflow-hidden px-3 py-2"
       :class="{ 'bg-stone-700': isTextareaFocused }"
     >
       <div class="relative overflow-hidden rounded-b-lg scroll-light h-full">
@@ -31,7 +31,7 @@
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
           @scroll="onScroll"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code"
+          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
           :style="{ backgroundPositionY: linesOffset }"
         />
       </div>

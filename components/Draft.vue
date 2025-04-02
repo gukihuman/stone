@@ -1,13 +1,13 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden flex-[10%] flex-shrink-0 -mt-2"
+    class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden flex-[10%] flex-shrink-0 -mt-2 z-10"
   >
     <!-- <div class="flex h-full p-3 bg-stone-700 justify-center flex-shrink-0">
       <ButtonLight @click="emit('append')"> append </ButtonLight>
     </div> -->
     <div
       class="w-full h-full relative flex-grow overflow-hidden p-3 py-2"
-      :class="{ 'bg-stone-700': isTextareaFocused }"
+      :class="{ 'bg-stone-700 z-20': isTextareaFocused }"
     >
       <div class="relative overflow-hidden rounded-xl scroll-light h-full">
         <textarea

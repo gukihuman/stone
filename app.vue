@@ -34,7 +34,15 @@
     <!-- # mid ---------------------------------------------------------------->
     <div class="flex w-full gap-2">
       <div class="flex flex-col gap-2 flex-grow justify-end">
-        <div class="flex flex-col h-full">
+        <div
+          class="flex flex-col h-full"
+          v-if="
+            getFocusedEvent() ||
+            getFocusedTopic() ||
+            getFocusedFile() ||
+            getFocusedShape()
+          "
+        >
           <FocusedEvent
             v-if="getFocusedEvent()"
             :key="`event-${appState.focusedIndex}-${appState.focusedField}-${appState.focusedEntity}-${updateFocused}`"

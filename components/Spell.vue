@@ -4,7 +4,7 @@
   >
     <div
       class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
-      :class="{ 'bg-stone-700': isTextareaFocused }"
+      :class="{ 'bg-stone-700 z-30': isTextareaFocused }"
     >
       <textarea
         ref="textareaEl"

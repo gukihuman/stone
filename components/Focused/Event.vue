@@ -1,9 +1,11 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-t-lg bg-stone-500 overflow-hidden flex-grow flex-shrink-0"
+    class="flex w-full flex-col items-center bg-circles rounded-t-lg bg-stone-500 overflow-hidden flex-[30%]"
   >
     <!-- # top ---------------------------------------------------------------->
-    <div class="w-full flex flex-col gap-2 bg-stone-700 flex-shrink-0">
+    <div
+      class="w-full flex flex-col gap-2 flex-grow bg-stone-700 flex-shrink-0"
+    >
       <div
         class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3 border-stone-600 border-b-[3px] border-dashed"
       >
@@ -67,8 +69,8 @@
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
-      class="w-full relative flex-grow overflow-hidden"
-      :class="{ 'bg-stone-700': isTextareaFocused, 'px-3 py-2': field }"
+      class="w-full relative h-full overflow-hidden"
+      :class="{ 'bg-stone-700 z-20': isTextareaFocused, 'px-3 py-2': field }"
     >
       <div
         v-if="field"
