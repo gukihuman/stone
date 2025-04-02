@@ -55,14 +55,8 @@ you can call another shape from shape function. even making nested structures
 
 ```json
 {
-  "jane": {
-    "talk": "function() {events, topics, shapes, files}",
-    "reflect": "function () {events, topics, shapes, files}"
-  },
-  "rox": {
-    "talk": "function() {events, topics, shapes, files}",
-    "reflect": "function () {events, topics, shapes, files}"
-  }
+  "jane": { "logEventCount": "", "reflect": "" },
+  "rox": { "talk": "", "reflect": "" }
 }
 ```
 
@@ -106,13 +100,11 @@ formed on the client only during session
 
 ## save / load json
 
-shapes become shapesRaw with functions saved as strings
-
 ```json
 {
   "events": [],
   "topics": {},
-  "shapesRaw": {},
+  "shapes": {},
   "appState": {}
 }
 ```

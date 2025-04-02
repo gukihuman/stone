@@ -73,7 +73,17 @@
           :key="`file-${appState.focusedIndex}`"
           :file="getFocusedFile()"
         />
-        <FocusedDraft
+        <FocusedShape
+          ref="focusedRef"
+          v-else-if="appState.focusedList === 'shapes' && getFocusedShape()"
+          :key="`focused-shape-${appState.focusedIndex}-${appState.focusedEntity}`"
+          :shapeName="getFocusedShape().name"
+          :shapeDefinition="getFocusedShape().definition"
+          @update-shape="handleUpdateShape"
+          @lock-hotkeys="() => (hotkeysLockedByInput = true)"
+          @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
+        />
+        <Draft
           ref="focusedDraftRef"
           v-if="appState.draft !== undefined"
           :modelValue="appState.draft"
@@ -82,15 +92,15 @@
           @lock-hotkeys="() => (hotkeysLockedByInput = true)"
           @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
         />
-        <FocusedShape
-          ref="focusedShapeRef"
+        <Spell
+          ref="focusedSpellRef"
           :events="events"
           :topics="topics"
           :shapes="shapes"
           :files="files"
           :app-state="appState"
           :focused-entity="appState.focusedEntity"
-          @execute-shape="onExecuteShape"
+          @cast="onCast"
           @lock-hotkeys="() => (hotkeysLockedByInput = true)"
           @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
         />
@@ -134,6 +144,13 @@
           @sort-up="sortTopic(1)"
           @sort-down="sortTopic(-1)"
         />
+        <Shapes
+          :shapes="shapes[appState.focusedEntity] || {}"
+          :focused-index="
+            appState.focusedList === 'shapes' ? appState.focusedIndex : null
+          "
+          @toggle-focus="toggleShapeFocus"
+        />
       </div>
     </div>
   </div>
@@ -146,7 +163,7 @@ const { entities, events, topics, shapes, appState } = useDatabase()
 // els refs
 const focusedRef = ref(null)
 const focusedDraftRef = ref(null)
-const focusedShapeRef = ref(null)
+const focusedSpellRef = ref(null)
 const filesRef = ref(null)
 
 // reactive
@@ -169,7 +186,7 @@ const hotkeys = {
   c: () => focusedRef.value?.focusName(),
   u: () => focusedRef.value?.focus(),
   e: () => focusedDraftRef.value?.focus(),
-  o: () => focusedShapeRef.value?.focus(),
+  o: () => focusedSpellRef.value?.focus(),
 
   b: () => filesRef.value?.focusPath(),
   g: () => scrollToBot(focusedRef.value?.textareaEl),
@@ -372,6 +389,37 @@ function onEntitySwitch(value) {
     appState.upsertDBSync("focusedIndex", null)
   }
 }
+////////////////////////////////// shapes //////////////////////////////////////
+function onCast(codeString) {
+  eval(codeString)
+  console.log("✅ Shape executed successfully.")
+}
+function toggleShapeFocus(i) {
+  const same = appState.focusedList === "shapes" && appState.focusedIndex === i
+  appState.upsertDBSync("focusedIndex", same ? null : i)
+  appState.upsertDBSync("focusedList", same ? null : "shapes")
+}
+function getFocusedShape() {
+  if (appState.focusedList !== "shapes" || appState.focusedIndex === null) {
+    return null
+  }
+  const entity = appState.focusedEntity
+  if (!shapes[entity]) return null // Ensure entity exists in shapes
+
+  const shapeNames = Object.keys(shapes[entity])
+  const name = shapeNames[appState.focusedIndex]
+  const func = shapes[entity][name]
+
+  if (!name || typeof func !== "function") return null // Ensure shape exists
+
+  return { name, definition: func.toString() }
+}
+function handleUpdateShape(shapeName, newDefinition) {
+  const entity = appState.focusedEntity
+  const newFunc = new Function("return " + newDefinition)()
+  shapes.upsertDBSync(entity, shapeName, newFunc)
+  console.log(`🔄 Shape '${shapeName}' updated for entity '${entity}'.`)
+}
 ////////////////////////////// file save load //////////////////////////////////
 async function onFileSave() {
   const filename = `stone ${events[events.length - 1]?.name || ""}.json`
@@ -452,19 +500,6 @@ function toggleUp() {
   appState.focusedList === "topics" ? toggleTopicFocus(i) : toggleEventFocus(i)
 }
 /////////////////////////////////// new shit ///////////////////////////////////
-function onExecuteShape(codeString) {
-  const shapeFn = new Function(
-    "events",
-    "topics",
-    "shapes",
-    "files",
-    "appState",
-    codeString
-  )
-  shapeFn(events, topics, shapes, files, appState)
-  console.log("✅ Shape executed successfully.")
-}
-
 function appendDraftToEvent() {
   const currentEvent = getFocusedEvent()
   if (!currentEvent || !appState.draft) return
@@ -474,6 +509,7 @@ function appendDraftToEvent() {
     `${capitalize(appState.focusedEntity)}\n`,
   ].join("\n\n")
   updateFocusedEvent(["text", currentEvent.text])
+  clipboard({ input: appState.draft })
   appState.upsertDBSync("draft", "")
   nextTick(() => scrollToBot(focusedRef.value?.textareaEl))
 }
