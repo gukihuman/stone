@@ -1,6 +1,7 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles rounded-t-lg bg-stone-500 overflow-hidden flex-[30%]"
+    class="flex w-full flex-col items-center bg-circles bg-stone-500 overflow-hidden flex-[30%]"
+    :class="field === 'text' ? 'rounded-t-lg' : 'rounded-lg'"
   >
     <!-- # top ---------------------------------------------------------------->
     <div
@@ -9,12 +10,6 @@
       <div
         class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3 border-stone-600 border-b-[3px] border-dashed"
       >
-        <CopyGen
-          field="name"
-          :is-locked="isLocked"
-          @copy="(field) => emit('copy', field)"
-          @gen="(field) => emit('gen', field)"
-        />
         <input
           ref="nameEl"
           type="text"
@@ -32,12 +27,6 @@
       </div>
       <div class="flex p-3 py-0 pb-2 justify-between gap-3">
         <div class="flex gap-3">
-          <CopyGen
-            field="text"
-            :is-locked="isLocked"
-            @copy="(field) => emit('copy', field)"
-            @gen="(field) => emit('gen', field)"
-          />
           <div class="flex gap-1">
             <Switch
               v-model="field"
@@ -52,17 +41,6 @@
               pretty
             </ButtonLight>
           </div>
-          <CopyGen
-            field="memory"
-            :is-locked="isLocked"
-            @copy="(field) => emit('copy', field)"
-            @gen="(field) => emit('gen', field)"
-          />
-          <PrettyNum
-            :number="getTokens(getPrompt('text'))"
-            theme="dark"
-            class="cursor-default pt-[1px] w-14 justify-end"
-          />
         </div>
         <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>
@@ -122,15 +100,12 @@ const props = defineProps([
   "field",
   "fields",
   "isLocked",
-  "getPrompt",
   "focusedEntity",
 ])
 const emit = defineEmits([
   "update-event",
   "remove-event",
   "update-app-state",
-  "copy",
-  "gen",
   "lock-hotkeys",
   "unlock-hotkeys",
 ])

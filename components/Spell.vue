@@ -25,7 +25,7 @@
         class="flex flex-col gap-2 items-center justify-end flex-shrink-0 h-full"
       >
         <ButtonLight
-          @click="onContext"
+          @click="emit('context')"
           :disabled="isContextLocked"
           class="w-full"
         >
@@ -57,7 +57,7 @@ const props = defineProps([
   "focusedEntity",
 ])
 
-const emit = defineEmits(["cast", "lock-hotkeys", "unlock-hotkeys"])
+const emit = defineEmits(["context", "cast", "lock-hotkeys", "unlock-hotkeys"])
 
 const {
   isTextareaFocused,
@@ -75,20 +75,6 @@ const textareaEl = ref(null)
 // reactive
 const textarea = ref("")
 const isContextLocked = ref(false)
-
-////////////////////////////////////////////////////////////////////////////////
-async function onContext() {
-  const getContext = props.shapes[props.focusedEntity]?.getContext
-  if (!getContext) return
-  const input = getContext(
-    props.events,
-    props.topics,
-    props.shapes,
-    props.files,
-    props.appState
-  )
-  await clipboard({ input, locked: isContextLocked })
-}
 
 defineExpose({ focus: () => focus(textareaEl) })
 </script>

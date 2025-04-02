@@ -51,15 +51,12 @@
             :field="appState.focusedField"
             :fields="['text', 'memory']"
             :is-locked="isLocked"
-            :get-prompt="getPrompt"
             :focused-entity="appState.focusedEntity"
             @update-event="updateFocusedEvent"
             @remove-event="removeFocusedEvent"
             @update-app-state="
               (key, value) => appState.upsertDBSync(key, value)
             "
-            @copy="onCopy"
-            @gen="onGen"
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
@@ -96,7 +93,11 @@
           />
           <Draft
             ref="focusedDraftRef"
-            v-if="appState.draft !== undefined"
+            v-if="
+              appState.draft !== undefined &&
+              appState.focusedField === 'text' &&
+              appState.focusedList === 'events'
+            "
             :modelValue="appState.draft"
             @update:modelValue="
               (value) => appState.upsertDBSync('draft', value)
@@ -106,6 +107,10 @@
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
           <Spell
+            v-if="
+              appState.focusedField === 'text' &&
+              appState.focusedList === 'events'
+            "
             ref="focusedSpellRef"
             :events="events"
             :topics="topics"
@@ -113,6 +118,7 @@
             :files="files"
             :app-state="appState"
             :focused-entity="appState.focusedEntity"
+            @context="onContext"
             @cast="onCast"
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
@@ -179,6 +185,9 @@
 </template>
 
 <script setup>
+// for cast
+import getTokens from "/utils/getTokens"
+
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
 const { entities, events, topics, shapes, appState } = useDatabase()
 
@@ -195,6 +204,19 @@ const isLocked = reactive({
   gen: { text: false, name: false, memory: false },
 })
 const updateFocused = ref(0)
+
+// computed
+const context = computed(() => {
+  return (
+    shapes[appState.focusedEntity]?.getContext(
+      events,
+      topics,
+      shapes,
+      files,
+      appState
+    ) || ""
+  )
+})
 
 // regular
 let lastRemovedEvent = null
@@ -220,8 +242,7 @@ const hotkeys = {
   n: () => appState.upsertDBSync("focusedField", null),
   f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
 
-  m: () => onCopy("text"),
-  l: () => onCopy("memory"),
+  m: () => onContext(),
 
   // both hands
   "{": toggleDown,
@@ -387,21 +408,29 @@ function sortTopic(direction) {
   appState.upsertDBSync("focusedIndex", newIndex)
 }
 ///////////////////////////////// copy gen /////////////////////////////////////
-function onCopy(field) {
-  if (!getFocusedEvent()) return // hotkey case
-  copyToClipboard({ input: getPrompt(field), locked: isLocked.copy, field })
-}
 async function onGen(field) {
+  if (!getFocusedEvent()) return // hotkey case
+  const getContext = shapes[appState.focusedEntity]?.getContext
+  if (!getContext) return
+  const input = getContext(events, topics, shapes, files, appState)
   await getFiles()
   await apiGen({
     model: "gemini-2.0-flash",
-    input: getPrompt(field),
+    input,
     event: getFocusedEvent(),
     locked: isLocked.gen,
     field,
     focusedEntity: appState.focusedEntity,
     onNextChunk: events.tUpsertDBSync,
   })
+}
+async function onContext() {
+  if (!getFocusedEvent()) return // hotkey case
+  await getFiles()
+  const getContext = shapes[appState.focusedEntity]?.getContext
+  if (!getContext) return
+  const input = getContext(events, topics, shapes, files, appState)
+  await clipboard({ input, locked: isContextLocked })
 }
 ////////////////////////////////// entity //////////////////////////////////////
 function onEntitySwitch(value) {
@@ -482,14 +511,6 @@ async function onFileLoad() {
   })
 }
 ///////////////////////////////// helpers //////////////////////////////////////
-function getPrompt(field) {
-  if (!files.value) return "" // ❗ ruins whole prompt if no files
-  let prompt
-  if (field === "text") prompt = promptText
-  else if (field === "name") prompt = promptName
-  else if (field === "memory") prompt = promptMemory
-  return prompt(events, topics, shapes, files.value, appState)
-}
 function getFocusedEvent() {
   if (appState.focusedList !== "events") return null
   return events[appState.focusedIndex] || null

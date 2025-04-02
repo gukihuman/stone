@@ -49,7 +49,7 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
 }
 ```
 
-### shapes
+### shapes (main)
 
 you can call another shape from shape function. even making nested structures
 
@@ -106,5 +106,21 @@ formed on the client only during session
   "topics": {},
   "shapes": {},
   "appState": {}
+}
+```
+
+## shapes (individual structure)
+
+### getEventListWithTokens
+
+```json
+{
+  "eventList": [
+    {
+      "name": "",
+      "date": "",
+      "tokens": ""
+    }
+  ]
 }
 ```
