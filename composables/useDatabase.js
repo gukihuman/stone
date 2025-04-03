@@ -13,7 +13,6 @@ export default function useDatabase() {
 
   const entities = useRuntimeConfig().public.entities
   const events = reactive([]) // sorted by date
-  const topics = reactive({})
   const shapes = reactive({})
   const appState = reactive({})
 
@@ -23,7 +22,6 @@ export default function useDatabase() {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           db.createObjectStore("events", { keyPath: "id" })
-          db.createObjectStore("topics")
           db.createObjectStore("shapes")
           db.createObjectStore("appState", { keyPath: "key" })
         }
@@ -83,56 +81,6 @@ export default function useDatabase() {
     console.log(`⏬️ all events cleared from db [${timestamp()}]`)
   }
 
-  //////////////////////////////// topics //////////////////////////////////////
-  topics.loadFromDB = async function () {
-    for (const entity of entities) delete topics[entity]
-
-    const db = await initDB()
-    const tx = db.transaction("topics", "readonly")
-    const store = tx.objectStore("topics")
-    for (const entity of entities) topics[entity] = await store.get(entity)
-    await tx.done
-    console.log(`⏬ topics loaded from db by entity [${timestamp()}]`)
-  }
-
-  topics.updateDBSync = async function () {
-    const db = await initDB()
-    const tx = db.transaction("topics", "readwrite")
-    const store = tx.objectStore("topics")
-    for (const entity of entities) {
-      await store.put(toRaw(topics[entity]), entity)
-    }
-    await tx.done
-    console.log(`⏬ topic updated [${timestamp()}]`)
-  }
-
-  topics.removeDBSync = async function (topic) {
-    const entity = appState.focusedEntity
-    const index = topics[entity].indexOf(topic)
-    if (index < 0) return // topic not found
-    topics[entity].splice(index, 1)
-    appState.upsertDBSync("focusedIndex", null)
-    appState.upsertDBSync("focusedList", null)
-
-    const db = await initDB()
-    const tx = db.transaction("topics", "readwrite")
-    const store = tx.objectStore("topics")
-    await store.put(toRaw(topics[entity]), entity)
-    await tx.done
-    console.log(`⏬ topic removed for entity ${entity} [${timestamp()}]`)
-  }
-
-  topics.clearDBSync = async function () {
-    const db = await initDB()
-    const tx = db.transaction("topics", "readwrite")
-    const store = tx.objectStore("topics")
-    for (const entity of entities) {
-      await store.delete(entity)
-      delete topics[entity]
-    }
-    await tx.done
-    console.log(`⏬️ all topics cleared from db [${timestamp()}]`)
-  }
   ///////////////////////////////// shapes /////////////////////////////////////
   shapes.loadFromDB = async function () {
     const db = await initDB()
@@ -217,5 +165,5 @@ export default function useDatabase() {
     console.log(`⏬ app state upsert to db ${key} [${timestamp()}]`)
   }
 
-  return { entities, events, topics, shapes, appState }
+  return { entities, events, shapes, appState }
 }

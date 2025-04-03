@@ -37,13 +37,13 @@
         </ButtonLight>
         <div class="flex flex-col gap-2">
           <ButtonLight
-            v-for="t in ['custom', 'full', 'mini']"
-            :key="`context-${t}`"
-            @click="emit('context', t)"
-            :disabled="isContextLocked[t].value"
+            v-for="{ name, type } in contexts"
+            :key="`context-${name}`"
+            @click="emit('context', type)"
+            :disabled="isContextLocked[type].value"
             class="w-full"
           >
-            {{ t }}
+            {{ name }}
           </ButtonLight>
         </div>
       </div>
@@ -54,10 +54,8 @@
 <script setup>
 const props = defineProps([
   "events",
-  "topics",
   "shapes",
   "files",
-  "appState",
   "focusedEntity",
   "isContextLocked",
 ])
@@ -79,6 +77,12 @@ const textareaEl = ref(null)
 
 // reactive
 const textarea = ref("")
+
+const contexts = computed(() => [
+  { name: props.focusedEntity, type: "entity" },
+  { name: "full", type: "full" },
+  { name: "mini", type: "mini" },
+])
 
 defineExpose({ focus: () => focus(textareaEl) })
 </script>

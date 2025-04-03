@@ -5,20 +5,8 @@
     >
       <!-- # top menu --------------------------------------------------------->
       <div class="flex bg-stone-700 pr-4">
-        <ButtonArrow
-          @click="emit('sort-down')"
-          :disabled="focusedIndex === null || focusedIndex === 0"
-          direction="down"
-        />
-        <ButtonArrow
-          @click="emit('sort-up')"
-          :disabled="
-            focusedIndex === null || focusedIndex === topics.length - 1
-          "
-          direction="up"
-        />
         <button
-          @click="emit('new-topic')"
+          @click="emit('new-tag')"
           class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
         >
           new
@@ -34,16 +22,16 @@
         <div class="flex flex-col-reverse">
           <div
             class="flex max-w-full gap-1"
-            v-for="(topic, i) in topics"
-            :key="`topic-${i}`"
+            v-for="(tag, i) in []"
+            :key="`tag-${i}`"
           >
             <ButtonList
               :active="focusedIndex === i"
               @click="emit('toggle-focus', i)"
             >
-              <span class="truncate">{{ topic }}</span>
+              <span class="truncate">{{ tag }}</span>
               <!-- <PrettyNum
-                :number="getTokens(getMemories(topic))"
+                :number="getTokens(getMemories(tag))"
                 theme="light"
               /> -->
             </ButtonList>
@@ -54,22 +42,15 @@
   </div>
 </template>
 <script setup>
-const props = defineProps(["topics", "events", "focusedIndex", "focusedEntity"])
-const emit = defineEmits([
-  "new-topic",
-  "toggle-focus",
-  "toggle-select",
-  "toggle-select-all",
-  "sort-up",
-  "sort-down",
-])
+const props = defineProps(["events", "focusedIndex", "focusedEntity"])
+const emit = defineEmits(["toggle-focus"])
 
 // els refs
 const listEl = ref(null)
 
 ////////////////////////////////////////////////////////////////////////////////
 // function getMemories(topicName) {
-//   const topicIndex = props.topics.indexOf(topicName) // Find index within the entity-specific list
+//   const topicIndex = props.tags.indexOf(topicName) // Find index within the entity-specific list
 //   if (topicIndex === -1) return "" // Topic not found for this entity
 
 //   const level = props.selected[topicIndex] // Get selection level using entity-specific selection array
@@ -80,7 +61,7 @@ const listEl = ref(null)
 //       const entityMemoryString = event.memory?.[props.focusedEntity]
 //       if (entityMemoryString) {
 //         const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse it
-//         // Find memory for the specific topic
+//         // Find memory for the specific tag
 //         const topicMemoryData = entityMemoryParsed[topicName]
 //         const memoryText = topicMemoryData?.[level] // Get text for selected level
 
@@ -96,8 +77,8 @@ const listEl = ref(null)
 //   }, "")
 // }
 // function getTokensTotal() {
-//   return props.topics.reduce((acc, topic) => {
-//     acc += getTokens(getMemories(topic))
+//   return props.tags.reduce((acc, tag) => {
+//     acc += getTokens(getMemories(tag))
 //     return acc
 //   }, 0)
 // }
