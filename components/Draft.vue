@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden flex-[10%] flex-shrink-0 -mt-2 z-10"
+    class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden flex-[15%] flex-shrink-0 -mt-2 z-10"
   >
     <!-- <div class="flex h-full p-3 bg-stone-700 justify-center flex-shrink-0">
       <ButtonLight @click="emit('append')"> append </ButtonLight>

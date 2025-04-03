@@ -223,9 +223,9 @@ const hotkeys = {
   n: () => appState.upsertDBSync("focusedField", null),
   f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
 
-  m: () => onCopyContext("custom"),
-  l: () => onCopyContext("full"),
-  k: () => onCopyContext("mini"),
+  m: () => onContext("custom"),
+  l: () => onContext("full"),
+  k: () => onContext("mini"),
 
   // both hands
   "{": toggleDown,

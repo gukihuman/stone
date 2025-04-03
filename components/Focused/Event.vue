@@ -1,49 +1,43 @@
 <template>
   <div
-    class="flex w-full flex-col items-center bg-circles bg-stone-500 overflow-hidden flex-[30%]"
+    class="flex flex-col items-center bg-circles bg-stone-500 overflow-hidden flex-[30%]"
     :class="field === 'text' ? 'rounded-t-lg' : 'rounded-lg'"
   >
     <!-- # top ---------------------------------------------------------------->
     <div
-      class="w-full flex flex-col gap-2 flex-grow bg-stone-700 flex-shrink-0"
+      class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-2"
     >
-      <div
-        class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-3 border-stone-600 border-b-[3px] border-dashed"
-      >
-        <input
-          ref="nameEl"
-          type="text"
-          v-model="name"
-          @input="dEmitUpdateEvent('name', name)"
-          @focus="emit('lock-hotkeys')"
-          @blur="emit('unlock-hotkeys')"
-          class="h-full focus:bg-stone-800 flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
-        />
-        <p
-          class="focus:bg-stone-800 focus:text-stone-300 flex-grow px-7 pb-1 bg-stone-700 text-center pt-[2px] text-stone-400 truncate cursor-default"
-        >
-          {{ event.date.substring(0, 10) }}
-        </p>
-      </div>
-      <div class="flex p-3 py-0 pb-2 justify-between gap-3">
-        <div class="flex gap-3">
-          <div class="flex gap-1">
-            <Switch
-              v-model="field"
-              :states="fields"
-              @change="emit('update-app-state', 'focusedField', field)"
-            />
-            <ButtonLight
-              @click="emit('update-app-state', 'focusedField', null)"
-              :disabled="!field"
-              theme="darker"
-            >
-              pretty
-            </ButtonLight>
-          </div>
+      <div class="flex gap-3">
+        <div class="flex gap-1">
+          <Switch
+            v-model="field"
+            :states="fields"
+            @change="emit('update-app-state', 'focusedField', field)"
+          />
+          <ButtonLight
+            @click="emit('update-app-state', 'focusedField', null)"
+            :disabled="!field"
+            theme="darker"
+          >
+            pretty
+          </ButtonLight>
         </div>
-        <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
       </div>
+      <input
+        ref="nameEl"
+        type="text"
+        v-model="name"
+        @input="dEmitUpdateEvent('name', name)"
+        @focus="emit('lock-hotkeys')"
+        @blur="emit('unlock-hotkeys')"
+        class="h-full focus:bg-stone-800 flex-grow pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate hover:bg-stone-800"
+      />
+      <p
+        class="pb-1 text-center pt-[2px] text-stone-400 truncate cursor-default"
+      >
+        {{ event.date.substring(0, 10) }}
+      </p>
+      <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
     </div>
     <!-- # mid ---------------------------------------------------------------->
     <div
