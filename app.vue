@@ -165,6 +165,8 @@
 <script setup>
 // for cast
 import getTokens from "/utils/getTokens"
+import remember from "/utils/remember"
+import newId from "/utils/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
 const { entities, events, shapes, appState } = useDatabase()

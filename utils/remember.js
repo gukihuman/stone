@@ -3,5 +3,6 @@ export default function (events, eventName, entity, memoryObject) {
   memoryObject.tokens = getTokens(memoryObject.text)
   if (!event.memory[entity]) event.memory[entity] = []
   event.memory[entity].push(memoryObject)
+  events.upsertDBSync(event)
   return true
 }
