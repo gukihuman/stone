@@ -31,20 +31,19 @@
         <div
           class="flex flex-col h-full"
           v-if="
-            getFocusedEvent() ||
-            getFocusedTag() ||
-            getFocusedFile() ||
-            getFocusedShape()
+            (getFocusedEvent() && appState.focusedList === 'events') ||
+            (focusedTagString && appState.focusedList === 'tags') || // Condition for FocusedTag
+            (getFocusedFile() && appState.focusedList === 'files') ||
+            (getFocusedShape() && appState.focusedList === 'shapes')
           "
         >
           <FocusedEvent
-            v-if="getFocusedEvent()"
+            v-if="getFocusedEvent() && appState.focusedList === 'events'"
             :key="`event-${appState.focusedIndex}-${appState.focusedField}-${appState.focusedEntity}-${updateFocused}`"
             ref="focusedRef"
             :event="getFocusedEvent()"
             :field="appState.focusedField"
             :fields="['text', 'memory']"
-            :is-locked="isLocked"
             :focused-entity="appState.focusedEntity"
             @update-event="updateFocusedEvent"
             @remove-event="removeFocusedEvent"
@@ -54,22 +53,22 @@
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
-          <!-- <FocusedTag
-            v-else-if="getFocusedTag() !== null"
+          <FocusedTag
+            v-else-if="focusedTagString && appState.focusedList === 'tags'"
             :key="`tag-${appState.focusedIndex}-${appState.focusedEntity}`"
-            :tag="getFocusedTag()"
+            :focusedTag="focusedTagString"
             :events="events"
-            :focused-entity="appState.focusedEntity"
-          /> -->
+            :focusedEntity="appState.focusedEntity"
+          />
           <FocusedFile
             ref="focusedRef"
-            v-else-if="getFocusedFile() !== null"
+            v-else-if="getFocusedFile() && appState.focusedList === 'files'"
             :key="`file-${appState.focusedIndex}`"
             :file="getFocusedFile()"
           />
           <FocusedShape
             ref="focusedRef"
-            v-else-if="appState.focusedList === 'shapes' && getFocusedShape()"
+            v-else-if="getFocusedShape() && appState.focusedList === 'shapes'"
             :key="`focused-shape-${appState.focusedIndex}-${appState.focusedEntity}`"
             :shapeName="getFocusedShape().name"
             :shapeDefinition="getFocusedShape().definition"
@@ -77,12 +76,13 @@
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
+          <!-- Draft and Spell components remain below -->
           <Draft
             ref="focusedDraftRef"
             v-if="
               appState.draft !== undefined &&
               appState.focusedField === 'text' &&
-              appState.focusedList === 'events'
+              appState.focusedList === 'events' // Only show for events
             "
             :modelValue="appState.draft"
             @update:modelValue="
@@ -95,7 +95,7 @@
           <Spell
             v-if="
               appState.focusedField === 'text' &&
-              appState.focusedList === 'events'
+              appState.focusedList === 'events' // Only show for events
             "
             ref="focusedSpellRef"
             :events="events"
@@ -142,14 +142,14 @@
           theme="dark"
           class="w-full"
         />
-        <!-- <Tags
-          :tags="tags[appState.focusedEntity] || []"
+        <Tags
+          :uniqueTags="uniqueTagsForEntity"
           :events="events"
+          :focusedEntity="appState.focusedEntity"
+          :focusedIndex="appState.focusedIndex"
+          :focusedList="appState.focusedList"
           @toggle-focus="toggleTagFocus"
-        /> -->
-        <!-- :focused-index="0"
-          :focused-entity="appState.focusedEntity" -->
-        <!-- appState.focusedList === 'tags' ? appState.focusedIndex : null -->
+        />
         <Shapes
           :shapes="shapes[appState.focusedEntity] || {}"
           :focused-index="
@@ -217,6 +217,34 @@ const hotkeys = {
   l: () => onContext("full"),
   k: () => onContext("mini"),
 }
+
+const uniqueTagsForEntity = computed(() => {
+  const tagSet = new Set()
+  events.forEach((event) => {
+    const memories = event.memory[appState.focusedEntity]
+    if (Array.isArray(memories)) {
+      memories.forEach((memoryObj) => {
+        if (Array.isArray(memoryObj.tags)) {
+          memoryObj.tags.forEach((tag) => tagSet.add(tag))
+        }
+      })
+    }
+  })
+  return Array.from(tagSet).sort()
+})
+
+const focusedTagString = computed(() => {
+  // This MUST return the actual tag string when a tag is focused
+  if (appState.focusedList !== "tags" || appState.focusedIndex === null) {
+    return null
+  }
+  const tags = uniqueTagsForEntity.value
+  // Check if the index is valid for the current tags array
+  if (appState.focusedIndex >= 0 && appState.focusedIndex < tags.length) {
+    return tags[appState.focusedIndex]
+  }
+  return null // Return null if index is out of bounds
+})
 
 onMounted(async () => {
   events.loadFromDB()
@@ -292,8 +320,18 @@ function restoreEvent() {
 ////////////////////////////////// tags //////////////////////////////////////
 function toggleTagFocus(i) {
   const same = appState.focusedList === "tags" && appState.focusedIndex === i
-  appState.upsertDBSync("focusedIndex", same ? null : i)
-  appState.upsertDBSync("focusedList", same ? null : "tags")
+  const newIndex = same ? null : i
+  const newList = same ? null : "tags"
+
+  appState.upsertDBSync("focusedIndex", newIndex)
+  appState.upsertDBSync("focusedList", newList)
+
+  // IMPORTANT: When focusing a tag, set field to null to show the pretty view (FocusedTag)
+  // if (newList === "tags") {
+  //   appState.upsertDBSync("focusedField", null)
+  // }
+  // Optional: Log state changes for debugging
+  // console.log(`toggleTagFocus: index=${newIndex}, list=${newList}`)
 }
 ///////////////////////////////// context //////////////////////////////////////
 // async function onGen(field) {
@@ -313,7 +351,8 @@ function toggleTagFocus(i) {
 // })
 // }
 async function onContext(type) {
-  if (!getFocusedEvent()) return // hotkey case
+  const event = getFocusedEvent()
+  if (!event) return // hotkey case
   await getFiles()
 
   const entity = appState.focusedEntity
@@ -329,6 +368,7 @@ async function onContext(type) {
   if (!config) return
   const input = getContext(
     events,
+    event,
     shapes,
     files.value,
     appState.focusedEntity,

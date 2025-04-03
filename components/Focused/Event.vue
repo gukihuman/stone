@@ -3,7 +3,6 @@
     class="flex flex-col items-center bg-circles bg-stone-500 overflow-hidden flex-[30%]"
     :class="field === 'text' ? 'rounded-t-lg' : 'rounded-lg'"
   >
-    <!-- # top ---------------------------------------------------------------->
     <div
       class="w-full bg-stone-700 items-center flex min-h-11 rounded-t-lg overflow-hidden px-3 gap-2"
     >
@@ -39,48 +38,42 @@
       </p>
       <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
     </div>
-    <!-- # mid ---------------------------------------------------------------->
+
     <div
       class="w-full relative h-full overflow-hidden"
       :class="{ 'bg-stone-700 z-20': isTextareaFocused, 'px-3 py-2': field }"
     >
       <div
-        v-if="field"
+        v-if="field === 'text' || field === 'memory'"
         class="relative overflow-hidden rounded-xl scroll-light h-full"
       >
         <textarea
           ref="textareaEl"
-          :key="`textarea-${field}`"
+          :key="`textarea-${field}-${focusedEntity}-${event.id}`"
           :value="field === 'memory' ? memoryContent : textContent"
-          @input="
-            (e) => {
-              if (field === 'memory') memoryContent = e.target.value
-              else textContent = e.target.value
-              onTextareaInput()
-            }
-          "
+          @input="handleTextareaInput"
           @scroll="onScroll"
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
           class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
           :class="
-            field !== 'memory'
+            field === 'text'
               ? 'bg-stone-400 text-stone-800'
-              : 'bg-stone-600 bg-lines-light selection-light text-stone-300'
+              : 'bg-stone-600 bg-lines-light selection-light text-stone-300 font-mono'
           "
           :style="{ backgroundPositionY: linesOffset }"
         />
       </div>
       <div v-else class="relative overflow-auto h-full max-h-full">
         <div
-          ref="textareaEl"
+          ref="prettyViewEl"
           class="w-full h-full px-3 py-2 flex flex-col gap-4 overflow-y-scroll auto items-center"
         >
           <FocusedRecord
-            v-for="([topic, topicMemory], i) in topicParts"
-            :key="`event-memory-${i}`"
-            :name="topic"
-            :text="topicMemory"
+            v-for="(memoryObj, i) in entityMemoriesForPrettyView"
+            :key="memoryObj.id || `memory-${i}`"
+            :name="memoryObj.tags.join(', ')"
+            :text="memoryObj.text || ''"
           />
         </div>
       </div>
@@ -89,13 +82,15 @@
 </template>
 
 <script setup>
-const props = defineProps([
-  "event",
-  "field",
-  "fields",
-  "isLocked",
-  "focusedEntity",
-])
+import { ref, watch, computed, toRaw } from "vue"
+import useFocused from "~/composables/useFocused"
+import debounce from "~/utils/debounce"
+import getTokens from "~/utils/getTokens"
+import Switch from "~/components/Switch.vue"
+import ButtonLight from "~/components/Button/Light.vue"
+import FocusedRecord from "~/components/Focused/Record.vue"
+
+const props = defineProps(["event", "field", "fields", "focusedEntity"])
 const emit = defineEmits([
   "update-event",
   "remove-event",
@@ -114,81 +109,95 @@ const {
   focus,
 } = useFocused()
 
-// els refs
 const nameEl = ref(null)
 const textareaEl = ref(null)
+const prettyViewEl = ref(null)
 
-// v-model
 const name = ref(props.event?.name || "")
 const textContent = ref(props.event?.text || "")
 const memoryContent = ref("")
 const field = ref(props.field)
 
-const focusedMemoryString = computed(() => {
-  return props.event.memory[props.focusedEntity] || ""
-})
-const topicParts = computed(() => {
-  const result = []
-  if (!props.event?.memory) return result // No memory object
-
-  try {
-    const entityMemoryString = props.event.memory[props.focusedEntity] // Get string for focused entity
-    if (entityMemoryString) {
-      const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse the stringified JSON array
-
-      Object.entries(entityMemoryParsed).forEach(([topicName, memories]) => {
-        if (topicName && memories && memories.length === 2) {
-          const displayText = [memories[0], `<br><br>`, memories[1]].join(
-            "\n\n"
-          )
-          result.push([topicName, displayText])
-        }
-      })
-    }
-  } catch (e) {}
-  return result
+const entityMemoriesForPrettyView = computed(() => {
+  const memories = props.event.memory[props.focusedEntity]
+  return Array.isArray(memories) ? memories : []
 })
 
-watch(focusedMemoryString, (newString) => {
-  if (newString !== memoryContent.value) memoryContent.value = newString
+const updateMemoryContentFromEvent = () => {
+  const currentMemoryArray = props.event.memory[props.focusedEntity]
+  if (Array.isArray(currentMemoryArray)) {
+    memoryContent.value = JSON.stringify(currentMemoryArray, null, 2)
+  } else {
+    memoryContent.value = "[]"
+  }
+}
+
+watch(
+  () => [props.event, props.focusedEntity],
+  () => {
+    name.value = props.event.name
+    textContent.value = props.event.text
+    updateMemoryContentFromEvent()
+  },
+  { immediate: true, deep: true }
+)
+
+watch(field, (newField) => {
+  if (newField === null) {
+    updateMemoryContentFromEvent()
+  }
 })
 
 watch(name, (newName) => {
   dEmitUpdateEvent("name", newName)
 })
+
 watch(textContent, (newText) => {
-  if (props.field === "text") dEmitUpdateEvent("text", newText)
+  if (props.field !== "text") return
+  dEmitUpdateEvent("text", newText)
   dUpdateTokens(newText)
 })
+
 watch(memoryContent, (newMemString) => {
-  if (props.field === "memory" && props.event?.memory) {
-    props.event.memory[props.focusedEntity] = newMemString
-    dEmitUpdateEvent("memory", { ...props.event.memory })
+  if (props.field !== "memory") return
+  try {
+    const parsedMemoryArray = JSON.parse(newMemString)
+    if (Array.isArray(parsedMemoryArray)) {
+      const fullMemoryObject = { ...props.event.memory }
+      fullMemoryObject[props.focusedEntity] = parsedMemoryArray
+      dEmitUpdateEvent("memory", toRaw(fullMemoryObject))
+    } else {
+      console.warn("Parsed memory content is not an array.")
+    }
+  } catch (e) {
+    console.error("Error parsing memory JSON string:", e)
   }
 })
-watch(
-  () => props.event,
-  (newEvent) => {
-    if (!newEvent) return
-    name.value = newEvent.name
-    textContent.value = newEvent.text
-    const newMemString = newEvent.memory?.[props.focusedEntity] || ""
-    if (newMemString !== memoryContent.value) {
-      memoryContent.value = newMemString
-    }
-  },
-  { immediate: true, deep: true }
-)
+
+const handleTextareaInput = (e) => {
+  const value = e.target.value
+  if (props.field === "memory") {
+    memoryContent.value = value
+  } else if (props.field === "text") {
+    textContent.value = value
+  }
+  adjustScrollTop(textareaEl.value)
+}
+
+const dEmitUpdateEvent = debounce((key, v) => {
+  emit("update-event", [key, v])
+}, 300)
+
+const dUpdateTokens = debounce((v) => {
+  if (props.event) {
+    props.event.tokens = getTokens(v)
+  }
+}, 500)
+
 defineExpose({
   textareaEl,
+  prettyViewEl,
   focusName: () => focusName(nameEl),
   focus: () => focus(textareaEl),
 })
-////////////////////////////////////////////////////////////////////////////////
-const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
-const dUpdateTokens = debounce((v) => (props.event.tokens = getTokens(v)))
-
-function onTextareaInput(event) {
-  adjustScrollTop(textareaEl)
-}
 </script>

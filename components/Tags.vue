@@ -3,83 +3,89 @@
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
-      <!-- # top menu --------------------------------------------------------->
-      <div class="flex bg-stone-700 pr-4">
-        <button
-          @click="emit('new-tag')"
-          class="bg-stone-700 w-full text-stone-400 hover:text-stone-300 pb-1 hover:bg-stone-800"
-        >
-          new
-        </button>
-        <!-- <PrettyNum
-          :number="getTokensTotal()"
+      <div class="flex justify-end gap-2 pb-1 pr-4 bg-stone-700">
+        <PrettyNum
+          v-if="tagsWithCounts.length"
+          :number="totalMemoryTokens"
           theme="dark"
           class="cursor-default w-14 pt-[2px]"
-        /> -->
+        />
       </div>
-      <!-- # list ------------------------------------------------------------->
       <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
-        <div class="flex flex-col-reverse">
+        <div class="flex flex-col">
           <div
-            class="flex max-w-full gap-1"
-            v-for="(tag, i) in []"
+            class="flex max-w-full gap-1 pr-2"
+            v-for="({ tag, count }, i) in tagsWithCounts"
             :key="`tag-${i}`"
           >
             <ButtonList
-              :active="focusedIndex === i"
+              :active="focusedIndex === i && focusedList === 'tags'"
               @click="emit('toggle-focus', i)"
             >
               <span class="truncate">{{ tag }}</span>
-              <!-- <PrettyNum
-                :number="getTokens(getMemories(tag))"
-                theme="light"
-              /> -->
+              <PrettyNum :number="count" theme="light" />
             </ButtonList>
           </div>
+          <p
+            v-if="!tagsWithCounts.length"
+            class="text-stone-400 italic mt-4 text-center px-3"
+          >
+            No tags found for {{ focusedEntity }}.
+          </p>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script setup>
-const props = defineProps(["events", "focusedIndex", "focusedEntity"])
+import { ref, computed } from "vue"
+import ButtonList from "~/components/Button/List.vue"
+import PrettyNum from "~/components/PrettyNum.vue"
+
+const props = defineProps([
+  "uniqueTags",
+  "events",
+  "focusedEntity",
+  "focusedIndex",
+  "focusedList",
+])
 const emit = defineEmits(["toggle-focus"])
 
-// els refs
 const listEl = ref(null)
 
-////////////////////////////////////////////////////////////////////////////////
-// function getMemories(topicName) {
-//   const topicIndex = props.tags.indexOf(topicName) // Find index within the entity-specific list
-//   if (topicIndex === -1) return "" // Topic not found for this entity
+const getTagTokenCount = (tag) => {
+  let count = 0
+  props.events.forEach((event) => {
+    const memories = event.memory[props.focusedEntity]
+    if (Array.isArray(memories)) {
+      memories.forEach((memoryObj) => {
+        if (Array.isArray(memoryObj.tags) && memoryObj.tags.includes(tag)) {
+          count += memoryObj.tokens || 0
+        }
+      })
+    }
+  })
+  return count
+}
 
-//   const level = props.selected[topicIndex] // Get selection level using entity-specific selection array
-//   if (level === null) return "" // Topic not selected
+const tagsWithCounts = computed(() => {
+  return props.uniqueTags
+    .map((tag) => ({
+      tag: tag,
+      count: getTagTokenCount(tag),
+    }))
+    .sort((a, b) => a.tag.localeCompare(b.tag))
+})
 
-//   return props.events.reduce((acc, event) => {
-//     try {
-//       const entityMemoryString = event.memory?.[props.focusedEntity]
-//       if (entityMemoryString) {
-//         const entityMemoryParsed = JSON.parse(entityMemoryString) // Parse it
-//         // Find memory for the specific tag
-//         const topicMemoryData = entityMemoryParsed[topicName]
-//         const memoryText = topicMemoryData?.[level] // Get text for selected level
-
-//         if (memoryText) {
-//           // Construct the string to contribute to token count (or display later)
-//           const eventLine = [event.name, event.date.substring(0, 10)].join(" ")
-//           // Accumulate text for token counting. Joining with \n\n approximates context.
-//           acc = [acc, eventLine, memoryText].join("\n\n")
-//         }
-//       }
-//     } catch (e) {}
-//     return acc
-//   }, "")
-// }
-// function getTokensTotal() {
-//   return props.tags.reduce((acc, tag) => {
-//     acc += getTokens(getMemories(tag))
-//     return acc
-//   }, 0)
-// }
+const totalMemoryTokens = computed(() => {
+  let total = 0
+  props.events.forEach((event) => {
+    const memories = event.memory[props.focusedEntity]
+    if (memories) {
+      memories.forEach((memoryObj) => (total += memoryObj.tokens || 0))
+    }
+  })
+  return total
+})
 </script>

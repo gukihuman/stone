@@ -1,4 +1,4 @@
-export default function (events, shapes, files, entity, config) {
+export default function (events, focusedEvent, shapes, files, entity, config) {
   const final = {}
 
   if (config.sharedEventCatalog) {
@@ -82,8 +82,10 @@ export default function (events, shapes, files, entity, config) {
 
   const jsonContextString = JSON.stringify(final, null, 2)
 
-  const now = events.find((event) => event.name === "now")
-  const textNow = [`now ${now.date.substring(0, 10)}`, now.text].join("\n\n")
+  const textNow = [
+    `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
+    focusedEvent.text,
+  ].join("\n\n")
 
   return [jsonContextString, textNow].join("\n\n")
 }
