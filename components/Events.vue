@@ -56,7 +56,7 @@ function onClickNew() {
 }
 function getTokensTotal() {
   return props.events.reduce((acc, event) => {
-    acc += event.tokens
+    acc += event.tokens || 0
     return acc
   }, 0)
 }

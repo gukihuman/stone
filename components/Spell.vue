@@ -1,10 +1,10 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[15%] flex-shrink-0 h-full -mt-2"
+    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[15%] flex-shrink-0 h-full border-dashed border-t-[3px] border-stone-550"
   >
     <div
       class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
-      :class="{ 'bg-stone-700 z-30': isTextareaFocused }"
+      :class="{ 'bg-stone-700': isTextareaFocused }"
     >
       <textarea
         ref="textareaEl"
@@ -37,25 +37,13 @@
         </ButtonLight>
         <div class="flex flex-col gap-2">
           <ButtonLight
-            @click="emit('context', 'custom')"
-            :disabled="isContextLocked.custom.value"
+            v-for="t in ['custom', 'full', 'mini']"
+            :key="`context-${t}`"
+            @click="emit('context', t)"
+            :disabled="isContextLocked[t].value"
             class="w-full"
           >
-            custom
-          </ButtonLight>
-          <ButtonLight
-            @click="emit('context', 'full')"
-            :disabled="isContextLocked.full.value"
-            class="w-full"
-          >
-            full
-          </ButtonLight>
-          <ButtonLight
-            @click="emit('context', 'mini')"
-            :disabled="isContextLocked.mini.value"
-            class="w-full"
-          >
-            mini
+            {{ t }}
           </ButtonLight>
         </div>
       </div>
