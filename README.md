@@ -22,19 +22,17 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
     "name": "name",
     "date": "2/9/2025",
     "text": "very long text of event",
+    "tokens": 5,
     "memory": {
-      "jane": "[
+      "jane": [
         {
-          \"topic name\": [\"long text\", \"short text\"],
-          \"another topic name\": [\"long text\", \"short text\"]
+          "source_event": "event name",
+          "text": "some memory text",
+          "tags": ["reflections", "my memory structure"],
+          "tokens": 3
         }
-      ]",
-      "rox": "[
-        {
-          \"topic name\": [\"long text\", \"short text\"],
-          \"another topic name\": [\"long text\", \"short text\"]
-        }
-      ]",
+      ],
+      "rox": []
     }
   }
 ]
@@ -49,7 +47,7 @@ memory is string that must be parsed as valid JSON. it consists of topics, each 
 }
 ```
 
-### shapes (main)
+### shapes
 
 you can call another shape from shape function. even making nested structures
 
@@ -98,21 +96,5 @@ formed on the client only during session
   "topics": {},
   "shapes": {},
   "appState": {}
-}
-```
-
-## shapes (individual structure)
-
-### getEventListWithTokens
-
-```json
-{
-  "eventList": [
-    {
-      "name": "",
-      "date": "",
-      "tokens": ""
-    }
-  ]
 }
 ```

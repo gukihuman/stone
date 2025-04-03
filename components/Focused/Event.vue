@@ -59,9 +59,9 @@
           :key="`textarea-${field}`"
           :value="field === 'memory' ? memoryContent : textContent"
           @input="
-            (event) => {
-              if (field === 'memory') memoryContent = event.target.value
-              else textContent = event.target.value
+            (e) => {
+              if (field === 'memory') memoryContent = e.target.value
+              else textContent = e.target.value
               onTextareaInput()
             }
           "
@@ -164,6 +164,7 @@ watch(name, (newName) => {
 })
 watch(textContent, (newText) => {
   if (props.field === "text") dEmitUpdateEvent("text", newText)
+  dUpdateTokens(newText)
 })
 watch(memoryContent, (newMemString) => {
   if (props.field === "memory" && props.event?.memory) {
@@ -191,6 +192,7 @@ defineExpose({
 })
 ////////////////////////////////////////////////////////////////////////////////
 const dEmitUpdateEvent = debounce((key, v) => emit("update-event", [key, v]))
+const dUpdateTokens = debounce((v) => (props.event.tokens = getTokens(v)))
 
 function onTextareaInput(event) {
   adjustScrollTop(textareaEl)

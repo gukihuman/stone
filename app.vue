@@ -110,7 +110,7 @@
             :app-state="appState"
             :focused-entity="appState.focusedEntity"
             :is-context-locked="isContextLocked"
-            @copy-context="onCopyContext"
+            @context="onContext"
             @cast="onCast"
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
@@ -193,7 +193,11 @@ const isLocked = reactive({
   gen: { text: false, name: false, memory: false },
 })
 const updateFocused = ref(0)
-const isContextLocked = ref(false)
+const isContextLocked = {
+  full: ref(false),
+  mini: ref(false),
+  custom: ref(false),
+}
 
 // regular
 let lastRemovedEvent = null
@@ -219,7 +223,9 @@ const hotkeys = {
   n: () => appState.upsertDBSync("focusedField", null),
   f: () => toggleTopicFocus(topics[appState.focusedEntity].length - 1),
 
-  m: () => onCopyContext(),
+  m: () => onCopyContext("custom"),
+  l: () => onCopyContext("full"),
+  k: () => onCopyContext("mini"),
 
   // both hands
   "{": toggleDown,
@@ -257,6 +263,9 @@ async function getFiles() {
       ".gitignore",
       "package-lock.json",
     ],
+  })
+  files.value = files.value.map((file) => {
+    return { ...file, tokens: getTokens(file.content) }
   })
 }
 function toggleFileFocus(i) {
@@ -353,20 +362,17 @@ function sortTopic(direction) {
 //   onNextChunk: events.tUpsertDBSync,
 // })
 // }
-async function onCopyContext() {
+async function onContext(type) {
   if (!getFocusedEvent()) return // hotkey case
   await getFiles()
-  const getContext = shapes[appState.focusedEntity]?.getContext
+  let getContext
+  const entityShapes = shapes[appState.focusedEntity]
+  if (type === "full") getContext = entityShapes?.getContextFull
+  else if (type === "mini") getContext = entityShapes?.getContextMini
+  else if (type === "custom") getContext = entityShapes?.getContextCustom
   if (!getContext) return
-  const input = getContext(
-    events,
-    topics,
-    shapes,
-    files.value,
-    appState,
-    getTokens
-  )
-  await clipboard({ input, locked: isContextLocked })
+  const input = getContext(events, topics, shapes, files.value, appState)
+  await clipboard({ input, locked: isContextLocked[type] })
 }
 ////////////////////////////////// entity //////////////////////////////////////
 function onEntitySwitch(value) {

@@ -25,11 +25,25 @@
         class="flex flex-col gap-2 items-center justify-end flex-shrink-0 h-full"
       >
         <ButtonLight
-          @click="emit('copy-context')"
-          :disabled="isContextLocked"
+          @click="emit('context', 'full')"
+          :disabled="isContextLocked.full.value"
           class="w-full"
         >
-          context
+          full
+        </ButtonLight>
+        <ButtonLight
+          @click="emit('context', 'mini')"
+          :disabled="isContextLocked.mini.value"
+          class="w-full"
+        >
+          mini
+        </ButtonLight>
+        <ButtonLight
+          @click="emit('context', 'custom')"
+          :disabled="isContextLocked.custom.value"
+          class="w-full"
+        >
+          custom
         </ButtonLight>
         <ButtonLight
           @click="
@@ -58,12 +72,7 @@ const props = defineProps([
   "isContextLocked",
 ])
 
-const emit = defineEmits([
-  "copy-context",
-  "cast",
-  "lock-hotkeys",
-  "unlock-hotkeys",
-])
+const emit = defineEmits(["context", "cast", "lock-hotkeys", "unlock-hotkeys"])
 
 const {
   isTextareaFocused,

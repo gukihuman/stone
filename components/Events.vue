@@ -20,7 +20,7 @@
     <div ref="listEl" class="overflow-y-scroll pb-2 flex-grow">
       <div class="flex flex-col-reverse">
         <div
-          v-for="({ name, text, memory }, i) in events"
+          v-for="({ name, memory, tokens }, i) in events"
           :key="`event-${i}`"
           class="flex gap-1 pr-2"
         >
@@ -35,7 +35,7 @@
               </div>
               <span class="truncate"> {{ name }}</span>
             </div>
-            <PrettyNum :number="getTokens(text)" theme="light" />
+            <PrettyNum :number="tokens || 0" theme="light" />
           </ButtonList>
         </div>
       </div>
@@ -56,7 +56,7 @@ function onClickNew() {
 }
 function getTokensTotal() {
   return props.events.reduce((acc, event) => {
-    acc += getTokens(event.text)
+    acc += event.tokens
     return acc
   }, 0)
 }
