@@ -18,7 +18,7 @@
         @focus="onFocus(emit)"
         @blur="onBlur(emit)"
         @scroll="onScroll"
-        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
+        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-lg bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
         :style="{ backgroundPositionY: linesOffset }"
       />
       <div

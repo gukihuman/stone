@@ -55,11 +55,11 @@
           @scroll="onScroll"
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl"
+          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none"
           :class="
             field === 'text'
-              ? 'bg-stone-400 text-stone-800'
-              : 'bg-stone-600 bg-lines-light selection-light text-stone-300 font-mono'
+              ? 'bg-stone-400 text-stone-800 text-xl'
+              : 'bg-stone-600 bg-lines-light selection-light text-stone-300 font-mono text-lg'
           "
           :style="{ backgroundPositionY: linesOffset }"
         />
