@@ -62,6 +62,7 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
           event: event.name,
           text: memory.text,
           tags: memory.tags,
+          id: memory.id,
         })
       }
     })

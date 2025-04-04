@@ -12,16 +12,8 @@ export default function (events, files, entity, type) {
   } else if (type === "mini") {
     return {
       sharedEventCatalog: true,
-      sharedFileCatalog: true,
-      sharedSelectedFilePaths: [
-        "utils\\remember.js",
-        "utils\\getContext.js",
-        "utils\\getContextConfig.js",
-        "utils\\getAllEntityEventNames.js",
-        "utils\\getAllEntityTags.js",
-        "utils\\getAllFilePaths.js",
-        "README.md",
-      ],
+      sharedFileCatalog: false,
+      sharedSelectedFilePaths: [],
       myShapes: true,
       myTagCatalog: true,
       mySelectedTags: ["my core identity and behavior"],

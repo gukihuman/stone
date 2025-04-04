@@ -66,7 +66,7 @@
       </div>
       <div v-else class="relative overflow-auto h-full max-h-full">
         <div
-          ref="prettyViewEl"
+          ref="textareaEl"
           class="w-full h-full px-3 py-2 flex flex-col gap-4 overflow-y-scroll auto items-center"
         >
           <FocusedRecord
@@ -111,7 +111,6 @@ const {
 
 const nameEl = ref(null)
 const textareaEl = ref(null)
-const prettyViewEl = ref(null)
 
 const name = ref(props.event?.name || "")
 const textContent = ref(props.event?.text || "")
@@ -196,7 +195,7 @@ const dUpdateTokens = debounce((v) => {
 
 defineExpose({
   textareaEl,
-  prettyViewEl,
+  textareaEl,
   focusName: () => focusName(nameEl),
   focus: () => focus(textareaEl),
 })

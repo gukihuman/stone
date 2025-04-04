@@ -166,6 +166,7 @@
 // for cast
 import getTokens from "/utils/getTokens"
 import remember from "/utils/remember"
+import forget from "/utils/forget"
 import newId from "/utils/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
