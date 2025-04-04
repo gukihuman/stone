@@ -72,7 +72,7 @@
           <FocusedRecord
             v-for="(memoryObj, i) in entityMemoriesForPrettyView"
             :key="memoryObj.id || `memory-${i}`"
-            :name="memoryObj.tags.join(', ')"
+            :title="memoryObj.tags"
             :text="memoryObj.text || ''"
           />
         </div>
@@ -82,14 +82,6 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, toRaw } from "vue"
-import useFocused from "~/composables/useFocused"
-import debounce from "~/utils/debounce"
-import getTokens from "~/utils/getTokens"
-import Switch from "~/components/Switch.vue"
-import ButtonLight from "~/components/Button/Light.vue"
-import FocusedRecord from "~/components/Focused/Record.vue"
-
 const props = defineProps(["event", "field", "fields", "focusedEntity"])
 const emit = defineEmits([
   "update-event",

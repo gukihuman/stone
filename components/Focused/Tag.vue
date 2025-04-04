@@ -20,7 +20,7 @@
           <FocusedRecord
             v-for="record in memoriesForTag"
             :key="record.memoryId"
-            :name="record.eventName"
+            :title="[record.eventName]"
             :date="record.eventDate"
             :text="record.memoryText"
           />
@@ -37,9 +37,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
-import FocusedRecord from "~/components/Focused/Record.vue"
-
 const props = defineProps(["focusedTag", "events", "focusedEntity"])
 
 const recordsContainerEl = ref(null)

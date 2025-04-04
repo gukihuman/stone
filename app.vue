@@ -167,6 +167,7 @@
 import getTokens from "/utils/getTokens"
 import remember from "/utils/remember"
 import forget from "/utils/forget"
+import reflect from "/utils/reflect"
 import newId from "/utils/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
@@ -460,21 +461,17 @@ function getFocusedFile() {
   if (appState.focusedList !== "files") return null
   return files.value[appState.focusedIndex] || null
 }
-function getFocusedTag() {
-  return
-  // if (appState.focusedList !== "tags") return null
-  // const entity = appState.focusedEntity
-  // return tags[entity][appState.focusedIndex]
-}
 /////////////////////////////////// new shit ///////////////////////////////////
 function appendDraftToEvent() {
   const currentEvent = getFocusedEvent()
   if (!currentEvent || !appState.draft) return
-  currentEvent.text = [
-    currentEvent.text,
-    `${capitalize(useRuntimeConfig().public.human)}\n${appState.draft}`,
-    `${capitalize(appState.focusedEntity)}\n`,
-  ].join("\n\n")
+  let textParts = []
+  if (currentEvent.text) textParts.push(currentEvent.text)
+  textParts.push(
+    `${capitalize(useRuntimeConfig().public.human)}\n${appState.draft}`
+  )
+  textParts.push(`${capitalize(appState.focusedEntity)}\n`)
+  currentEvent.text = textParts.join("\n\n")
   updateFocusedEvent(["text", currentEvent.text])
   clipboard({ input: appState.draft })
   appState.upsertDBSync("draft", "")
