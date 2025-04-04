@@ -9,7 +9,7 @@ export default function (events, files, entity, type) {
       mySelectedTags: getAllEntityTags(events, entity),
       mySelectedEventNames: [],
     }
-  } else if (type === "mini") {
+  } else if (type === "small") {
     return {
       sharedEventCatalog: true,
       sharedFileCatalog: false,
@@ -23,6 +23,16 @@ export default function (events, files, entity, type) {
         "our process",
         "reflections",
       ],
+      mySelectedEventNames: [],
+    }
+  } else if (type === "mini") {
+    return {
+      sharedEventCatalog: false,
+      sharedFileCatalog: false,
+      sharedSelectedFilePaths: [],
+      myShapes: false,
+      myTagCatalog: false,
+      mySelectedTags: ["mini context"],
       mySelectedEventNames: [],
     }
   }

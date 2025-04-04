@@ -169,6 +169,8 @@ import remember from "/utils/remember"
 import forget from "/utils/forget"
 import reflect from "/utils/reflect"
 import getEvent from "/utils/getEvent"
+import renameTag from "/utils/renameTag"
+import getMemoriesByTag from "/utils/getMemoriesByTag"
 import newId from "/utils/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
@@ -185,6 +187,7 @@ const files = ref(null)
 const updateFocused = ref(0)
 const isContextLocked = {
   full: ref(false),
+  small: ref(false),
   mini: ref(false),
   entity: ref(false),
 }
@@ -214,7 +217,8 @@ const hotkeys = {
 
   m: () => onContext("entity"),
   l: () => onContext("full"),
-  k: () => onContext("mini"),
+  k: () => onContext("small"),
+  z: () => onContext("mini"),
 }
 
 const uniqueTagsForEntity = computed(() => {
@@ -359,6 +363,8 @@ async function onContext(type) {
   let config
   if (type === "full") {
     config = getContextConfig(events, files.value, entity, "full")
+  } else if (type === "small") {
+    config = getContextConfig(events, files.value, entity, "small")
   } else if (type === "mini") {
     config = getContextConfig(events, files.value, entity, "mini")
   } else if (type === "entity") {

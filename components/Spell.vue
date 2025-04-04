@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[15%] flex-shrink-0 h-full border-dashed border-t-[3px] border-stone-550"
+    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[17%] flex-shrink-0 h-full border-dashed border-t-[3px] border-stone-550"
   >
     <div
       class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
@@ -81,6 +81,7 @@ const textarea = ref("")
 const contexts = computed(() => [
   { name: props.focusedEntity, type: "entity" },
   { name: "full", type: "full" },
+  { name: "small", type: "small" },
   { name: "mini", type: "mini" },
 ])
 
