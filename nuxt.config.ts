@@ -9,4 +9,5 @@ export default defineNuxtConfig({
       entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
     },
   },
+  imports: { dirs: ["utils/**"] },
 })
