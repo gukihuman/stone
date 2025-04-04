@@ -164,14 +164,14 @@
 
 <script setup>
 // for cast
-import getTokens from "/utils/getTokens"
-import remember from "/utils/remember"
-import forget from "/utils/forget"
-import reflect from "/utils/reflect"
-import getEvent from "/utils/getEvent"
-import renameTag from "/utils/renameTag"
-import getMemoriesByTag from "/utils/getMemoriesByTag"
-import newId from "/utils/newId"
+import getTokens from "/utils/query/getTokens"
+import remember from "/utils/memory/remember"
+import forget from "/utils/memory/forget"
+import reflect from "/utils/memory/reflect"
+import renameTag from "/utils/memory/renameTag"
+import getMemoriesByEvent from "/utils/query/getMemoriesByEvent"
+import getMemoriesByTag from "/utils/query/getMemoriesByTag"
+import newId from "/utils/misc/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
 const { entities, events, shapes, appState } = useDatabase()

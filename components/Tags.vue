@@ -39,10 +39,6 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
-import ButtonList from "~/components/Button/List.vue"
-import PrettyNum from "~/components/PrettyNum.vue"
-
 const props = defineProps([
   "uniqueTags",
   "events",
