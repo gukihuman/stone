@@ -8,7 +8,7 @@
       <p
         class="h-full flex-grow px-7 pb-1 bg-stone-700 text-center text-xl text-stone-300 truncate cursor-default pt-[6px]"
       >
-        Tag: {{ focusedTag }}
+        {{ focusedTag }}
       </p>
     </div>
     <div class="w-full overflow-hidden flex-grow">

@@ -168,6 +168,7 @@ import getTokens from "/utils/getTokens"
 import remember from "/utils/remember"
 import forget from "/utils/forget"
 import reflect from "/utils/reflect"
+import getEvent from "/utils/getEvent"
 import newId from "/utils/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeys()
@@ -181,10 +182,6 @@ const filesRef = ref(null)
 
 // reactive
 const files = ref(null)
-const isLocked = reactive({
-  copy: { text: false, name: false, memory: false },
-  gen: { text: false, name: false, memory: false },
-})
 const updateFocused = ref(0)
 const isContextLocked = {
   full: ref(false),

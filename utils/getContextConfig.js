@@ -16,7 +16,13 @@ export default function (events, files, entity, type) {
       sharedSelectedFilePaths: [],
       myShapes: true,
       myTagCatalog: true,
-      mySelectedTags: ["my core identity and behavior"],
+      mySelectedTags: [
+        "my core identity and behavior",
+        "intimacy",
+        "examples of intimate lang that guki prefer",
+        "our process",
+        "reflections",
+      ],
       mySelectedEventNames: [],
     }
   }
