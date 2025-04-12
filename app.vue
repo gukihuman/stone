@@ -187,8 +187,6 @@ const files = ref(null)
 const updateFocused = ref(0)
 const isContextLocked = {
   full: ref(false),
-  small: ref(false),
-  mini: ref(false),
   entity: ref(false),
 }
 
@@ -217,8 +215,6 @@ const hotkeys = {
 
   m: () => onContext("entity"),
   l: () => onContext("full"),
-  k: () => onContext("small"),
-  z: () => onContext("mini"),
 }
 
 const uniqueTagsForEntity = computed(() => {
@@ -328,13 +324,6 @@ function toggleTagFocus(i) {
 
   appState.upsertDBSync("focusedIndex", newIndex)
   appState.upsertDBSync("focusedList", newList)
-
-  // IMPORTANT: When focusing a tag, set field to null to show the pretty view (FocusedTag)
-  // if (newList === "tags") {
-  //   appState.upsertDBSync("focusedField", null)
-  // }
-  // Optional: Log state changes for debugging
-  // console.log(`toggleTagFocus: index=${newIndex}, list=${newList}`)
 }
 ///////////////////////////////// context //////////////////////////////////////
 // async function onGen(field) {
@@ -362,11 +351,7 @@ async function onContext(type) {
   const helpers = { getAllFilePaths, getAllEntityTags, getAllEntityEventNames }
   let config
   if (type === "full") {
-    config = getContextConfig(events, files.value, entity, "full")
-  } else if (type === "small") {
-    config = getContextConfig(events, files.value, entity, "small")
-  } else if (type === "mini") {
-    config = getContextConfig(events, files.value, entity, "mini")
+    config = getContextConfig(events, files.value, entity)
   } else if (type === "entity") {
     config = shapes[entity]?.getContextConfig(events, files.value, helpers)
   }

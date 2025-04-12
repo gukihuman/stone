@@ -4,7 +4,7 @@
       v-for="(state, index) in states"
       :key="state"
       @click="handleClick(state)"
-      class="flex justify-between min-w-[90px] w-full"
+      class="flex justify-between min-w-[80px] w-full"
       :class="[
         theme === 'dark'
           ? state === modelValue
@@ -22,7 +22,7 @@
       </span>
       <div
         v-if="index < states.length - 1"
-        class="h-full bg-stone-600 border-dotted border-r-[3px] border-stone-500"
+        class="h-full bg-stone-650 border-dotted border-r-[3px] border-stone-550"
       />
     </button>
   </div>

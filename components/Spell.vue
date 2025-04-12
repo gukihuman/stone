@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden flex-[17%] flex-shrink-0 h-full border-dashed border-t-[3px] border-stone-550"
+    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden h-[130px] flex-shrink-0 border-dashed border-t-[3px] border-stone-550"
   >
     <div
       class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
@@ -22,7 +22,7 @@
         :style="{ backgroundPositionY: linesOffset }"
       />
       <div
-        class="flex flex-col gap-2 items-center justify-between flex-shrink-0 h-full"
+        class="flex flex-col gap-2 items-center justify-between flex-shrink-0 h-full min-w-[80px]"
       >
         <ButtonLight
           @click="
@@ -35,7 +35,7 @@
         >
           cast
         </ButtonLight>
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 w-full">
           <ButtonLight
             v-for="{ name, type } in contexts"
             :key="`context-${name}`"
@@ -81,8 +81,6 @@ const textarea = ref("")
 const contexts = computed(() => [
   { name: props.focusedEntity, type: "entity" },
   { name: "full", type: "full" },
-  { name: "small", type: "small" },
-  { name: "mini", type: "mini" },
 ])
 
 defineExpose({ focus: () => focus(textareaEl) })

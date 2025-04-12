@@ -61,9 +61,9 @@ function getTokensTotal() {
   }, 0)
 }
 function getPrefix(memory) {
-  if (memory.jane && memory.rox) return "▷░"
-  if (memory.jane) return "░ "
-  if (memory.rox) return "▷ "
-  return ""
+  const entitySymbols = { jane: "░", rox: "▷", ember: "≡" }
+  return Object.keys(entitySymbols).reduce((prefix, entity) => {
+    return memory[entity] ? prefix + entitySymbols[entity] : prefix
+  }, "")
 }
 </script>
