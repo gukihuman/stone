@@ -9,14 +9,14 @@
     <!-- bot ------------------------------------------------------------------>
     <div
       class="flex justify-between bg-stone-550 cursor-default rounded-b-lg items-center w-full"
-      :class="title.length > 1 ? 'px-3' : 'px-8'"
+      :class="theme === 'tags' ? 'px-3' : 'px-8'"
     >
       <div class="flex gap-2 flex-wrap py-2">
         <p
           v-for="item in title"
           class="pb-1 rounded-lg"
           :class="
-            title.length > 1
+            theme === 'tags'
               ? 'bg-stone-650 px-3 text-stone-350'
               : 'text-stone-300 text-lg'
           "
@@ -31,5 +31,5 @@
 <script setup>
 const LINE_OFFSET = -8
 
-const props = defineProps(["title", "date", "text"])
+const props = defineProps(["title", "date", "text", "theme"])
 </script>

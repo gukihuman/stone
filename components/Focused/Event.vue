@@ -74,6 +74,7 @@
             :key="memoryObj.id || `memory-${i}`"
             :title="memoryObj.tags"
             :text="memoryObj.text || ''"
+            theme="tags"
           />
         </div>
       </div>
