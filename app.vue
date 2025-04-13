@@ -157,6 +157,9 @@
           "
           @toggle-focus="toggleShapeFocus"
         />
+        <div class="flex h-7 justify-end text-stone-400 text-center pr-4">
+          <PrettyNum :number="openAiUsageToday" theme="dark" />
+        </div>
       </div>
     </div>
   </div>
@@ -185,10 +188,8 @@ const filesRef = ref(null)
 // reactive
 const files = ref(null)
 const updateFocused = ref(0)
-const isContextLocked = {
-  full: ref(false),
-  entity: ref(false),
-}
+const isContextLocked = { full: ref(false), entity: ref(false) }
+const openAiUsageToday = ref(0)
 
 // regular
 let lastRemovedEvent = null
@@ -251,6 +252,8 @@ onMounted(async () => {
   await appState.loadFromDB()
   cleanupHotkeys = setupHotkeys(hotkeys)
   getFiles()
+  fetchOpenAiUsage()
+  setInterval(fetchOpenAiUsage, 5 * 60_000)
 })
 onUnmounted(cleanupHotkeys)
 
@@ -341,7 +344,13 @@ function toggleTagFocus(i) {
 //   focusedEntity: appState.focusedEntity,
 //   onNextChunk: events.tUpsertDBSync,
 // })
+// await fetchOpenAiUsage()
 // }
+async function fetchOpenAiUsage() {
+  const usage = await apiGetUsage("openai")
+  if (usage !== null) openAiUsageToday.value = usage
+  else openAiUsageToday.value = 0
+}
 async function onContext(type) {
   const event = getFocusedEvent()
   if (!event) return // hotkey case

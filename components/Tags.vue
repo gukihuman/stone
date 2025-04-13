@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col flex-1 gap-3 overflow-y-auto">
+  <div class="flex flex-col flex-[30%] gap-3 overflow-y-auto">
     <div
       class="flex flex-col flex-grow flex-shrink-0 bg-circles bg-stone-500 rounded-lg max-h-full overflow-hidden"
     >
