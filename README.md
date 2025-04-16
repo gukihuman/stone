@@ -24,10 +24,10 @@ persistent data stored in indexedDB
     "memory": {
       "jane": [
         {
-          "source_event": "event name",
           "text": "some memory text",
           "tags": ["reflections", "my memory structure"],
-          "tokens": 3
+          "tokens": 3,
+          "id": "y2csg3fu"
         }
       ],
       "rox": []
@@ -85,4 +85,36 @@ formed on the client only during session
   "shapes": {},
   "appState": {}
 }
+```
+
+## circle data structure
+
+### events
+
+```json
+[
+  {
+    "name": "name",
+    "date": "2/9/2025",
+    "participantIds": ["cmil6fly"],
+    "content": [
+      {
+        "entity": "entity name",
+        "text": "some text"
+      }
+    ],
+    "tokens": 5,
+    "memory": {
+      "jane": [
+        {
+          "text": "some memory text",
+          "tags": ["reflections", "my memory structure"],
+          "tokens": 3,
+          "id": "y2csg3fu"
+        }
+      ],
+      "rox": []
+    }
+  }
+]
 ```
