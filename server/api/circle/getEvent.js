@@ -8,25 +8,26 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
 
   // 2. Get Event ID and Requester's Participant Code from query parameters
-  // Example URL: /api/circle/getEvent?eventId=circle_main_chat&participantCode=yura_code_here
+  // Example URL: /api/circle/getEvent?eventId=circle_main_chat&participantId=yura_code_here
   const query = getQuery(event)
   const eventId = query.eventId
-  const participantCode = query.participantCode
+  const participantId = query.participantId
 
-  if (!eventId || !participantCode) {
+  if (!eventId || !participantId) {
     throw createError({
       statusCode: 400,
       statusMessage:
-        "Missing required query parameters: eventId and participantCode",
+        "Missing required query parameters: eventId and participantId",
     })
   }
 
   try {
     // 3. Validate the requesting participant exists
-    const participantExists = await Participant.findById(participantCode).lean()
+    const participantExists = await Participant.findById(participantId).lean()
+    console.log(participantExists)
     if (!participantExists) {
       console.warn(
-        `getEvent attempt with invalid participantCode: ${participantCode}`
+        `getEvent attempt with invalid participantId: ${participantId}`
       )
       throw createError({
         statusCode: 403, // Forbidden
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event) => {
 
     // 4. Find the target Circle Event by its ID
     // Using .lean() returns a plain JS object, good for sending as JSON
+    console.log(CircleEvent)
     const targetEvent = await CircleEvent.findById(eventId).lean()
 
     if (!targetEvent) {
@@ -50,9 +52,9 @@ export default defineEventHandler(async (event) => {
 
     // 5. Check if the requesting participant is allowed in this event
     // NOTE: .lean() returns plain JS, so participantIds is a simple array
-    if (!targetEvent.participantIds.includes(participantCode)) {
+    if (!targetEvent.participantIds.includes(participantId)) {
       console.warn(
-        `getEvent attempt failed: Participant ${participantCode} not authorized for event ${eventId}`
+        `getEvent attempt failed: Participant ${participantId} not authorized for event ${eventId}`
       )
       throw createError({
         statusCode: 403, // Forbidden
@@ -62,7 +64,7 @@ export default defineEventHandler(async (event) => {
 
     // 6. If all checks pass, return the fetched event data
     console.log(
-      `Event ${eventId} fetched successfully by participant ${participantCode}`
+      `Event ${eventId} fetched successfully by participant ${participantId}`
     )
     return targetEvent // Send the whole event document back
   } catch (error) {

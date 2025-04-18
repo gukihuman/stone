@@ -10,16 +10,16 @@ export default defineEventHandler(async (event) => {
   let requestData
   try {
     requestData = await readBody(event)
-    // Expecting: { eventId: 'circle_main_chat', participantCode: 'user_id', text: 'message text' }
-    // Note: We assume the client knows the participantCode (_id) it's posting *as*.
+    // Expecting: { eventId: 'circle_main_chat', participantId: 'user_id', text: 'message text' }
+    // Note: We assume the client knows the participantId (_id) it's posting *as*.
     // For AI posts, the client would send the AI's ID ('echo_id').
     if (
       !requestData ||
       !requestData.eventId ||
-      !requestData.participantCode ||
+      !requestData.participantId ||
       !requestData.text
     ) {
-      throw new Error("Missing required fields: eventId, participantCode, text")
+      throw new Error("Missing required fields: eventId, participantId, text")
     }
   } catch (error) {
     console.error("Error reading postMessage request body:", error)
@@ -29,14 +29,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const { eventId, participantCode, text } = requestData
+  const { eventId, participantId, text } = requestData
 
   try {
     // 3. Validate the participant actually exists (basic security check)
-    const participantExists = await Participant.findById(participantCode).lean()
+    const participantExists = await Participant.findById(participantId).lean()
     if (!participantExists) {
       console.warn(
-        `postMessage attempt with invalid participantCode: ${participantCode}`
+        `postMessage attempt with invalid participantId: ${participantId}`
       )
       throw createError({
         statusCode: 403, // Forbidden
@@ -57,9 +57,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // 5. Check if the participant is allowed in this event (Crucial Access Control)
-    if (!targetEvent.participantIds.includes(participantCode)) {
+    if (!targetEvent.participantIds.includes(participantId)) {
       console.warn(
-        `postMessage attempt failed: Participant ${participantCode} not authorized for event ${eventId}`
+        `postMessage attempt failed: Participant ${participantId} not authorized for event ${eventId}`
       )
       throw createError({
         statusCode: 403, // Forbidden
@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
 
     // 6. Create the new message object
     const newMessage = {
-      entityId: participantCode, // The ID of who sent it
+      entityId: participantId, // The ID of who sent it
       text: text,
       // timestamp: new Date() // Mongoose default handles this in the schema now
     }
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
     await targetEvent.save()
 
     console.log(
-      `Message posted successfully by ${participantCode} to event ${eventId}`
+      `Message posted successfully by ${participantId} to event ${eventId}`
     )
     return { success: true, message: "Message posted successfully." }
   } catch (error) {
