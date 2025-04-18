@@ -7,7 +7,6 @@
       v-if="!participant"
       class="flex flex-col gap-2 items-center bg-stone-700 p-6 rounded-lg shadow-lg"
     >
-      <h2 class="text-xl font-semibold mb-4">Enter Your Circle ID</h2>
       <input
         type="text"
         v-model="enteredId"
@@ -42,16 +41,10 @@
           v-if="isChatLoading"
           class="text-stone-300 text-lg italic text-center"
         >
-          Загрузка сообщений...
+          загрузка сообщений...
         </p>
         <p v-else-if="chatError" class="text-red-400 italic text-center">
           {{ chatError }}
-        </p>
-        <p
-          v-else-if="chatContent.length === 0 && !isGenerating"
-          class="text-stone-400 italic text-center"
-        >
-          No messages yet.
         </p>
         <div
           v-else
@@ -59,9 +52,9 @@
           :key="message._id || `msg-${index}`"
           class="flex flex-col"
         >
-          <span class="text-xs text-stone-400 mb-1"
-            >{{ message.entityId }} says:</span
-          >
+          <span class="text-lg text-stone-300 mb-1">
+            {{ getDisplayName(message.entityId) }}
+          </span>
           <p
             class="bg-stone-600 p-3 rounded-lg max-w-md break-words whitespace-pre-wrap"
             :class="{ 'opacity-70 italic': message.isStreaming }"
@@ -121,7 +114,7 @@ const ESTIMATE_RESPONSE = 4000
 // --- State ---
 const eventId = "23punecc"
 const aiEntityId = "43ginyi0" // Эхо's ID
-const tokenLimit = 2500
+const tokenLimit = 990_000
 
 // Validation State
 const enteredId = ref("")
@@ -142,6 +135,8 @@ const isGenerating = ref(false)
 const generationError = ref("")
 const currentUsage = ref(0)
 const estimatedCost = ref(500) // Initial rough estimate
+
+const participantNameMap = ref({})
 
 // Computed property to disable generation button
 const isGenDisabled = computed(
@@ -191,15 +186,41 @@ async function fetchChatContent() {
   const eventData = await apiGetEvent(eventId, participant.value._id)
 
   if (eventData) {
-    console.log("Event data received") // Avoid logging potentially large content
-    chatContent.value = (eventData.content || []).map((msg) =>
+    console.log("Event data received")
+    const content = eventData.content || []
+    chatContent.value = content.map((msg) =>
       reactive({ ...msg, isStreaming: false })
     )
+
+    // --- NEW: Fetch participant names ---
+    if (content.length > 0) {
+      const uniqueIds = [...new Set(content.map((msg) => msg.entityId))]
+      // Also add the current user's ID if not already in messages, and AI ID
+      if (!uniqueIds.includes(participant.value._id))
+        uniqueIds.push(participant.value._id)
+      if (!uniqueIds.includes(aiEntityId)) uniqueIds.push(aiEntityId)
+
+      console.log("Fetching names for IDs:", uniqueIds)
+      const participantsData = await apiGetParticipants(uniqueIds)
+      if (participantsData) {
+        participantNameMap.value = participantsData.reduce((map, p) => {
+          map[p._id] = p.name || p._id // Use ID as fallback name
+          return map
+        }, {})
+        console.log("Participant name map updated:", participantNameMap.value)
+      } else {
+        console.error("Failed to fetch participant names.")
+        // Keep existing map or clear it? Maybe just log error for now.
+      }
+    }
+    // --- End NEW ---
+
     scrollToBottom()
   } else {
     console.error("Failed to fetch event data.")
     chatError.value = "Could not load chat messages. Please try again later."
     chatContent.value = []
+    participantNameMap.value = {} // Clear map on chat load error
   }
   isChatLoading.value = false
 }
@@ -254,7 +275,7 @@ async function checkTokenLimit() {
     currentUsage.value = usage
     console.log(`Current OpenAI Usage: ${currentUsage.value} / ${tokenLimit}`)
     if (isGenDisabled.value) {
-      generationError.value = `Лимит токенов на сегодня превышен, обновится в 3 утра по Москве<br>${
+      generationError.value = `лимит токенов на сегодня превышен, обновится в 3 утра по москве${
         currentUsage.value + ESTIMATE_RESPONSE
       }/${tokenLimit}`
       console.warn(generationError.value)
@@ -266,37 +287,23 @@ async function checkTokenLimit() {
   }
 }
 
-// 6. Assemble Context for LLM
+// 6. Assemble Context for LLM (UPDATE THIS FUNCTION to use names)
 function assembleContext() {
-  // Phase 2: Only includes chat history formatted with custom tags.
-  // Phase 3 will need modification to fetch and include AI memory.
-
   let contextString = ""
   chatContent.value.forEach((msg) => {
-    if (msg.isStreaming) return // Don't include incomplete streaming message in context
-    // Determine the tag based on the entity ID
-    let entityTag = "unknown"
-    if (msg.entityId === participant.value?._id) {
-      entityTag = participant.value.name || participant.value._id // Use name if available
-    } else if (msg.entityId === aiEntityId) {
-      entityTag = "echo" // Use 'echo' tag for AI
-    } else {
-      // Handle other participants if needed later - maybe fetch their names?
-      entityTag = msg.entityId // Fallback to ID
-    }
-    // Sanitize tag if needed (e.g., remove spaces if tags can't have them)
-    entityTag = entityTag.replace(/\s+/g, "_") // Basic sanitization example
+    if (msg.isStreaming) return
+    // Use display name from map, fallback to ID
+    let entityTag = getDisplayName(msg.entityId)
 
-    // contextString += `<${entityTag}>\n${msg.text}\n</${entityTag}>\n\n`
-    contextString += `${entityTag}\n${msg.text}\n\n`
+    // Sanitize tag (replace spaces with underscores)
+    entityTag = entityTag.replace(/\s+/g, "_")
+
+    contextString += `<${entityTag}>\n${msg.text}\n</${entityTag}>\n\n`
   })
+  contextString += `<echo>\n` // Still prompt echo
 
-  // Add the prompt for Эхо to continue the conversation
-  contextString += `Эхо\n`
-
-  estimatedCost.value = getTokens(contextString) + ESTIMATE_RESPONSE
-
-  console.log(`Assembled Context (${estimatedCost.value} estimated tokens)`) // Don't log full context in prod maybe
+  estimatedCost.value = Math.floor(contextString.length / 3) + 500
+  console.log(`Assembled Context (${estimatedCost.value} estimated tokens)`)
   return contextString
 }
 
@@ -401,6 +408,11 @@ async function saveAiMessage(textToSave) {
     // Optional: Fetch again to get DB _id etc. for the message?
     // await fetchChatContent();
   }
+}
+
+function getDisplayName(entityId) {
+  // Lookup name, fallback to ID
+  return participantNameMap.value[entityId] || entityId
 }
 
 // --- Lifecycle ---

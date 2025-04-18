@@ -60,9 +60,9 @@ export default defineEventHandler(async (event) => {
     // Langchain stream method handles closing the connection implicitly
     for await (const chunk of await llmModel.stream(messages)) {
       // console.log("Chunk:", chunk.content); // Log chunk for debugging
-      // if (chunk?.content) {
-      //   event.node.res.write(`${chunk.content}`) // Write only the content part
-      // }
+      if (chunk?.content) {
+        event.node.res.write(`${chunk.content}`) // Write only the content part
+      }
     }
     // Ensure the stream is properly ended after the loop finishes
     event.node.res.end()
