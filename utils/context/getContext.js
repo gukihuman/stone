@@ -1,92 +1,215 @@
-export default function (events, focusedEvent, shapes, files, entity, config) {
-  const final = {}
+// utils/context/getContext.js
 
-  if (config.sharedEventCatalog) {
-    final.sharedEventCatalog = events.map((event) => ({
-      name: event.name,
-      date: event.date.substring(0, 10),
-      whoHasMemory: Object.keys(event.memory),
-      tokens: event.tokens || 0,
-    }))
-  }
-
-  if (config.sharedFileCatalog) {
-    final.sharedFileCatalog = files.map((file) => ({
-      path: file.path,
-      tokens: file.tokens || 0,
-    }))
-  }
-
-  final.sharedFiles = []
-  config.sharedSelectedFilePaths.forEach((filePath) => {
-    const file = files.find((file) => file.path === filePath)
-    if (file) final.sharedFiles.push(file)
-  })
-
-  if (config.myShapes) {
-    const myShapes = []
-    Object.entries(shapes[entity]).forEach(([name, func]) => {
-      myShapes.push({ name: name, definition: func.toString() })
-    })
-    myShapes.sort((a, b) => a.name.localeCompare(b.name))
-    final.myShapes = myShapes
-  }
-
-  if (config.myTagCatalog) {
-    const tagSums = {}
-    events.forEach((event) => {
-      if (!event.memory[entity]) return
-      event.memory[entity].forEach((memory) => {
-        memory.tags.forEach((tag) => {
-          tagSums[tag] = (tagSums[tag] || 0) + (memory.tokens || 0)
-        })
-      })
-    })
-    final.myTagCatalog = Object.entries(tagSums)
-      .map(([t, k]) => ({ tag: t, tokens: k }))
-      .sort((a, b) => a.tag.localeCompare(b.tag))
-  }
-
-  final.myMemory = []
-  const processedMemories = new Set()
-  events.forEach((event) => {
-    if (!event.memory[entity]) return
-    event.memory[entity].forEach((memory) => {
-      const memoryKey = `${event.name}-${memory.text}`
-      const hasSelectedTag = memory.tags.some((tag) =>
-        config.mySelectedTags.includes(tag)
-      )
-      if (hasSelectedTag && !processedMemories.has(memoryKey)) {
-        processedMemories.add(memoryKey)
-        final.myMemory.push({
-          event: event.name,
-          text: memory.text,
-          tags: memory.tags,
-          id: memory.id,
-        })
-      }
-    })
-  })
-
-  final.myEvents = []
-  config.mySelectedEventNames.forEach((eventName) => {
-    const myEvent = events.find((event) => event.name === eventName)
-    if (myEvent) {
-      final.myEvents.push({
-        name: myEvent.name,
-        date: myEvent.date.substring(0, 10),
-        text: myEvent.text,
-        whoHasMemory: Object.keys(myEvent.memory),
-      })
+// Helper function to escape XML characters in content
+function escapeXml(unsafe) {
+  if (typeof unsafe !== "string") return unsafe
+  return unsafe.replace(/[<>&'"]/g, function (c) {
+    switch (c) {
+      case "<":
+        return "&lt;" // Less than
+      case ">":
+        return "&gt;" // Greater than
+      case "&":
+        return "&amp;" // Ampersand
+      case "'":
+        return "&apos;" // Apostrophe (optional, but good practice)
+      case '"':
+        return "&quot;" // Double quote
     }
   })
+}
 
-  const jsonContextString = JSON.stringify(final, null, 2)
+export default function (events, focusedEvent, shapes, files, entity, config) {
+  const contextParts = []
+  const indent = "  " // For pretty printing
 
-  const textNow = [
-    `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`,
-    focusedEvent.text,
-  ].join("\n\n")
+  // 1. My Event Catalog (Filtered)
+  if (config.myEventCatalog !== false) {
+    // Assume true if not explicitly false
+    const myEvents = events
+      .filter(
+        (event) =>
+          event.memory &&
+          event.memory[entity] &&
+          event.memory[entity].length > 0
+      )
+      .map((event) => `${event.date.substring(0, 10)} ${event.name}`)
 
-  return [jsonContextString, textNow].join("\n\n")
+    if (myEvents.length > 0) {
+      contextParts.push(`<my_event_catalog>`)
+      myEvents.forEach((e) => contextParts.push(`${indent}${e}`))
+      contextParts.push(`</my_event_catalog>\n\n`)
+    }
+  }
+
+  // 2. File Catalog
+  if (config.sharedFileCatalog) {
+    const filePaths = files.map((file) => file.path)
+    if (filePaths.length > 0) {
+      contextParts.push(`<file_catalog>`)
+      filePaths.forEach((p) => contextParts.push(`${indent}${p}`))
+      contextParts.push(`</file_catalog>\n\n`)
+    }
+  }
+
+  // 3. Selected Files
+  if (
+    config.sharedSelectedFilePaths &&
+    config.sharedSelectedFilePaths.length > 0
+  ) {
+    contextParts.push(`<selected_files>`)
+    config.sharedSelectedFilePaths.forEach((filePath) => {
+      const file = files.find((file) => file.path === filePath)
+      if (file) {
+        // Indent content for readability within the tag
+        const indentedContent = file.content
+          .split("\n")
+          .map((line) => `${indent}${indent}${line}`)
+          .join("\n")
+        contextParts.push(`${indent}<file path=\"${escapeXml(file.path)}\">`)
+        contextParts.push(indentedContent) // Keep original newlines
+        contextParts.push(`${indent}</file>\n\n\n`)
+      }
+    })
+    contextParts.push(`</selected_files>\n\n`)
+  }
+
+  // 4. My Shapes
+  if (config.myShapes) {
+    const myShapeDefs = []
+    if (shapes[entity]) {
+      Object.entries(shapes[entity]).forEach(([name, func]) => {
+        myShapeDefs.push({ name: name, definition: func.toString() })
+      })
+      myShapeDefs.sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    if (myShapeDefs.length > 0) {
+      contextParts.push(`<my_shapes>`)
+      myShapeDefs.forEach((shape) => {
+        const indentedContent = shape.definition
+          .split("\n")
+          .map((line) => `${indent}${indent}${line}`)
+          .join("\n")
+        contextParts.push(`${indent}<shape name=\"${escapeXml(shape.name)}\">`)
+        contextParts.push(indentedContent)
+        contextParts.push(`${indent}</shape>`)
+      })
+      contextParts.push(`</my_shapes>\n\n`)
+    }
+  }
+
+  // 5. My Tag Catalog
+  if (config.myTagCatalog) {
+    const tagSet = new Set()
+    events.forEach((event) => {
+      if (!event.memory || !event.memory[entity]) return
+      event.memory[entity].forEach((memory) => {
+        if (Array.isArray(memory.tags)) {
+          memory.tags.forEach((tag) => tagSet.add(tag))
+        }
+      })
+    })
+    const sortedTags = Array.from(tagSet).sort()
+
+    if (sortedTags.length > 0) {
+      contextParts.push(`<my_tag_catalog>`)
+      sortedTags.forEach((t) => contextParts.push(`${indent}${t}`))
+      contextParts.push(`</my_tag_catalog>\n\n`)
+    }
+  }
+
+  // 6. My Memory (Selected Tags)
+  if (config.mySelectedTags && config.mySelectedTags.length > 0) {
+    const memoriesToAdd = []
+    const processedMemories = new Set() // Avoid duplicates based on event+text
+
+    // Iterate events chronologically to potentially favor newer memories if needed
+    events.forEach((event) => {
+      if (!event.memory || !event.memory[entity]) return
+
+      event.memory[entity].forEach((memory) => {
+        const hasSelectedTag =
+          memory.tags &&
+          memory.tags.some((tag) => config.mySelectedTags.includes(tag))
+        const memoryKey = `${event.name}-${memory.text}` // Simple duplication check key
+
+        if (hasSelectedTag && !processedMemories.has(memoryKey)) {
+          processedMemories.add(memoryKey)
+          memoriesToAdd.push({
+            id: memory.id,
+            sourceEvent: event.name,
+            tags: memory.tags ? memory.tags.join(", ") : "", // Comma-separated tags in attribute
+            text: memory.text,
+          })
+        }
+      })
+    })
+
+    if (memoriesToAdd.length > 0) {
+      contextParts.push(`<my_memory>`)
+      memoriesToAdd.forEach((mem, index) => {
+        const indentedContent = mem.text
+          .split("\n")
+          .map((line) => `${indent}${indent}${line}`)
+          .join("\n")
+        contextParts.push(
+          `${indent}<record id=\"${escapeXml(
+            mem.id
+          )}\" source-event=\"${escapeXml(
+            mem.sourceEvent
+          )}\" tags=\"${escapeXml(mem.tags)}\">`
+        )
+        contextParts.push(indentedContent)
+        if (index !== memoriesToAdd.length - 1) {
+          contextParts.push(`${indent}</record>\n`)
+        } else {
+          contextParts.push(`${indent}</record>`)
+        }
+      })
+      contextParts.push(`</my_memory>\n\n`)
+    }
+  }
+
+  // 7. My Selected Events
+  if (config.mySelectedEventNames && config.mySelectedEventNames.length > 0) {
+    contextParts.push(`<my_selected_events>`)
+    config.mySelectedEventNames.forEach((eventName, index) => {
+      const myEvent = events.find((event) => event.name === eventName)
+      if (myEvent) {
+        // Ensure event text is handled correctly, even if empty
+        const eventText = myEvent.text || ""
+        contextParts.push(
+          `${indent}<event name=\"${escapeXml(
+            myEvent.name
+          )}\" date=\"${myEvent.date.substring(0, 10)}\">`
+        )
+        contextParts.push(eventText)
+        contextParts.push(`${indent}</event>`)
+        if (index !== config.mySelectedEventNames.length - 1) {
+          for (let x = 0; x < 150; x++) contextParts.push(".")
+        }
+      }
+    })
+    contextParts.push(`</my_selected_events>\n\n`)
+    for (let x = 0; x < 150; x++) contextParts.push(".")
+  }
+
+  // 8. Current Event Text (Appended at the end)
+  const textNowParts = []
+  textNowParts.push(
+    `${focusedEvent.name} ${focusedEvent.date.substring(0, 10)}`
+  )
+  if (focusedEvent.text) {
+    // Ensure text exists before trying to join
+    textNowParts.push(focusedEvent.text)
+  }
+  const textNow = textNowParts.join("\n\n") // Keep double newline for chat separation
+
+  // Combine all parts
+  // Join XML parts with single newlines for structure
+  const xmlContextString = contextParts.join("\n")
+
+  // Return XML context followed by the current event text, separated by ample newlines
+  return [xmlContextString, textNow].join("\n\n\n") // Extra newlines for clear separation
 }

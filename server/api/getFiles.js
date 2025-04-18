@@ -46,7 +46,8 @@ export default defineEventHandler(async (event) => {
         ) {
           try {
             const fileContent = await fs.readFile(fullPath, "utf-8")
-            filesData.push({ path: relativePath, content: fileContent })
+            const normalizedContent = fileContent.replace(/\r\n/g, "\n")
+            filesData.push({ path: relativePath, content: normalizedContent })
           } catch (err) {
             console.error(`Error reading file ${fullPath}:`, err)
           }

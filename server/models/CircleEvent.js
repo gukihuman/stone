@@ -20,7 +20,6 @@ const memoryRecordSchema = new mongoose.Schema(
 const circleEventSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   name: { type: String, required: true },
-  date: { type: Date, default: Date.now },
   participantIds: { type: [String], required: true, default: [] },
   content: { type: [messageSchema], default: [] },
   // object where keys are entity ids, values are arrays of memory records

@@ -9,7 +9,7 @@ export default function (events, entity, tag, appState) {
       })
     }
   })
-  const resultString = JSON.stringify(results)
+  const resultString = JSON.stringify(results, null, 2)
   const currentDraft = appState.draft || ""
   const newDraft =
     currentDraft +

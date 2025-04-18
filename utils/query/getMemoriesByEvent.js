@@ -13,6 +13,6 @@ export default function (events, eventName, entity, appState) {
   console.log(result)
   appState.upsertDBSync(
     "draft",
-    `${appState.draft}\n\n${JSON.stringify(result)}`
+    `${appState.draft}\n\n${JSON.stringify(result, null, 2)}`
   )
 }
