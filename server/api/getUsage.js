@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY_ADMIN
   if (!apiKey) {
     throw createError({
       statusCode: 500,

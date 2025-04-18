@@ -1,134 +1,116 @@
-const CONFIG = {
-  text: { erase: false, start: "", end: "", include: true },
-  name: { erase: true, start: '["', end: '"]', include: false },
-  memory: { erase: true, start: "{", end: "}", include: true },
-}
+/**
+ * Calls the backend /api/gen endpoint to generate text using a specified LLM provider and model.
+ * Handles the response as a stream, invoking callbacks for each chunk and when the stream ends.
+ *
+ * @param {object} options - The options for the generation call.
+ * @param {string} options.provider - The LLM provider ('openai' or 'google').
+ * @param {string} options.model - The specific model name.
+ * @param {string} options.input - The prompt/context string.
+ * @param {function(string): void} options.onChunk - Callback function invoked with each text chunk received.
+ * @param {function(string): void} options.onComplete - Callback function invoked with the full assembled text when the stream finishes successfully.
+ * @param {function(Error): void} options.onError - Callback function invoked if an error occurs during streaming or fetching.
+ */
 export default async function ({
+  provider,
   model,
   input,
-  event,
-  field,
-  locked,
-  onNextChunk,
-  focusedEntity,
+  onChunk,
+  onComplete,
+  onError,
 }) {
-  locked[field] = true
+  let accumulatedText = "" // To store the full response
 
-  const config = CONFIG[field] || CONFIG.text
+  try {
+    const response = await fetch("/api/gen", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream", // Indicate we expect a stream
+      },
+      body: JSON.stringify({ provider, model, input }),
+    })
 
-  const response = await fetch("/api/gen", {
-    method: "POST",
-    body: JSON.stringify({ input, model }),
-    headers: { "Content-Type": "application/json" },
-  })
-
-  let capturing = config.start === "" ? true : false
-  let startIndex = 0
-  let endIndex = 0
-  let buffer = ""
-
-  const reader = response.body.getReader()
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    const chunk = new TextDecoder().decode(value)
-
-    if (chunk.startsWith("ERROR: ")) {
-      if (field === memory) {
-        event.memory[focusedEntity] += `${chunk.substring(7)}`
-      } else {
-        event[field] += `${chunk.substring(7)}`
+    if (!response.ok) {
+      // Handle non-2xx responses (e.g., 400, 500 errors from the backend endpoint itself)
+      let errorPayload = {
+        message: `API request failed: ${response.status} ${response.statusText}`,
       }
-      break
+      try {
+        // Attempt to parse specific error message from backend if available
+        const errorData = await response.json()
+        errorPayload = errorData // Use the structured error from backend
+      } catch (parseError) {
+        // Ignore if response body isn't JSON
+      }
+      console.error("apiGen fetch error:", errorPayload)
+      throw new Error(
+        errorPayload.statusMessage ||
+          errorPayload.message ||
+          `HTTP error ${response.status}`
+      )
     }
 
-    buffer += chunk
-    console.log(chunk)
+    // Check if the response body is readable stream
+    if (!response.body) {
+      throw new Error("Response body is not readable stream.")
+    }
 
-    // logic for finding the start position
-    if (!capturing) {
-      // for name, we need to match ["
-      // for other types, we match the entire start at once
-      let searchStartPos = 0
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
 
-      while (searchStartPos < buffer.length) {
-        if (buffer[searchStartPos] === config.start[startIndex]) {
-          startIndex++
-          if (startIndex === config.start.length) {
-            // we found the complete start symbol
-            capturing = true
-            const captureStartPos = searchStartPos - startIndex + 1
+    // Read the stream
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        console.log("apiGen stream finished.")
+        break // Exit the loop when the stream is done
+      }
 
-            if (config.erase && field === "memory") {
-              event.memory[focusedEntity] = ""
-            } else if (config.erase) {
-              event[field] = ""
-            }
+      // Decode the chunk (Uint8Array) to text
+      const textChunk = decoder.decode(value, { stream: true })
+      // console.log("apiGen received chunk:", textChunk); // Debugging
 
-            // if we should include the symbols, start from the beginning of the symbol, otherwise, start after the symbol
-            const sliceStartPos = config.include
-              ? captureStartPos
-              : captureStartPos + config.start.length
+      // Check for potential error messages embedded in the stream (if backend sends them like this)
+      if (textChunk.startsWith("ERROR: ")) {
+        throw new Error(`Stream error: ${textChunk.substring(7)}`)
+      }
 
-            buffer = buffer.substring(sliceStartPos)
-            break
-          }
-        } else if (startIndex > 0) {
-          // if we've started matching but hit a non-match, don't reset completely, this is only relevant for multi-character symbols like ["
-          startIndex = 0
+      accumulatedText += textChunk
+
+      // Invoke the onChunk callback with the received text chunk
+      if (onChunk && typeof onChunk === "function") {
+        try {
+          onChunk(textChunk)
+        } catch (chunkError) {
+          console.error("Error in onChunk callback:", chunkError)
+          // Decide if you want to stop streaming on callback error
         }
-        searchStartPos++
       }
     }
 
-    // process chunk if we're capturing
-    if (capturing) {
-      // check for end symbol if we have one
-      if (config.end) {
-        let endPos = -1
-
-        for (let i = 0; i < buffer.length; i++) {
-          if (buffer[i] === config.end[endIndex]) {
-            endIndex++
-            if (endIndex === config.end.length) {
-              endPos = i - endIndex + 1
-              break
-            }
-          } else if (endIndex > 0) {
-            // similar to start logic, don't reset completely on non-match
-            endIndex = 0
-          }
-        }
-
-        if (endPos >= 0) {
-          // we found the end symbol
-          const finalChunk = config.include
-            ? buffer.substring(0, endPos + config.end.length)
-            : buffer.substring(0, endPos)
-
-          if (field === "memory") {
-            event.memory[focusedEntity] += finalChunk
-          } else {
-            event[field] += finalChunk
-          }
-          onNextChunk(event)
-          break // Stop processing further chunks
+    // Stream finished successfully, invoke the onComplete callback with the full text
+    if (onComplete && typeof onComplete === "function") {
+      try {
+        onComplete(accumulatedText)
+      } catch (completeError) {
+        console.error("Error in onComplete callback:", completeError)
+        // Potentially call onError here as well?
+        if (onError && typeof onError === "function") {
+          onError(completeError)
         }
       }
-
-      // if no end symbol found or it's not complete yet, add the entire buffer
-      if (field === "memory") {
-        event.memory[focusedEntity] += buffer
-      } else {
-        event[field] += buffer
-      }
-
-      onNextChunk(event)
-      buffer = ""
     }
+  } catch (error) {
+    console.error("Error in apiGen utility:", error)
+    // Invoke the onError callback if provided
+    if (onError && typeof onError === "function") {
+      try {
+        onError(error)
+      } catch (errorCallbackError) {
+        console.error("Error in onError callback itself:", errorCallbackError)
+      }
+    }
+    // Decide if you want to re-throw the error or just let the callback handle it
+    // throw error; // Optional: re-throw if the calling component needs to know about the failure beyond the callback
   }
-
-  locked[field] = false
 }

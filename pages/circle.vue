@@ -33,26 +33,22 @@
       v-else
       class="flex flex-col w-full max-w-2xl h-[90vh] bg-stone-700 rounded-lg shadow-lg overflow-hidden"
     >
-      <h2
-        class="text-lg font-semibold p-3 bg-stone-600 text-center border-b border-stone-500"
-      >
-        Welcome, {{ participant.name || participant._id }}! (Event:
-        {{ eventId }})
-      </h2>
-
       <!-- Message Display Area -->
       <div
         ref="messageContainer"
         class="flex-grow overflow-y-auto p-4 space-y-3 scroll-light"
       >
-        <p v-if="isChatLoading" class="text-stone-400 italic text-center">
-          Loading messages...
+        <p
+          v-if="isChatLoading"
+          class="text-stone-300 text-lg italic text-center"
+        >
+          Загрузка сообщений...
         </p>
         <p v-else-if="chatError" class="text-red-400 italic text-center">
           {{ chatError }}
         </p>
         <p
-          v-else-if="chatContent.length === 0"
+          v-else-if="chatContent.length === 0 && !isGenerating"
           class="text-stone-400 italic text-center"
         >
           No messages yet.
@@ -60,16 +56,32 @@
         <div
           v-else
           v-for="(message, index) in chatContent"
-          :key="index"
+          :key="message._id || `msg-${index}`"
           class="flex flex-col"
         >
           <span class="text-xs text-stone-400 mb-1"
             >{{ message.entityId }} says:</span
           >
-          <p class="bg-stone-600 p-3 rounded-lg max-w-md break-words">
-            {{ message.text }}
+          <p
+            class="bg-stone-600 p-3 rounded-lg max-w-md break-words whitespace-pre-wrap"
+            :class="{ 'opacity-70 italic': message.isStreaming }"
+          >
+            {{ message.text }}<span v-if="message.isStreaming">▍</span>
           </p>
         </div>
+      </div>
+
+      <!-- Generation Status -->
+      <div
+        v-if="isGenerating || generationError"
+        class="p-2 text-center text-sm"
+        :class="
+          generationError
+            ? 'text-red-400 bg-red-900/30'
+            : 'text-stone-400 bg-stone-600'
+        "
+      >
+        {{ generationError ? `${generationError}` : "Эхо печатает..." }}
       </div>
 
       <!-- Message Input Area -->
@@ -77,17 +89,25 @@
         <input
           type="text"
           v-model="newMessage"
-          :disabled="isSending"
+          :disabled="isSending || isGenerating"
           class="flex-grow px-3 py-2 rounded bg-stone-500 text-stone-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
           placeholder="Type your message..."
           @keyup.enter="handleSendMessage"
         />
         <button
           @click="handleSendMessage"
-          :disabled="isSending || !newMessage"
+          :disabled="isSending || !newMessage || isGenerating"
           class="px-4 py-2 rounded bg-teal-600 hover:bg-teal-500 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold transition-colors"
         >
           {{ isSending ? "Sending..." : "Send" }}
+        </button>
+        <button
+          @click="handleGenerateResponse"
+          :disabled="isSending || isGenerating || isGenDisabled"
+          class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold transition-colors"
+          title="Generate response from Эхо"
+        >
+          {{ isGenerating ? "Thinking..." : "Generate" }}
         </button>
       </div>
     </div>
@@ -95,22 +115,38 @@
 </template>
 
 <script setup>
+const ESTIMATE_RESPONSE = 4000
+// Imports are handled by Nuxt 3 auto-imports
+
 // --- State ---
-const eventId = "23punecc" // Our hardcoded event ID
+const eventId = "23punecc"
+const aiEntityId = "43ginyi0" // Эхо's ID
+const tokenLimit = 2500
 
 // Validation State
 const enteredId = ref("")
-const participant = ref(null) // Stores { _id, name, role } from validation
+const participant = ref(null)
 const isLoading = ref(false)
 const errorMessage = ref("")
 
 // Chat State
-const chatContent = ref([]) // Array to hold message objects { entityId, text }
+const chatContent = ref([])
 const newMessage = ref("")
 const isSending = ref(false)
 const isChatLoading = ref(false)
 const chatError = ref("")
-const messageContainer = ref(null) // Ref for the scrollable message area
+const messageContainer = ref(null)
+
+// Generation State
+const isGenerating = ref(false)
+const generationError = ref("")
+const currentUsage = ref(0)
+const estimatedCost = ref(500) // Initial rough estimate
+
+// Computed property to disable generation button
+const isGenDisabled = computed(
+  () => currentUsage.value + estimatedCost.value >= tokenLimit
+)
 
 // --- Methods ---
 
@@ -119,45 +155,51 @@ async function handleJoin() {
   if (!enteredId.value || isLoading.value) return
   isLoading.value = true
   errorMessage.value = ""
-  participant.value = null // Reset participant on new attempt
+  participant.value = null
 
-  // Use the utility function
   const result = await apiValidateParticipant(enteredId.value)
 
   if (result?.success) {
     participant.value = result.participant
     console.log(`Validation successful:`, participant.value)
-    // Validation successful, now fetch initial chat content
-    fetchChatContent()
-    // TODO: Persist participant._id in localStorage/IndexedDB for next visit?
+    await fetchChatContent()
+    await checkTokenLimit()
+    // Persist participant ID for next visit
+    if (process.client) {
+      // Ensure localStorage is available
+      localStorage.setItem("circleParticipantId", participant.value._id)
+    }
   } else {
     errorMessage.value =
       result?.message || "An unknown error occurred during validation."
+    if (process.client) {
+      localStorage.removeItem("circleParticipantId") // Clear invalid ID
+    }
   }
-
   isLoading.value = false
 }
 
 // 2. Fetching Chat Content
 async function fetchChatContent() {
-  if (!participant.value?._id) return // Need a validated participant
+  if (!participant.value?._id) return
   isChatLoading.value = true
   chatError.value = ""
   console.log(
     `Fetching event ${eventId} for participant ${participant.value._id}`
   )
 
-  // Use the utility function
   const eventData = await apiGetEvent(eventId, participant.value._id)
 
   if (eventData) {
-    console.log("Event data received:", eventData)
-    chatContent.value = eventData.content || [] // Update chat content
-    scrollToBottom() // Scroll down after loading messages
+    console.log("Event data received") // Avoid logging potentially large content
+    chatContent.value = (eventData.content || []).map((msg) =>
+      reactive({ ...msg, isStreaming: false })
+    )
+    scrollToBottom()
   } else {
     console.error("Failed to fetch event data.")
     chatError.value = "Could not load chat messages. Please try again later."
-    chatContent.value = [] // Clear content on error
+    chatContent.value = []
   }
   isChatLoading.value = false
 }
@@ -167,11 +209,9 @@ async function handleSendMessage() {
   if (!newMessage.value || isSending.value || !participant.value?._id) return
   isSending.value = true
   const textToSend = newMessage.value
-  newMessage.value = "" // Clear input optimistically
+  newMessage.value = ""
 
   console.log(`Sending message from ${participant.value._id}: "${textToSend}"`)
-
-  // Use the utility function
   const result = await apiPostMessage(
     eventId,
     participant.value._id,
@@ -180,17 +220,12 @@ async function handleSendMessage() {
 
   if (result?.success) {
     console.log("Message posted successfully.")
-    // Refresh the chat content to show the new message
-    await fetchChatContent()
-    // Scroll down after sending and refreshing
-    // scrollToBottom(); // fetchChatContent already calls this
+    await fetchChatContent() // Refresh chat immediately
   } else {
     console.error("Failed to send message:", result?.message)
-    // Handle error - maybe show a temporary error message?
-    newMessage.value = textToSend // Put text back in input on failure?
-    chatError.value = `Failed to send: ${result?.message || "Unknown error"}` // Show error briefly?
+    newMessage.value = textToSend
+    chatError.value = `Failed to send: ${result?.message || "Unknown error"}` // Show error briefly? Reset later?
   }
-
   isSending.value = false
 }
 
@@ -199,20 +234,203 @@ function scrollToBottom() {
   nextTick(() => {
     if (messageContainer.value) {
       messageContainer.value.scrollTop = messageContainer.value.scrollHeight
-      // Use our utility if preferred: scrollToBot(messageContainer.value, 'auto'); // Use 'auto' for instant scroll on load/send
+      // Or: scrollToBot(messageContainer.value, 'auto');
     }
   })
 }
 
-// Optional: Fetch chat content automatically if participant info is already known (e.g., from localStorage)
-// onMounted(() => {
-//   // Check localStorage/IndexedDB for persisted participant ID
-//   const persistedId = localStorage.getItem('circleParticipantId');
-//   if (persistedId) {
-//     // You might want to re-validate here for security or just assume it's valid
-//     // For simplicity now, let's just pre-fill and attempt join
-//     enteredId.value = persistedId;
-//     handleJoin(); // Attempt to join automatically
-//   }
-// });
+// 5. Check Token Limit
+async function checkTokenLimit() {
+  // Temporarily disable check if running locally without API key?
+  // if (!process.env.OPENAI_API_KEY && process.dev) {
+  //   console.warn("Skipping token check in dev without key.");
+  //   currentUsage.value = 0;
+  //   return;
+  // }
+
+  generationError.value = ""
+  const usage = await apiGetUsage("openai")
+  if (usage !== null) {
+    currentUsage.value = usage
+    console.log(`Current OpenAI Usage: ${currentUsage.value} / ${tokenLimit}`)
+    if (isGenDisabled.value) {
+      generationError.value = `Лимит токенов на сегодня превышен, обновится в 3 утра по Москве<br>${
+        currentUsage.value + ESTIMATE_RESPONSE
+      }/${tokenLimit}`
+      console.warn(generationError.value)
+    }
+  } else {
+    currentUsage.value = 0
+    generationError.value = "Could not fetch token usage." // Show error clearly
+    console.error("Failed to fetch token usage.")
+  }
+}
+
+// 6. Assemble Context for LLM
+function assembleContext() {
+  // Phase 2: Only includes chat history formatted with custom tags.
+  // Phase 3 will need modification to fetch and include AI memory.
+
+  let contextString = ""
+  chatContent.value.forEach((msg) => {
+    if (msg.isStreaming) return // Don't include incomplete streaming message in context
+    // Determine the tag based on the entity ID
+    let entityTag = "unknown"
+    if (msg.entityId === participant.value?._id) {
+      entityTag = participant.value.name || participant.value._id // Use name if available
+    } else if (msg.entityId === aiEntityId) {
+      entityTag = "echo" // Use 'echo' tag for AI
+    } else {
+      // Handle other participants if needed later - maybe fetch their names?
+      entityTag = msg.entityId // Fallback to ID
+    }
+    // Sanitize tag if needed (e.g., remove spaces if tags can't have them)
+    entityTag = entityTag.replace(/\s+/g, "_") // Basic sanitization example
+
+    // contextString += `<${entityTag}>\n${msg.text}\n</${entityTag}>\n\n`
+    contextString += `${entityTag}\n${msg.text}\n\n`
+  })
+
+  // Add the prompt for Эхо to continue the conversation
+  contextString += `Эхо\n`
+
+  estimatedCost.value = getTokens(contextString) + ESTIMATE_RESPONSE
+
+  console.log(`Assembled Context (${estimatedCost.value} estimated tokens)`) // Don't log full context in prod maybe
+  return contextString
+}
+
+// 7. Handle Generate Button Click
+async function handleGenerateResponse() {
+  if (isGenerating.value || !participant.value?._id) return
+
+  await checkTokenLimit()
+  if (isGenDisabled.value) {
+    alert(generationError.value || "Token limit reached or usage unavailable.")
+    return
+  }
+
+  isGenerating.value = true
+  generationError.value = ""
+
+  const context = assembleContext()
+  console.log(context)
+
+  const streamMessage = reactive({
+    entityId: aiEntityId,
+    text: "",
+    isStreaming: true,
+  })
+  chatContent.value.push(streamMessage)
+  scrollToBottom()
+
+  try {
+    await apiGen({
+      provider: "openai",
+      model: "gpt-4.5-preview",
+      input: context,
+      onChunk: (chunk) => {
+        console.log(chunk)
+        streamMessage.text += chunk
+        scrollToBottom()
+      },
+      onComplete: (finalText) => {
+        console.log("Generation complete.")
+        streamMessage.isStreaming = false
+        saveAiMessage(finalText)
+        isGenerating.value = false
+        checkTokenLimit() // Update usage after successful generation
+      },
+      onError: (error) => {
+        console.error("Error during generation stream:", error)
+        generationError.value = error.message || "Unknown generation error."
+        streamMessage.isStreaming = false
+        streamMessage.text += `\n\n[ERROR: ${generationError.value}]`
+        saveAiMessage(streamMessage.text) // Save partial + error
+        isGenerating.value = false
+        checkTokenLimit() // Update usage even after error
+      },
+    })
+  } catch (setupError) {
+    console.error("Error setting up generation:", setupError)
+    generationError.value = setupError.message || "Failed to start generation."
+    streamMessage.isStreaming = false // Ensure streaming stops
+    streamMessage.text += `\n\n[SETUP ERROR: ${generationError.value}]`
+    // Check if streamMessage was actually added before trying to save partial
+    if (chatContent.value.includes(streamMessage)) {
+      saveAiMessage(streamMessage.text) // Save placeholder + error
+    }
+    isGenerating.value = false
+    checkTokenLimit()
+  }
+}
+
+// 8. Save AI Message (Helper function)
+async function saveAiMessage(textToSave) {
+  if (!textToSave && textToSave !== "") return // Don't save if truly empty (e.g., setup error before any text)
+
+  console.log(`Attempting to save AI message...`)
+  let cleanText = textToSave.trim()
+  // Basic tag stripping - might need refinement if tags appear mid-text
+  if (cleanText.startsWith("<echo>")) cleanText = cleanText.slice(6).trim()
+  if (cleanText.endsWith("</echo>")) cleanText = cleanText.slice(0, -7).trim()
+
+  // Avoid saving empty strings after stripping tags/errors
+  if (!cleanText) {
+    console.warn(
+      "Attempted to save empty AI message after cleaning. Aborting save."
+    )
+    const index = chatContent.value.findIndex((msg) => msg.text === "")
+    if (index > -1) chatContent.value.splice(index, 1)
+    return
+  }
+
+  const result = await apiPostMessage(eventId, aiEntityId, cleanText)
+  if (!result?.success) {
+    console.error("Failed to save AI message to DB:", result?.message)
+    generationError.value = `Generation done, but save failed: ${
+      result?.message || "DB error"
+    }`
+    // Mark the displayed message as having a save error?
+    const messageWithError = chatContent.value.find(
+      (msg) => msg === streamMessage
+    )
+    if (messageWithError) messageWithError.saveError = true // Add a flag for UI
+  } else {
+    console.log("AI message saved successfully to DB.")
+    // Optional: Fetch again to get DB _id etc. for the message?
+    // await fetchChatContent();
+  }
+}
+
+// --- Lifecycle ---
+onMounted(async () => {
+  // Attempt to auto-join if participant ID is stored
+  if (process.client) {
+    const persistedId = localStorage.getItem("circleParticipantId")
+    if (persistedId) {
+      console.log("Found persisted participant ID:", persistedId)
+      enteredId.value = persistedId
+      await handleJoin() // Use await to ensure it completes before potential next steps
+    }
+  }
+})
 </script>
+
+<style scoped>
+/* Blinking cursor effect */
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+span[v-if="message.isStreaming"] {
+  display: inline-block;
+  width: 2px; /* Adjust width as needed */
+  height: 1em; /* Match line height */
+  background-color: currentColor;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+}
+</style>
