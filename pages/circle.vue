@@ -11,16 +11,16 @@
         type="text"
         v-model="enteredId"
         :disabled="isLoading"
-        class="px-3 py-2 rounded bg-stone-600 text-stone-200 focus:outline-none focus:ring-2 focus:ring-teal-500 w-60 text-center"
-        placeholder="Your unique ID"
+        class="px-3 py-2 rounded bg-stone-600 text-stone-200 focus:outline-none focus:ring-4 focus:ring-stone-500 max-w-[700px] text-center text-lg font-semibold"
+        placeholder=""
         @keyup.enter="handleJoin"
       />
       <button
         @click="handleJoin"
         :disabled="isLoading || !enteredId"
-        class="px-4 py-2 mt-2 rounded bg-teal-600 hover:bg-teal-500 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold transition-colors w-full"
+        class="px-4 py-2 mt-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold w-full disabled:text-stone-400 text-lg"
       >
-        {{ isLoading ? "Joining..." : "Join Circle" }}
+        {{ isLoading ? "проверка..." : "войти в круг" }}
       </button>
       <p v-if="errorMessage" class="text-red-400 mt-3 text-sm">
         {{ errorMessage }}
@@ -28,93 +28,124 @@
     </div>
 
     <!-- Chat Screen -->
-    <div
-      v-else
-      class="flex flex-col w-full max-w-2xl h-[90vh] bg-stone-700 rounded-lg shadow-lg overflow-hidden"
-    >
-      <!-- Message Display Area -->
+    <div v-else class="flex flex-col gap-2 items-center">
       <div
-        ref="messageContainer"
-        class="flex-grow overflow-y-auto p-4 space-y-3 scroll-light"
+        class="flex flex-col w-[700px] max-w-2xl h-[90vh] bg-stone-500 rounded-lg shadow-lg overflow-hidden scroll-wide"
       >
-        <p
+        <!-- Message Display Area -->
+        <div
+          ref="messageContainer"
+          class="flex-grow overflow-y-auto p-4 space-y-3 text-lg w-full scroll-wide gap-3"
+        >
+          <!-- <p
           v-if="isChatLoading"
           class="text-stone-300 text-lg italic text-center"
         >
           загрузка сообщений...
-        </p>
-        <p v-else-if="chatError" class="text-red-400 italic text-center">
-          {{ chatError }}
-        </p>
-        <div
-          v-else
-          v-for="(message, index) in chatContent"
-          :key="message._id || `msg-${index}`"
-          class="flex flex-col"
-        >
-          <span class="text-lg text-stone-300 mb-1">
-            {{ getDisplayName(message.entityId) }}
-          </span>
-          <p
-            class="bg-stone-600 p-3 rounded-lg max-w-md break-words whitespace-pre-wrap"
-            :class="{ 'opacity-70 italic': message.isStreaming }"
-          >
-            {{ message.text }}<span v-if="message.isStreaming">▍</span>
+        </p> -->
+          <p v-if="chatError" class="text-red-400 italic text-center w-full">
+            {{ chatError }}
           </p>
+          <div
+            v-else
+            v-for="(message, index) in chatContent"
+            :key="message._id || `msg-${index}`"
+            class="flex flex-col w-full rounded-lg overflow-hidden"
+          >
+            <div
+              class="text-lg px-5 font-semibold bg-stone-600 text-stone-300 pb-2 pt-1 w-full"
+            >
+              {{ getDisplayName(message.entityId) }}
+            </div>
+            <p
+              class="bg-stone-400 bg-lines pt-3 pb-5 px-5 break-words whitespace-pre-wrap w-full text-stone-700 text-xl"
+              :style="{ backgroundPositionY: `-16px` }"
+            >
+              {{ message.text }}
+              <span class="text-stone-500" v-if="message.isStreaming">⬤</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Generation Status -->
+        <div
+          v-if="isSending || isGenerating || generationError"
+          class="p-2 text-center font-semibold text-lg"
+          :class="
+            generationError
+              ? 'text-red-400 bg-red-900/30'
+              : 'text-stone-400 bg-stone-700'
+          "
+        >
+          {{
+            generationError
+              ? `${generationError}`
+              : isSending
+              ? "отправка сообщения..."
+              : "эхо говорит..."
+          }}
+        </div>
+
+        <!-- Message Input Area -->
+        <div class="bg-stone-600 flex flex-col gap-3 p-3">
+          <div class="flex gap-3">
+            <textarea
+              type="text"
+              v-model="newMessage"
+              :disabled="isSending || isGenerating"
+              class="flex-grow px-3 py-2 rounded bg-stone-500 text-stone-200 focus:outline-none focus:ring-4 focus:ring-stone-400 resize-none h-[120px] text-lg placeholder:text-stone-400 placeholder:italic scroll-wide disabled:cursor-not-allowed"
+              placeholder="введите сообщение"
+            />
+            <div class="flex flex-col gap-2 items-center w-[130px]">
+              <button
+                @click="handleSendMessage"
+                :disabled="isSending || !newMessage || isGenerating"
+                class="px-4 py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400 h-fit w-full"
+              >
+                {{ isSending ? "отправка..." : "отправить" }}
+              </button>
+            </div>
+          </div>
+          <button
+            @click="handleGenerateResponse"
+            :disabled="
+              isSending || isGenerating || isGenDisabled || !currentUsage
+            "
+            class="px-4 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
+          >
+            дать эхо высказаться
+            <span class="font-semibold font-fira-code text-[16px]">
+              (стоимость
+              {{
+                getTokens(assembleContext()) > 10
+                  ? `~${getTokens(assembleContext())}`
+                  : "загружается..."
+              }})
+            </span>
+          </button>
         </div>
       </div>
-
-      <!-- Generation Status -->
-      <div
-        v-if="isGenerating || generationError"
-        class="p-2 text-center text-sm"
-        :class="
-          generationError
-            ? 'text-red-400 bg-red-900/30'
-            : 'text-stone-400 bg-stone-600'
-        "
-      >
-        {{ generationError ? `${generationError}` : "Эхо печатает..." }}
-      </div>
-
-      <!-- Message Input Area -->
-      <div class="p-3 bg-stone-600 border-t border-stone-500 flex gap-2">
-        <input
-          type="text"
-          v-model="newMessage"
-          :disabled="isSending || isGenerating"
-          class="flex-grow px-3 py-2 rounded bg-stone-500 text-stone-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
-          placeholder="Type your message..."
-          @keyup.enter="handleSendMessage"
-        />
-        <button
-          @click="handleSendMessage"
-          :disabled="isSending || !newMessage || isGenerating"
-          class="px-4 py-2 rounded bg-teal-600 hover:bg-teal-500 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold transition-colors"
-        >
-          {{ isSending ? "Sending..." : "Send" }}
-        </button>
-        <button
-          @click="handleGenerateResponse"
-          :disabled="isSending || isGenerating || isGenDisabled"
-          class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold transition-colors"
-          title="Generate response from Эхо"
-        >
-          {{ isGenerating ? "Thinking..." : "Generate" }}
-        </button>
-      </div>
+      <span class="font-semibold font-fira-code text-stone-400">
+        {{
+          currentUsage
+            ? `лимит на сегодня ${currentUsage} / ${tokenLimit}`
+            : "загрузка лимита..."
+        }}
+      </span>
     </div>
   </div>
 </template>
 
 <script setup>
+import { nextTick } from "vue"
+
 const ESTIMATE_RESPONSE = 4000
 // Imports are handled by Nuxt 3 auto-imports
 
 // --- State ---
 const eventId = "23punecc"
 const aiEntityId = "43ginyi0" // Эхо's ID
-const tokenLimit = 990_000
+const tokenLimit = 900_000
 
 // Validation State
 const enteredId = ref("")
@@ -139,9 +170,12 @@ const estimatedCost = ref(500) // Initial rough estimate
 const participantNameMap = ref({})
 
 // Computed property to disable generation button
-const isGenDisabled = computed(
-  () => currentUsage.value + estimatedCost.value >= tokenLimit
-)
+const isGenDisabled = computed(() => {
+  return (
+    currentUsage.value + getTokens(assembleContext()) + estimatedCost.value >=
+    tokenLimit
+  )
+})
 
 // --- Methods ---
 
@@ -251,11 +285,13 @@ async function handleSendMessage() {
 }
 
 // 4. Auto-scroll
-function scrollToBottom() {
+function scrollToBottom(behavior = "smooth") {
   nextTick(() => {
     if (messageContainer.value) {
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight
-      // Or: scrollToBot(messageContainer.value, 'auto');
+      messageContainer.value.scrollTo({
+        top: messageContainer.value.scrollHeight,
+        behavior: behavior,
+      })
     }
   })
 }
@@ -275,9 +311,8 @@ async function checkTokenLimit() {
     currentUsage.value = usage
     console.log(`Current OpenAI Usage: ${currentUsage.value} / ${tokenLimit}`)
     if (isGenDisabled.value) {
-      generationError.value = `лимит токенов на сегодня превышен, обновится в 3 утра по москве${
-        currentUsage.value + ESTIMATE_RESPONSE
-      }/${tokenLimit}`
+      generationError.value =
+        "лимит токенов на сегодня превышен, обновится в 3 утра по москве"
       console.warn(generationError.value)
     }
   } else {
@@ -311,13 +346,13 @@ function assembleContext() {
 async function handleGenerateResponse() {
   if (isGenerating.value || !participant.value?._id) return
 
-  await checkTokenLimit()
+  isGenerating.value = true
+
   if (isGenDisabled.value) {
     alert(generationError.value || "Token limit reached or usage unavailable.")
     return
   }
 
-  isGenerating.value = true
   generationError.value = ""
 
   const context = assembleContext()
@@ -346,7 +381,7 @@ async function handleGenerateResponse() {
         streamMessage.isStreaming = false
         saveAiMessage(finalText)
         isGenerating.value = false
-        checkTokenLimit() // Update usage after successful generation
+        setTimeout(checkTokenLimit, 10_000)
       },
       onError: (error) => {
         console.error("Error during generation stream:", error)
@@ -355,7 +390,7 @@ async function handleGenerateResponse() {
         streamMessage.text += `\n\n[ERROR: ${generationError.value}]`
         saveAiMessage(streamMessage.text) // Save partial + error
         isGenerating.value = false
-        checkTokenLimit() // Update usage even after error
+        setTimeout(checkTokenLimit, 10_000)
       },
     })
   } catch (setupError) {
@@ -412,7 +447,7 @@ async function saveAiMessage(textToSave) {
 
 function getDisplayName(entityId) {
   // Lookup name, fallback to ID
-  return participantNameMap.value[entityId] || entityId
+  return participantNameMap.value[entityId]
 }
 
 // --- Lifecycle ---
@@ -423,7 +458,7 @@ onMounted(async () => {
     if (persistedId) {
       console.log("Found persisted participant ID:", persistedId)
       enteredId.value = persistedId
-      await handleJoin() // Use await to ensure it completes before potential next steps
+      await handleJoin()
     }
   }
 })
