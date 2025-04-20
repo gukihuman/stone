@@ -328,7 +328,7 @@ function assembleContext() {
   chatContent.value.forEach((msg) => {
     if (msg.isStreaming) return
     // Use display name from map, fallback to ID
-    let entityTag = getDisplayName(msg.entityId)
+    let entityTag = getDisplayName(msg.entityId) || ""
 
     // Sanitize tag (replace spaces with underscores)
     entityTag = entityTag.replace(/\s+/g, "_")
