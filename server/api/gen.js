@@ -2,6 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { ChatOpenAI } from "@langchain/openai"
 import { HumanMessage } from "@langchain/core/messages"
 
+export const runtime = "edge"
 export default defineEventHandler(async (event) => {
   let provider, model, input
 
