@@ -346,6 +346,7 @@ function assembleContext(forLLM = true) {
       contextString += "-----------------------------------------------\n\n"
     }
   })
+  if (forLLM) contextString += `<${entityName}>\n`
 
   estimatedCost.value = Math.floor(contextString.length / 3) + 500
   console.log(
