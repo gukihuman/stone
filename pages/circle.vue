@@ -109,7 +109,10 @@
           <button
             @click="handleGenerateResponse"
             :disabled="
-              isSending || isGenerating || isGenDisabled || !currentUsage
+              isSending ||
+              isGenerating ||
+              isGenDisabled ||
+              currentUsage !== null
             "
             class="px-4 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
           >
@@ -127,7 +130,7 @@
       </div>
       <span class="font-semibold font-fira-code text-stone-400">
         {{
-          currentUsage
+          currentUsage !== null
             ? `лимит на сегодня ${currentUsage} / ${tokenLimit}`
             : "загрузка лимита..."
         }}
@@ -164,13 +167,14 @@ const messageContainer = ref(null)
 // Generation State
 const isGenerating = ref(false)
 const generationError = ref("")
-const currentUsage = ref(0)
+const currentUsage = ref(null)
 const estimatedCost = ref(500) // Initial rough estimate
 
 const participantNameMap = ref({})
 
 // Computed property to disable generation button
 const isGenDisabled = computed(() => {
+  if (currentUsage.value === null) return
   return (
     currentUsage.value + getTokens(assembleContext()) + estimatedCost.value >=
     tokenLimit
@@ -316,7 +320,7 @@ async function checkTokenLimit() {
       console.warn(generationError.value)
     }
   } else {
-    currentUsage.value = 0
+    currentUsage.value = null
     generationError.value = "Could not fetch token usage." // Show error clearly
     console.error("Failed to fetch token usage.")
   }
