@@ -106,26 +106,34 @@
               </button>
             </div>
           </div>
-          <button
-            @click="handleGenerateResponse"
-            :disabled="
-              isSending ||
-              isGenerating ||
-              isGenDisabled ||
-              currentUsage === null
-            "
-            class="px-4 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
-          >
-            дать эхо высказаться
-            <span class="font-semibold font-fira-code text-[16px]">
-              (стоимость
-              {{
-                getTokens(assembleContext()) > 10
-                  ? `~${getTokens(assembleContext())}`
-                  : "загружается..."
-              }})
-            </span>
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="handleCopyContext"
+              :disabled="isCopying"
+              class="w-full px-2 py-1 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-600 disabled:cursor-not-allowed text-white font-semibold text-lg"
+            >
+              {{ isCopying ? "скопировано" : "скопировать весь текст" }}
+            </button>
+            <button
+              @click="handleGenerateResponse"
+              :disabled="
+                isSending ||
+                isGenerating ||
+                isGenDisabled ||
+                currentUsage === null
+              "
+              class="px-2 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
+            >
+              дать эхо высказаться
+              <span class="font-semibold font-fira-code text-[16px]">
+                {{
+                  getTokens(assembleContext()) > 10
+                    ? `~${getTokens(assembleContext())}`
+                    : "~..."
+                }}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
       <span class="font-semibold font-fira-code text-stone-400">
@@ -140,14 +148,9 @@
 </template>
 
 <script setup>
-import { nextTick } from "vue"
-
-const ESTIMATE_RESPONSE = 4000
-// Imports are handled by Nuxt 3 auto-imports
-
 // --- State ---
 const eventId = "23punecc"
-const aiEntityId = "43ginyi0" // Эхо's ID
+const digitalEntityId = "43ginyi0" // Эхо's ID
 const tokenLimit = 900_000
 
 // Validation State
@@ -171,6 +174,8 @@ const currentUsage = ref(null)
 const estimatedCost = ref(500) // Initial rough estimate
 
 const participantNameMap = ref({})
+
+const isCopying = ref(false)
 
 // Computed property to disable generation button
 const isGenDisabled = computed(() => {
@@ -236,7 +241,7 @@ async function fetchChatContent() {
       // Also add the current user's ID if not already in messages, and AI ID
       if (!uniqueIds.includes(participant.value._id))
         uniqueIds.push(participant.value._id)
-      if (!uniqueIds.includes(aiEntityId)) uniqueIds.push(aiEntityId)
+      if (!uniqueIds.includes(digitalEntityId)) uniqueIds.push(digitalEntityId)
 
       console.log("Fetching names for IDs:", uniqueIds)
       const participantsData = await apiGetParticipants(uniqueIds)
@@ -326,24 +331,34 @@ async function checkTokenLimit() {
   }
 }
 
-// 6. Assemble Context for LLM (UPDATE THIS FUNCTION to use names)
-function assembleContext() {
+function assembleContext(forLLM = true) {
+  // Add parameter to control output
   let contextString = ""
+  // Keep existing logic to build the contextString using getDisplayName etc...
   chatContent.value.forEach((msg) => {
     if (msg.isStreaming) return
-    // Use display name from map, fallback to ID
-    let entityTag = getDisplayName(msg.entityId) || ""
-
-    // Sanitize tag (replace spaces with underscores)
-    entityTag = entityTag.replace(/\s+/g, "_")
-
-    contextString += `<${entityTag}>\n${msg.text}\n</${entityTag}>\n\n`
+    const entityName = getDisplayName(msg.entityId)
+    if (forLLM) {
+      contextString += `<${entityName}>\n${msg.text}\n</${entityName}>\n\n`
+    } else {
+      contextString += "-----------------------------------------------\n"
+      contextString += `${entityName}\n\n${msg.text}\n`
+      contextString += "-----------------------------------------------\n\n"
+    }
   })
-  contextString += `<echo>\n` // Still prompt echo
 
   estimatedCost.value = Math.floor(contextString.length / 3) + 500
-  console.log(`Assembled Context (${estimatedCost.value} estimated tokens)`)
+  console.log(
+    `Assembled Context (${forLLM ? "for LLM, " : ""}${
+      estimatedCost.value
+    } estimated tokens)`
+  )
   return contextString
+}
+
+async function handleCopyContext() {
+  const contextToCopy = assembleContext(false)
+  await clipboard({ input: contextToCopy, locked: isCopying, lockTime: 1000 })
 }
 
 // 7. Handle Generate Button Click
@@ -363,7 +378,7 @@ async function handleGenerateResponse() {
   console.log(context)
 
   const streamMessage = reactive({
-    entityId: aiEntityId,
+    entityId: digitalEntityId,
     text: "",
     isStreaming: true,
   })
@@ -431,7 +446,7 @@ async function saveAiMessage(textToSave) {
     return
   }
 
-  const result = await apiPostMessage(eventId, aiEntityId, cleanText)
+  const result = await apiPostMessage(eventId, digitalEntityId, cleanText)
   if (!result?.success) {
     console.error("Failed to save AI message to DB:", result?.message)
     generationError.value = `Generation done, but save failed: ${
