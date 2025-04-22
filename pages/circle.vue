@@ -112,7 +112,7 @@
               isSending ||
               isGenerating ||
               isGenDisabled ||
-              currentUsage !== null
+              currentUsage === null
             "
             class="px-4 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
           >
