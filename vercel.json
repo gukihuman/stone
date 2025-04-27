@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/gen.js": {
-      "runtime": "edge"
-    }
-  }
-}
