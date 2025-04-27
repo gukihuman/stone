@@ -7,6 +7,7 @@ import { HumanMessage } from "@langchain/core/messages"
 // if Nuxt/Nitro handles function type detection automatically based on usage.
 // Let's leave it out for now and see if deployment still works correctly as Edge.
 // If deployment fails as Edge, add `export const runtime = "edge"` back.
+export const runtime = "edge"
 
 export default defineEventHandler(async (event) => {
   // ---- Shared: Parse body and Initialize LLM ----
