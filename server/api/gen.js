@@ -4,6 +4,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { HumanMessage } from "@langchain/core/messages"
 
 export const runtime = "edge" // ⚡ make ONLY this route an Edge Function
+export const config = { runtime: "edge" }
 
 export default defineEventHandler(async (event) => {
   // 1 · parse body -----------------------------------------------------------
