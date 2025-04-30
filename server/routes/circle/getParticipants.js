@@ -1,4 +1,4 @@
-// server/api/circle/getParticipants.js
+// server/nitro-api/circle/getParticipants.js
 import dbConnect from "../../utils/dbConnect" // Adjust path if needed
 import Participant from "../../models/Participant" // Adjust path if needed
 

@@ -1,7 +1,7 @@
 export default async function (params) {
   if (!params.path) return
   try {
-    const response = await fetch("/api/getFiles", {
+    const response = await fetch("/getFiles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

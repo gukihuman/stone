@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     await walk(rootPath)
     return filesData
   } catch (error) {
-    console.error("Error in /api/getFiles:", error)
+    console.error("Error in /nitro-api/getFiles:", error)
     throw createError({
       statusCode: 400,
       statusMessage: error.message,

@@ -1,3 +1,5 @@
+// utils/api/apiGen.js
+
 /**
  * Calls the backend /api/gen endpoint to generate text using a specified LLM provider and model.
  * Handles the response as a stream, invoking callbacks for each chunk and when the stream ends.

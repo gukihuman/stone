@@ -1,3 +1,4 @@
 {
-  "devCommand": "nuxt dev"
+  "framework": "nuxtjs",
+  "devCommand": "nuxi dev --port $PORT"
 }

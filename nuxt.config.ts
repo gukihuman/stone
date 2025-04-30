@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  nitro: { scanDirs: ["nitro-api", "server"] },
   compatibilityDate: "2024-11-01",
   devtools: { enabled: false },
   modules: ["@nuxtjs/tailwindcss"],

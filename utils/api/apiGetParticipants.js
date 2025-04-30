@@ -16,7 +16,7 @@ export default async function (participantIds) {
   }
 
   try {
-    const response = await $fetch("/api/circle/getParticipants", {
+    const response = await $fetch("/circle/getParticipants", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: { ids: participantIds }, // Send IDs in the expected format
@@ -25,7 +25,7 @@ export default async function (participantIds) {
     // Backend returns the array of participant objects directly on success
     return response
   } catch (error) {
-    console.error("Error calling /api/circle/getParticipants:", error)
+    console.error("Error calling /circle/getParticipants:", error)
     // Log the specific error for debugging, but return empty array to the component
     return [] // Return empty array on error to avoid breaking v-for loops etc.
   }

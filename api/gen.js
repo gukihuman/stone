@@ -1,22 +1,19 @@
-// server/api/gen.ts ----------------------------------------------------------
+// api/edge/gen.js
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { HumanMessage } from "@langchain/core/messages"
 
-export const runtime = "edge" // ⚡ make ONLY this route an Edge Function
 export const config = { runtime: "edge" }
 
-export default defineEventHandler(async (event) => {
-  // 1 · parse body -----------------------------------------------------------
-  const { provider = "google", model, input } = await readBody(event)
-  if (!model || !input) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "model & input required",
+export default async function handler(req) {
+  // Parse JSON body
+  const { provider = "google", model, input } = await req.json()
+  if (!model || !input)
+    return new Response(JSON.stringify({ error: "model & input required" }), {
+      status: 400,
     })
-  }
 
-  // 2 · init model -----------------------------------------------------------
+  // Select LLM
   const llm =
     provider === "openai"
       ? new ChatOpenAI({
@@ -30,21 +27,21 @@ export default defineEventHandler(async (event) => {
           apiKey: process.env.GEMINI_API_KEY,
         })
 
-  // 3 · stream response ------------------------------------------------------
+  // Stream ↦ TextEncoder ↦ TransformStream
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
-  const encoder = new TextEncoder()
+  const enc = new TextEncoder()
 
   ;(async () => {
     try {
       for await (const chunk of await llm.stream([
         new HumanMessage({ content: input }),
       ])) {
-        if (chunk?.content) await writer.write(encoder.encode(chunk.content))
+        if (chunk?.content) await writer.write(enc.encode(chunk.content))
       }
-      await writer.close()
-    } catch (err) {
-      await writer.abort(err)
+      writer.close()
+    } catch (e) {
+      writer.abort(e)
     }
   })()
 
@@ -54,4 +51,4 @@ export default defineEventHandler(async (event) => {
       "Cache-Control": "no-cache",
     },
   })
-})
+}
