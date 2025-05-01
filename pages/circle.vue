@@ -149,8 +149,8 @@
 
 <script setup>
 // --- State ---
-const eventId = "xs6g4dmc" // test event with хвастунчик (guki) and эхо
-// const eventId = "23punecc"
+// const eventId = "xs6g4dmc" // test event with хвастунчик (guki) and эхо
+const eventId = "23punecc"
 const digitalEntityId = "43ginyi0" // Эхо's ID
 const tokenLimit = 900_000
 

@@ -23,8 +23,7 @@ export default async function ({
   let accumulatedText = "" // To store the full response
 
   try {
-    // const response = await fetch("/api/gen", {
-    const response = await fetch("/api/gen-test", {
+    const response = await fetch("/api/gen", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
