@@ -1,19 +1,41 @@
-// api/edge/gen.js
+// api/gen.js
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { HumanMessage } from "@langchain/core/messages"
 
+// Vercel Edge Runtime
 export const config = { runtime: "edge" }
 
 export default async function handler(req) {
+  /* ------------------------------------------------- *
+   * 🌐  CORS  (allow everything)
+   * ------------------------------------------------- */
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    })
+  }
+
   // Parse JSON body
-  const { provider = "google", model, input } = await req.json()
+  const {
+    provider = "google",
+    model,
+    input,
+  } = await req.json().catch(() => ({}))
   if (!model || !input)
     return new Response(JSON.stringify({ error: "model & input required" }), {
       status: 400,
+      headers: { "Access-Control-Allow-Origin": "*" },
     })
 
-  // Select LLM
+  /* ------------------------------------------------- *
+   * 🔮  Select LLM
+   * ------------------------------------------------- */
   const llm =
     provider === "openai"
       ? new ChatOpenAI({
@@ -27,7 +49,9 @@ export default async function handler(req) {
           apiKey: process.env.GEMINI_API_KEY,
         })
 
-  // Stream ↦ TextEncoder ↦ TransformStream
+  /* ------------------------------------------------- *
+   * 🚰  Stream chunks → readable
+   * ------------------------------------------------- */
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
   const enc = new TextEncoder()
@@ -49,6 +73,7 @@ export default async function handler(req) {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
+      "Access-Control-Allow-Origin": "*",
     },
   })
 }
