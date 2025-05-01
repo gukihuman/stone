@@ -4,23 +4,17 @@ import { defineEventHandler, readBody, setHeader, createError } from "h3"
 /**
  * GET/POST /getUsage
  * Returns { provider: "openai", totalTokens: number }
+ * CORS: Allows ALL origins (Access-Control-Allow-Origin: *)
  */
 export default defineEventHandler(async (event) => {
   /* ------------------------------------------------- *
-   * 🛡️  Minimal CORS (dev only)
+   * 🌐 CORS for everyone
    * ------------------------------------------------- */
-  const devOrigin = "http://localhost:3000" // tweak if port ≠ 3000
-  const requestOrigin = event.node.req.headers.origin
-
+  setHeader(event, "Access-Control-Allow-Origin", "*") // ← open wide
   setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
   setHeader(event, "Access-Control-Allow-Headers", "Content-Type")
 
-  if (process.env.NODE_ENV !== "production" && requestOrigin === devOrigin) {
-    setHeader(event, "Access-Control-Allow-Origin", devOrigin)
-    setHeader(event, "Vary", "Origin")
-  }
-
-  // 💡 Just use event.method now
+  // Respond to pre-flight OPTIONS
   if (event.method === "OPTIONS") return ""
 
   /* ------------------------------------------------- *
