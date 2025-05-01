@@ -1,12 +1,34 @@
-import { defineEventHandler, readBody } from "h3"
+// server/routes/getUsage.js
+import { defineEventHandler, readBody, setHeader, createError } from "h3"
 
+/**
+ * GET/POST /getUsage
+ * Returns { provider: "openai", totalTokens: number }
+ */
 export default defineEventHandler(async (event) => {
-  const { provider } = await readBody(event).catch(() => ({
-    provider: "openai",
-  })) // Default to openai if body fails or is empty
+  /* ------------------------------------------------- *
+   * 🛡️  Minimal CORS (dev only)
+   * ------------------------------------------------- */
+  const devOrigin = "http://localhost:3000" // tweak if port ≠ 3000
+  const requestOrigin = event.node.req.headers.origin
+
+  setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
+  setHeader(event, "Access-Control-Allow-Headers", "Content-Type")
+
+  if (process.env.NODE_ENV !== "production" && requestOrigin === devOrigin) {
+    setHeader(event, "Access-Control-Allow-Origin", devOrigin)
+    setHeader(event, "Vary", "Origin")
+  }
+
+  // 💡 Just use event.method now
+  if (event.method === "OPTIONS") return ""
+
+  /* ------------------------------------------------- *
+   * ✨ Original logic
+   * ------------------------------------------------- */
+  const { provider = "openai" } = await readBody(event).catch(() => ({}))
 
   if (provider !== "openai") {
-    // Placeholder for future providers
     throw createError({
       statusCode: 400,
       statusMessage: `Provider '${provider}' not currently supported for usage checks.`,
@@ -21,12 +43,14 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Calculate start_time: Midnight GMT of the current day
-  const today = new Date()
-  today.setUTCHours(0, 0, 0, 0) // Set to midnight GMT
-  const startTimeUnix = Math.floor(today.getTime() / 1000)
+  // Midnight UTC today
+  const nowUTC = new Date()
+  nowUTC.setUTCHours(0, 0, 0, 0)
+  const startTimeUnix = Math.floor(nowUTC.getTime() / 1000)
 
-  const apiUrl = `https://api.openai.com/v1/organization/usage/completions?start_time=${startTimeUnix}&bucket_width=1d&limit=1`
+  const apiUrl =
+    `https://api.openai.com/v1/organization/usage/completions` +
+    `?start_time=${startTimeUnix}&bucket_width=1d&limit=1`
 
   try {
     const response = await fetch(apiUrl, {
@@ -41,7 +65,7 @@ export default defineEventHandler(async (event) => {
       const errorData = await response.json().catch(() => ({}))
       console.error("OpenAI API Error:", errorData)
       throw new Error(
-        `OpenAI API request failed: ${response.status} - ${
+        `OpenAI API request failed: ${response.status} – ${
           errorData?.error?.message || response.statusText || "Unknown Error"
         }`
       )
@@ -50,23 +74,18 @@ export default defineEventHandler(async (event) => {
     const usageData = await response.json()
     let totalTokens = 0
 
-    // Sum tokens from the results within the first (and only) bucket
-    if (
-      usageData.data &&
-      usageData.data.length > 0 &&
-      usageData.data[0].results
-    ) {
-      usageData.data[0].results.forEach((result) => {
-        totalTokens += (result.input_tokens || 0) + (result.output_tokens || 0)
+    if (usageData.data?.length && usageData.data[0].results?.length) {
+      usageData.data[0].results.forEach((r) => {
+        totalTokens += (r.input_tokens || 0) + (r.output_tokens || 0)
       })
     }
 
     return { provider: "openai", totalTokens }
-  } catch (error) {
-    console.error("Error fetching OpenAI usage:", error)
+  } catch (err) {
+    console.error("Error fetching OpenAI usage:", err)
     throw createError({
-      statusCode: 503, // Service Unavailable or Bad Gateway might fit
-      statusMessage: `Failed to fetch usage from OpenAI: ${error.message}`,
+      statusCode: 503,
+      statusMessage: `Failed to fetch usage from OpenAI: ${err.message}`,
     })
   }
 })

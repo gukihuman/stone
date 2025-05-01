@@ -1,6 +1,8 @@
 export default async function (provider = "openai") {
+  const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
+
   try {
-    const response = await fetch("/getUsage", {
+    const response = await fetch(`${baseURL}/getUsage`, {
       method: "POST", // Changed to POST to send body easily
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider }),
