@@ -13,7 +13,7 @@ export default async function (eventId, participantId) {
 
   try {
     // Construct the URL with query parameters
-    const apiUrl = `/api/circle/getEvent?eventId=${encodeURIComponent(
+    const apiUrl = `/circle/getEvent?eventId=${encodeURIComponent(
       eventId
     )}&participantId=${encodeURIComponent(participantId)}`
 
@@ -25,10 +25,7 @@ export default async function (eventId, participantId) {
     // Backend returns the event object directly on success
     return eventData
   } catch (error) {
-    console.error(
-      `Error calling /api/circle/getEvent for event ${eventId}:`,
-      error
-    )
+    console.error(`Error calling /circle/getEvent for event ${eventId}:`, error)
 
     // $fetch throws errors for non-2xx responses, error object often contains details
     // Log the specific error for debugging, but return null to the component

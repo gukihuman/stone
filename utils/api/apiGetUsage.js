@@ -1,6 +1,6 @@
 export default async function (provider = "openai") {
   try {
-    const response = await fetch("/api/getUsage", {
+    const response = await fetch("/getUsage", {
       method: "POST", // Changed to POST to send body easily
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider }),

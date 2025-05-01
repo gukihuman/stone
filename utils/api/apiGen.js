@@ -1,3 +1,5 @@
+// utils/api/apiGen.js
+
 /**
  * Calls the backend /api/gen endpoint to generate text using a specified LLM provider and model.
  * Handles the response as a stream, invoking callbacks for each chunk and when the stream ends.
@@ -68,7 +70,7 @@ export default async function ({
 
       // Decode the chunk (Uint8Array) to text
       const textChunk = decoder.decode(value, { stream: true })
-      // console.log("apiGen received chunk:", textChunk); // Debugging
+      console.log("apiGen received chunk:", textChunk) // Debugging
 
       // Check for potential error messages embedded in the stream (if backend sends them like this)
       if (textChunk.startsWith("ERROR: ")) {

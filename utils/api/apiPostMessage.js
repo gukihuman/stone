@@ -18,7 +18,7 @@ export default async function (eventId, participantId, text) {
 
   try {
     // Use Nuxt's $fetch for client-side requests
-    const response = await $fetch("/api/circle/postMessage", {
+    const response = await $fetch("/circle/postMessage", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: {
@@ -32,7 +32,7 @@ export default async function (eventId, participantId, text) {
     return response
   } catch (error) {
     console.error(
-      `Error calling /api/circle/postMessage for event ${eventId}:`,
+      `Error calling /circle/postMessage for event ${eventId}:`,
       error
     )
 

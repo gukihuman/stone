@@ -1,4 +1,4 @@
-// server/api/circle/getEvent.js
+// server/nitro-api/circle/getEvent.js
 import dbConnect from "../../utils/dbConnect"
 import CircleEvent from "../../models/CircleEvent"
 import Participant from "../../models/Participant"
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
 
   // 2. Get Event ID and Requester's Participant Code from query parameters
-  // Example URL: /api/circle/getEvent?eventId=circle_main_chat&participantId=yura_code_here
+  // Example URL: /nitro-api/circle/getEvent?eventId=circle_main_chat&participantId=yura_code_here
   const query = getQuery(event)
   const eventId = query.eventId
   const participantId = query.participantId

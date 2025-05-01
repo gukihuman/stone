@@ -13,7 +13,7 @@ export default async function (participantId) {
   }
 
   try {
-    const response = await $fetch("/api/circle/validateParticipant", {
+    const response = await $fetch("/circle/validateParticipant", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: { _id: participantId },
@@ -21,7 +21,7 @@ export default async function (participantId) {
 
     return response
   } catch (error) {
-    console.error("Error calling /api/circle/validateParticipant:", error)
+    console.error("Error calling /circle/validateParticipant:", error)
 
     // Try to extract a specific error message from the response if it's an HTTP error
     const statusMessage =
