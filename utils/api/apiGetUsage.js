@@ -7,6 +7,7 @@ export default async function (provider = "openai") {
       method: "POST", // Changed to POST to send body easily
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider }),
+      //
     })
 
     if (!response.ok) {
