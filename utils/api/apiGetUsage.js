@@ -1,5 +1,8 @@
 export default async function (provider = "openai") {
-  const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
+  // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
+  const baseURL = import.meta.dev
+    ? "https://stone-git-circle-event-list-gukis-projects.vercel.app"
+    : ""
 
   try {
     const response = await fetch(`${baseURL}/getUsage`, {
