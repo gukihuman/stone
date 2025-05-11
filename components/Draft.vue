@@ -3,7 +3,7 @@
     class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden h-[170px] flex-shrink-0 -mt-2 z-10"
   >
     <!-- <div class="flex h-full p-3 bg-stone-700 justify-center flex-shrink-0">
-      <ButtonLight @click="emit('append')"> append </ButtonLight>
+      <Button600 @click="emit('append')"> append </Button600>
     </div> -->
     <div
       class="w-full h-full relative flex-grow overflow-hidden p-3 py-2"

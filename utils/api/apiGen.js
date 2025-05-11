@@ -9,7 +9,7 @@ export default async function apiGen({
 }) {
   // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
   const baseURL = import.meta.dev
-    ? "https://stone-git-circle-event-list-gukis-projects.vercel.app"
+    ? "https://stone-git-space-odyssey-gukis-projects.vercel.app"
     : ""
 
   const res = await fetch(`${baseURL}/api/gen`, {

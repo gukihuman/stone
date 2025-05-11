@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 html {
-  @apply bg-stone-800;
+  @apply bg-stone-600;
 }
 * {
   @apply focus:outline-none;
@@ -59,23 +59,18 @@ html {
   );
   background-size: 100% 28px;
 }
-.text-stone-350 {
-  color: rgb(198, 192, 190);
+.screen-glare-lines {
+  position: relative;
 }
-.text-stone-450 {
-  color: rgb(144, 137, 133);
-}
-.bg-stone-450 {
-  background-color: rgb(144, 137, 133);
-}
-.bg-stone-550 {
-  background-color: rgb(98, 92, 87);
-}
-.bg-stone-650 {
-  background-color: rgb(80, 76, 73);
-}
-.border-stone-550 {
-  border-color: rgb(98, 92, 87);
+.screen-glare-lines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0 3px,
+    rgba(255, 255, 255, 0) 0px 5px
+  );
 }
 [contenteditable] {
   white-space: pre-wrap;

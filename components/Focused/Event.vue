@@ -13,13 +13,13 @@
             :states="fields"
             @change="emit('update-app-state', 'focusedField', field)"
           />
-          <ButtonLight
+          <Button600
             @click="emit('update-app-state', 'focusedField', null)"
             :disabled="!field"
             theme="darker"
           >
             pretty
-          </ButtonLight>
+          </Button600>
         </div>
       </div>
       <input
@@ -36,7 +36,7 @@
       >
         {{ event.date.substring(0, 10) }}
       </p>
-      <ButtonLight @click="emit('remove-event')">remove</ButtonLight>
+      <Button600 @click="emit('remove-event')">remove</Button600>
     </div>
 
     <div
