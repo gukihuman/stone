@@ -25,7 +25,7 @@ export default function handler(req) {
     async start(controller) {
       try {
         for (let i = 1; i <= 100; i++) {
-          controller.enqueue(`${i}\n`)
+          controller.enqueue(`${i} `)
           await sleep(1000)
         }
       } finally {

@@ -81,7 +81,7 @@ async function onCopyScreen() {
   await clipboard({ input: screen.value, locked: isCopyScreen })
 }
 async function onGen() {
-  withLoading("gen", async () => {
+  frameAction("gen", async () => {
     await gen({
       provider: "openai",
       model: "gpt-4.5-preview",
@@ -92,19 +92,19 @@ async function onGen() {
   })
 }
 async function onStreamDurationTest() {
-  withLoading("streamDurationTest", async () => {
+  frameAction("streamDurationTest", async () => {
     await streamDurationTest((chunk) => (screen.value += chunk))
   })
 }
 async function onGetUsageOpenAI() {
-  withLoading("getUsageOpenAI", async () => {
+  frameAction("getUsageOpenAI", async () => {
     const usage = await getUsageOpenAI()
     if (usage !== null) screen.value = `openai tokens today ${usage}`
     else screen.value = "getUsageOpenAI responded with null"
   })
 }
 ////////////////////////////////// helpers /////////////////////////////////////
-async function withLoading(key, action) {
+async function frameAction(key, action) {
   screen.value = ""
   loading[key] = true
   await action()
