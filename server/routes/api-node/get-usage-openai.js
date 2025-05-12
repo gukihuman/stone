@@ -1,4 +1,4 @@
-// server/routes/api-node/getUsageOpenAI.js
+// server/routes/api-node/get-usage-openai.js
 import { defineEventHandler, setHeader, createError } from "h3"
 
 export default defineEventHandler(async (event) => {

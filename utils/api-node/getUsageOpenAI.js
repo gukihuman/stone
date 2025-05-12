@@ -6,7 +6,7 @@ export default async function getUsageOpenAI() {
     : ""
 
   try {
-    const res = await fetch(`${baseURL}/api-node/getUsageOpenAI`)
+    const res = await fetch(`${baseURL}/api-node/get-usage-openai`)
     if (!res.ok) throw new Error(`api failed ${res.status} – ${res.statusText}`)
     const { totalTokens } = await res.json()
     return totalTokens // plain number for ui

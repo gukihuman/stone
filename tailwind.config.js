@@ -4,6 +4,7 @@ export default {
     extend: {
       fontFamily: {
         "fira-code": ['"Fira Code"', "monospace"],
+        pacifico: ['"Pacifico"', "cursive"],
       },
       colors: {
         stone: {

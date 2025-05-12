@@ -6,40 +6,46 @@
       <!-- # controls -->
       <div class="flex flex-col">
         <div
-          class="flex flex-wrap gap-2 p-3 border-b-[3px] border-stone-450 border-dashed"
+          class="flex flex-wrap gap-2 p-3 border-b-[3px] border-stone-450 border-dashed items-end"
         >
+          <p class="font-pacifico text-stone-350 text-2xl pl-1">api /</p>
           <Button600
             @click="onStreamTest"
             :active="isStreamTestRunning"
             :disabled="isAnythingLoading && !isStreamTestRunning"
           >
-            stream duration test
+            stream-duration-test
           </Button600>
         </div>
-        <div class="flex flex-wrap gap-2 p-3 flex-grow">
+        <div class="flex flex-wrap gap-2 p-3 flex-grow items-end">
+          <p class="font-pacifico text-stone-350 text-2xl pl-1">api-node /</p>
           <Button600
             @click="onGetUsageOpenAI"
             :active="isGetUsageLoading"
             :disabled="isAnythingLoading && !isGetUsageLoading"
           >
-            get usage openai
+            get-usage-openai
           </Button600>
         </div>
       </div>
       <!-- # console output area -->
-      <div class="relative overflow-hidden rounded-lg p-3">
-        <Button600
-          @click="onCopyScreen"
-          :active="isCopyingScreen"
-          :disabled="!screenContent || (isAnythingLoading && !isCopyingScreen)"
-          class="absolute right-5 top-5"
-        >
-          copy screen
-        </Button600>
-        <div
-          class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light"
-        >
-          {{ screenContent }}
+      <div class="p-3">
+        <div class="relative overflow-hidden rounded-lg shadow-lg">
+          <Button600
+            @click="onCopyScreen"
+            :active="isCopyingScreen"
+            :disabled="
+              !screenContent || (isAnythingLoading && !isCopyingScreen)
+            "
+            class="absolute right-6 top-2"
+          >
+            copy screen
+          </Button600>
+          <div
+            class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light"
+          >
+            {{ screenContent }}
+          </div>
         </div>
       </div>
     </div>
