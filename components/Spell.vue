@@ -40,7 +40,7 @@
             v-for="{ name, type } in contexts"
             :key="`context-${name}`"
             @click="emit('context', type)"
-            :disabled="isContextLocked[type].value"
+            :active="isContextLocked[type].value"
             class="w-full"
           >
             {{ name }}

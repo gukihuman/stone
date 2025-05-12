@@ -8,7 +8,7 @@
       'bg-stone-550 text-stone-400': disabled,
       'bg-amber-400 text-amber-900': active,
     }"
-    :disabled="disabled"
+    :disabled="disabled || active"
   >
     <slot />
   </button>

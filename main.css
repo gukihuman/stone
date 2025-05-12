@@ -59,19 +59,32 @@ html {
   );
   background-size: 100% 28px;
 }
-.screen-glare-lines {
+
+/* screen lines */
+@keyframes screen-scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 7px;
+  }
+}
+.screen-lines {
   position: relative;
 }
-.screen-glare-lines::after {
+.screen-lines::after {
   content: "";
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.03) 0 3px,
-    rgba(255, 255, 255, 0) 0px 5px
+    rgba(255, 255, 255, 0.03) 0 4px,
+    transparent 3px 7px
   );
+  animation: screen-scroll 2s linear infinite;
+  will-change: background-position;
 }
+
 [contenteditable] {
   white-space: pre-wrap;
 }

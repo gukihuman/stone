@@ -1,5 +1,5 @@
-// utils/api/apiGen.js
-export default async function apiGen({
+// utils/api/gen.js
+export default async function gen({
   provider,
   model,
   input,
@@ -47,7 +47,7 @@ export default async function apiGen({
     onComplete?.(full)
     return full
   } catch (err) {
-    console.error("apiGen error:", err)
+    console.error("gen error:", err)
     onError?.(err)
   }
 }

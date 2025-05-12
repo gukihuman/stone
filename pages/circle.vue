@@ -316,7 +316,7 @@ async function checkTokenLimit() {
   // }
 
   generationError.value = ""
-  const usage = await apiGetUsage("openai")
+  const usage = await getUsageOpenAI()
   if (usage !== null) {
     currentUsage.value = usage
     console.log(`Current OpenAI Usage: ${currentUsage.value} / ${tokenLimit}`)
@@ -388,7 +388,7 @@ async function handleGenerateResponse() {
   scrollToBottom()
 
   try {
-    await apiGen({
+    await gen({
       provider: "openai",
       model: "gpt-4.5-preview",
       input: context,

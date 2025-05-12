@@ -16,7 +16,7 @@
       </div>
       <!-- # console output area -->
       <div
-        class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-glare-lines"
+        class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines"
       >
         {{ screenContent }}
       </div>
@@ -35,9 +35,9 @@ async function onGetUsage() {
   isGetUsageLoading.value = true
   screenContent.value = "getting usage data..."
   try {
-    const usage = await apiGetUsage()
+    const usage = await getUsageOpenAI()
     if (usage !== null) screenContent.value = `openai tokens today ${usage}`
-    else screenContent.value = "apiGetUsage responded with null"
+    else screenContent.value = "getUsageOpenAI responded with null"
   } catch (error) {
     screenContent.value = error.message || "unknown error during api call"
   } finally {

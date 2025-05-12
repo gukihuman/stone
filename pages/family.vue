@@ -335,7 +335,7 @@ function toggleTagFocus(i) {
 //   if (!getContext) return
 //   const input = getContext(events, shapes, files, appState, getTokens)
 //   await getFiles()
-// await apiGen({
+// await gen({
 //   model: "gemini-2.0-flash",
 //   input,
 //   event: getFocusedEvent(),
@@ -347,7 +347,7 @@ function toggleTagFocus(i) {
 // await fetchOpenAiUsage()
 // }
 async function fetchOpenAiUsage() {
-  const usage = await apiGetUsage("openai")
+  const usage = await getUsageOpenAI()
   if (usage !== null) openAiUsageToday.value = usage
   else openAiUsageToday.value = 0
 }
