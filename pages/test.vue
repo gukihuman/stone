@@ -11,15 +11,15 @@
           <p class="font-pacifico text-stone-350 text-2xl pl-1">api /</p>
           <Button600
             @click="onGen"
-            :active="isGenTestLoading"
-            :disabled="isAnythingLoading && !isGenTestLoading"
+            :active="loading.gen"
+            :disabled="isAnythingLoading && !loading.gen"
           >
             gen
           </Button600>
           <Button600
             @click="onStreamDurationTest"
-            :active="isStreamTestRunning"
-            :disabled="isAnythingLoading && !isStreamTestRunning"
+            :active="loading.streamDurationTest"
+            :disabled="isAnythingLoading && !loading.streamDurationTest"
           >
             stream-duration-test
           </Button600>
@@ -28,8 +28,8 @@
           <p class="font-pacifico text-stone-350 text-2xl pl-1">api-node /</p>
           <Button600
             @click="onGetUsageOpenAI"
-            :active="isGetUsageLoading"
-            :disabled="isAnythingLoading && !isGetUsageLoading"
+            :active="loading.getUsageOpenAI"
+            :disabled="isAnythingLoading && !loading.getUsageOpenAI"
           >
             get-usage-openai
           </Button600>
@@ -40,18 +40,16 @@
         <div class="relative overflow-hidden rounded-lg shadow-lg">
           <Button600
             @click="onCopyScreen"
-            :active="isCopyingScreen"
-            :disabled="
-              !screenContent || (isAnythingLoading && !isCopyingScreen)
-            "
-            class="absolute right-6 top-2"
+            :active="isCopyScreen"
+            :disabled="!screen"
+            class="absolute right-6 bottom-2"
           >
             copy screen
           </Button600>
           <div
             class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light"
           >
-            {{ screenContent }}
+            {{ screen }}
           </div>
         </div>
       </div>
@@ -63,83 +61,53 @@
 // hotkeys
 const { setupHotkeys } = useHotkeys()
 let cleanupHotkeys // hold cleanup function
-const hotkeys = {
-  m: onCopyScreen,
-}
+const hotkeys = { m: onCopyScreen }
 
-const screenContent = ref("")
-
-const isCopyingScreen = ref(false)
-const isGenTestLoading = ref(false)
-const isStreamTestRunning = ref(false)
-const isGetUsageLoading = ref(false)
-
+const screen = ref("")
+const isCopyScreen = ref(false)
+const loading = reactive({
+  gen: false,
+  streamDurationTest: false,
+  getUsageOpenAI: false,
+})
 const isAnythingLoading = computed(() => {
-  return (
-    isGetUsageLoading.value ||
-    isStreamTestRunning.value ||
-    isCopyingScreen.value ||
-    isGenTestLoading.value
-  )
+  return Object.values(loading).some((state) => state)
 })
 onMounted(() => (cleanupHotkeys = setupHotkeys(hotkeys)))
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
 ////////////////////////////////////////////////////////////////////////////////
 async function onCopyScreen() {
-  if (!screenContent.value || isCopyingScreen.value) return
-  await clipboard({
-    input: screenContent.value,
-    locked: isCopyingScreen,
-  })
+  await clipboard({ input: screen.value, locked: isCopyScreen })
 }
 async function onGen() {
-  isGenTestLoading.value = true
-  screenContent.value = ""
-  try {
+  withLoading("gen", async () => {
     await gen({
       provider: "openai",
       model: "gpt-4.5-preview",
       input: "tell a very short story about a puppy girl",
-      onChunk: (chunk) => (screenContent.value += chunk),
-      onError: (err) => {
-        console.error("Gen test stream error:", err)
-        screenContent.value = `gen error ${
-          err.message || "unknown streaming error"
-        }`
-      },
+      onChunk: (chunk) => (screen.value += chunk),
+      onError: (err) => (screen.value = err.message || "unknown error"),
     })
-  } catch (setupError) {
-    console.error("error setting up gen test:", setupError)
-    screenContent.value = `gen setup error ${
-      setupError.message || "failed to start generation"
-    }`
-  } finally {
-    isGenTestLoading.value = false
-  }
+  })
 }
 async function onStreamDurationTest() {
-  isStreamTestRunning.value = true
-  screenContent.value = "stream duration test starts..."
-  try {
-    await streamDurationTest((chunk) => (screenContent.value += chunk))
-  } catch (err) {
-    screenContent.value = err.message || "stream error"
-  } finally {
-    isStreamTestRunning.value = false
-  }
+  withLoading("streamDurationTest", async () => {
+    await streamDurationTest((chunk) => (screen.value += chunk))
+  })
 }
 async function onGetUsageOpenAI() {
-  isGetUsageLoading.value = true
-  screenContent.value = ""
-  try {
+  withLoading("getUsageOpenAI", async () => {
     const usage = await getUsageOpenAI()
-    if (usage !== null) screenContent.value = `openai tokens today ${usage}`
-    else screenContent.value = "getUsageOpenAI responded with null"
-  } catch (error) {
-    screenContent.value = error.message || "unknown error during api call"
-  } finally {
-    isGetUsageLoading.value = false
-  }
+    if (usage !== null) screen.value = `openai tokens today ${usage}`
+    else screen.value = "getUsageOpenAI responded with null"
+  })
+}
+////////////////////////////////// helpers /////////////////////////////////////
+async function withLoading(key, action) {
+  screen.value = ""
+  loading[key] = true
+  await action()
+  loading[key] = false
 }
 </script>
