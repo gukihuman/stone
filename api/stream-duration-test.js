@@ -1,4 +1,4 @@
-// api/gen-test.js
+// api/stream-duration-test.js
 export const config = { runtime: "edge" }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

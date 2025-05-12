@@ -1,10 +1,10 @@
-// utils/api/gen-test.js
-export default async function genTest(onChunk) {
+// utils/api/streamDurationTest.js
+export default async function streamDurationTest(onChunk) {
   const baseURL = import.meta.dev
     ? "https://stone-git-space-odyssey-gukis-projects.vercel.app"
     : ""
 
-  const res = await fetch(`${baseURL}/api/gen-test`, {
+  const res = await fetch(`${baseURL}/api/stream-duration-test`, {
     headers: { Accept: "text/event-stream" },
   })
 
