@@ -1,5 +1,6 @@
 // utils/api/streamDurationTest.js
 export default async function streamDurationTest(onChunk) {
+  // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
   const baseURL = import.meta.dev
     ? "https://stone-git-space-odyssey-gukis-projects.vercel.app"
     : ""
