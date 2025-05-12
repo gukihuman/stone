@@ -13,6 +13,14 @@
         >
           get usage
         </Button600>
+        <Button600
+          @click="onStreamTest"
+          :active="isStreamTestRunning"
+          :disabled="isAnythingLoading && !isStreamTestRunning"
+          class="ml-2 !min-w-[120px]"
+        >
+          stream test
+        </Button600>
       </div>
       <!-- # console output area -->
       <div
@@ -27,6 +35,8 @@
 <script setup>
 const screenContent = ref("")
 const isGetUsageLoading = ref(false)
+const isStreamTestRunning = ref(false)
+
 const isAnythingLoading = computed(() => {
   return isGetUsageLoading.value
 })
@@ -42,6 +52,19 @@ async function onGetUsage() {
     screenContent.value = error.message || "unknown error during api call"
   } finally {
     isGetUsageLoading.value = false
+  }
+}
+
+async function onStreamTest() {
+  isStreamTestRunning.value = true
+  screenContent.value = ""
+
+  try {
+    await genTest((chunk) => (screenContent.value += chunk))
+  } catch (err) {
+    screenContent.value = err.message || "stream error"
+  } finally {
+    isStreamTestRunning.value = false
   }
 }
 </script>

@@ -1,59 +1,45 @@
 // api/gen-test.js
-// No Langchain imports needed here!
-
 export const config = { runtime: "edge" }
 
-// Simple sleep helper function for async delays
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export default async function handler(req) {
-  // We don't actually need the request body for this test,
-  // but parsing it might be useful if you wanted to parameterize the test later (e.g., duration).
-  // For now, we'll keep it minimal.
-  console.log("[gen-test.js] Received request.")
+export default function handler(req) {
+  /* ------------------------------------------------- *
+   * 🌐  CORS  (allow everything, same style as gen.js)
+   * ------------------------------------------------- */
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    })
+  }
 
-  // Stream ↦ TextEncoder ↦ TransformStream (Same setup as gen.js)
-  const { readable, writable } = new TransformStream()
-  const writer = writable.getWriter()
-  const enc = new TextEncoder()
-
-  // Start the timed streaming process in the background
-  ;(async () => {
-    console.log("[gen-test.js] Starting 100-second test stream...")
-    try {
-      for (let i = 1; i <= 100; i++) {
-        // Create the string for the current number and a newline
-        const dataString = `${i}\n`
-        // Encode the string to Uint8Array
-        const encodedData = enc.encode(dataString)
-        // Write the encoded data to the stream
-        await writer.write(encodedData)
-        console.log(`[gen-test.js] Sent chunk: ${i}`)
-
-        // Wait for 1 second before sending the next chunk
-        await sleep(1000)
+  /* ------------------------------------------------- *
+   * 🚰  Stream one number per second (100 seconds total)
+   * ------------------------------------------------- */
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        for (let i = 1; i <= 100; i++) {
+          controller.enqueue(`${i}\n`)
+          await sleep(1000)
+        }
+      } finally {
+        controller.close()
       }
-      // After the loop finishes, close the writer to signal the end of the stream
-      await writer.close()
-      console.log(
-        "[gen-test.js] Test stream finished successfully after 100 chunks."
-      )
-    } catch (e) {
-      // If any error occurs during the loop (e.g., writer error), abort the writer
-      console.error("[gen-test.js] Error during streaming loop:", e)
-      await writer.abort(e)
-    }
-  })() // Immediately invoke the async function
+    },
+  })
 
-  // Return the standard Response object with the readable stream
-  // The browser's EventSource will connect to this readable stream
-  console.log("[gen-test.js] Returning Response object with readable stream.")
-  return new Response(readable, {
+  return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
-      Connection: "keep-alive", // Important for SSE
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*", // ← important!
     },
-    // Status defaults to 200 OK
   })
 }
