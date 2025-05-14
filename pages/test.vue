@@ -1,7 +1,7 @@
 <template>
   <div class="p-2 h-screen flex justify-center">
     <div
-      class="w-full h-full flex flex-col justify-between max-w-2xl bg-stone-500 rounded-lg shadow-lg bg-circles"
+      class="w-[720px] h-full flex flex-col justify-between bg-stone-500 rounded-lg shadow-lg bg-circles"
     >
       <!-- # controls -->
       <div class="flex flex-col">
@@ -66,10 +66,14 @@ let cleanupHotkeys // hold cleanup function
 const hotkeys = { m: onCopyScreen }
 
 const GEN_OPTIONS = {
-  "openai-gpt-4.5": {
-    provider: "openai",
-    model: "gpt-4.5-preview",
-  },
+  // 1m
+  "openai-gpt-4.5": { provider: "openai", model: "gpt-4.5-preview" },
+  "openai-gpt-4.1": { provider: "openai", model: "gpt-4.1" },
+  // 10m
+  "openai-gpt-4o-mini": { provider: "openai", model: "gpt-4o-mini" },
+  "openai-gpt-4.1-mini": { provider: "openai", model: "gpt-4.1-mini" },
+  "openai-o4-mini": { provider: "openai", model: "o4-mini" },
+
   "togetherai-llama-4-maverick": {
     provider: "togetherai",
     model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
@@ -77,6 +81,11 @@ const GEN_OPTIONS = {
 }
 const loading = reactive({
   "openai-gpt-4.5": false,
+  "openai-gpt-4.1": false,
+  "openai-gpt-4o-mini": false,
+  "openai-gpt-4.1-mini": false,
+  "openai-o4-mini": false,
+
   "togetherai-llama-4-maverick": false,
   streamDurationTest: false,
   getUsageOpenAI: false,
