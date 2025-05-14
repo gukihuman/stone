@@ -112,7 +112,7 @@ async function onStreamDurationTest() {
 async function onGetUsageOpenAI() {
   frameAction("getUsageOpenAI", async () => {
     const usage = await getUsageOpenAI()
-    if (usage !== null) screen.value = `openai tokens today ${usage}`
+    if (usage !== null) screen.value = usage
     else screen.value = "getUsageOpenAI responded with null"
   })
 }
