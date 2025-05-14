@@ -26,7 +26,7 @@
             :active="loading.gen"
             :disabled="isAnythingLoading && !loading.gen"
           >
-            gen openai gpt-4.5-preview
+            gen togetherai meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
           </Button600>
           <Button600
             @click="onStreamDurationTest"

@@ -44,7 +44,11 @@ export default async function handler(req) {
       for await (const chunk of await llm.stream([
         new HumanMessage({ content: input }),
       ])) {
-        if (chunk?.content) await writer.write(enc.encode(chunk.content))
+        if (chunk?.content) {
+          console.log(chunk.content)
+
+          await writer.write(enc.encode(chunk.content))
+        }
       }
       writer.close()
     } catch (e) {
