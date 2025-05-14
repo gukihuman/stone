@@ -1,16 +1,14 @@
 // api/gen.js
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
+import { ChatTogetherAI } from "@langchain/community/chat_models/togetherai"
 import { HumanMessage } from "@langchain/core/messages"
 
-// Vercel Edge Runtime
 export const config = { runtime: "edge" }
 
 export default async function handler(req) {
-  /* ------------------------------------------------- *
-   * 🌐  CORS  (allow everything)
-   * ------------------------------------------------- */
-  if (req.method === "OPTIONS") {
+  /* 🌐 CORS */
+  if (req.method === "OPTIONS")
     return new Response(null, {
       status: 204,
       headers: {
@@ -19,39 +17,24 @@ export default async function handler(req) {
         "Access-Control-Allow-Headers": "Content-Type",
       },
     })
-  }
 
-  // Parse JSON body
-  const {
-    provider = "google",
-    model,
-    input,
-  } = await req.json().catch(() => ({}))
-  if (!model || !input)
-    return new Response(JSON.stringify({ error: "model & input required" }), {
+  /* 📦 Body */
+  const { provider, model, input } = (await req.json().catch(() => ({}))) || {}
+  if (!provider || !model || !input)
+    return new Response(JSON.stringify({ error: "incorrect body" }), {
       status: 400,
       headers: { "Access-Control-Allow-Origin": "*" },
     })
 
-  /* ------------------------------------------------- *
-   * 🔮  Select LLM
-   * ------------------------------------------------- */
+  /* 🔮 LLM  */
   const llm =
     provider === "openai"
-      ? new ChatOpenAI({
-          modelName: model,
-          temperature: 1,
-          openAIApiKey: process.env.OPENAI_API_KEY,
-        })
-      : new ChatGoogleGenerativeAI({
-          model,
-          temperature: 1,
-          apiKey: process.env.GEMINI_API_KEY,
-        })
+      ? new ChatOpenAI({ modelName: model, temperature: 1 })
+      : provider === "togetherai"
+      ? new ChatTogetherAI({ model, temperature: 1 })
+      : new ChatGoogleGenerativeAI({ model, temperature: 1 })
 
-  /* ------------------------------------------------- *
-   * 🚰  Stream chunks → readable
-   * ------------------------------------------------- */
+  /* 🚰 Stream */
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
   const enc = new TextEncoder()

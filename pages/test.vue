@@ -10,11 +10,23 @@
         >
           <p class="font-pacifico text-stone-350 text-2xl pl-1">api /</p>
           <Button600
-            @click="onGen"
+            @click="onGen('openai', 'gpt-4.5-preview')"
             :active="loading.gen"
             :disabled="isAnythingLoading && !loading.gen"
           >
-            gen
+            gen openai gpt-4.5-preview
+          </Button600>
+          <Button600
+            @click="
+              onGen(
+                'togetherai',
+                'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'
+              )
+            "
+            :active="loading.gen"
+            :disabled="isAnythingLoading && !loading.gen"
+          >
+            gen openai gpt-4.5-preview
           </Button600>
           <Button600
             @click="onStreamDurationTest"
@@ -80,11 +92,11 @@ onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 async function onCopyScreen() {
   await clipboard({ input: screen.value, locked: isCopyScreen })
 }
-async function onGen() {
+async function onGen(provider, model) {
   frameAction("gen", async () => {
     await gen({
-      provider: "openai",
-      model: "gpt-4.5-preview",
+      provider,
+      model,
       input: "tell a very short story about a puppy girl",
       onChunk: (chunk) => (screen.value += chunk),
       onError: (err) => (screen.value = err.message || "unknown error"),
