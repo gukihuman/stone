@@ -10,30 +10,20 @@
         >
           <p class="font-pacifico text-stone-350 text-2xl pl-1">api /</p>
           <Button600
-            @click="onGen('openai', 'gpt-4.5-preview')"
-            :active="loading.gen"
-            :disabled="isAnythingLoading && !loading.gen"
-          >
-            gen openai gpt-4.5-preview
-          </Button600>
-          <Button600
-            @click="
-              onGen(
-                'togetherai',
-                'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'
-              )
-            "
-            :active="loading.gen"
-            :disabled="isAnythingLoading && !loading.gen"
-          >
-            gen togetherai meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
-          </Button600>
-          <Button600
             @click="onStreamDurationTest"
             :active="loading.streamDurationTest"
             :disabled="isAnythingLoading && !loading.streamDurationTest"
           >
             stream-duration-test
+          </Button600>
+          <Button600
+            v-for="(option, key) in GEN_OPTIONS"
+            :key="key"
+            @click="onGen(key, option.provider, option.model)"
+            :active="loading[key]"
+            :disabled="isAnythingLoading && !loading[key]"
+          >
+            {{ key }}
           </Button600>
         </div>
         <div class="flex flex-wrap gap-2 p-3 flex-grow items-end">
@@ -75,16 +65,27 @@ const { setupHotkeys } = useHotkeys()
 let cleanupHotkeys // hold cleanup function
 const hotkeys = { m: onCopyScreen }
 
-const screen = ref("")
-const isCopyScreen = ref(false)
+const GEN_OPTIONS = {
+  "openai-gpt-4.5": {
+    provider: "openai",
+    model: "gpt-4.5-preview",
+  },
+  "togetherai-llama-4-maverick": {
+    provider: "togetherai",
+    model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+  },
+}
 const loading = reactive({
-  gen: false,
+  "openai-gpt-4.5": false,
+  "togetherai-llama-4-maverick": false,
   streamDurationTest: false,
   getUsageOpenAI: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
 })
+const screen = ref("")
+const isCopyScreen = ref(false)
 onMounted(() => (cleanupHotkeys = setupHotkeys(hotkeys)))
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
@@ -92,8 +93,8 @@ onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 async function onCopyScreen() {
   await clipboard({ input: screen.value, locked: isCopyScreen })
 }
-async function onGen(provider, model) {
-  frameAction("gen", async () => {
+async function onGen(key, provider, model) {
+  frameAction(key, async () => {
     await gen({
       provider,
       model,
