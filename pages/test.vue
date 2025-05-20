@@ -1,3 +1,4 @@
+<!-- pages/test.vue -->
 <template>
   <div class="p-2 h-screen flex justify-center">
     <div
@@ -35,6 +36,13 @@
           >
             get-usage-openai
           </Button600>
+          <Button600
+            @click="onCreateEntity"
+            :active="loading.createEntity"
+            :disabled="isAnythingLoading && !loading.createEntity"
+          >
+            create-entity
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -49,7 +57,7 @@
             copy screen
           </Button600>
           <div
-            class="w-full h-[300px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light"
+            class="w-full h-[250px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light text-lg"
           >
             {{ screen }}
           </div>
@@ -80,15 +88,11 @@ const GEN_OPTIONS = {
   },
 }
 const loading = reactive({
-  "openai-gpt-4.5": false,
-  "openai-gpt-4.1": false,
-  "openai-gpt-4o-mini": false,
-  "openai-gpt-4.1-mini": false,
-  "openai-o4-mini": false,
-
-  "togetherai-llama-4-maverick": false,
+  // turn every gen option key into { key: false }
+  ...Object.fromEntries(Object.keys(GEN_OPTIONS).map((key) => [key, false])),
   streamDurationTest: false,
   getUsageOpenAI: false,
+  createEntity: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -121,8 +125,31 @@ async function onStreamDurationTest() {
 async function onGetUsageOpenAI() {
   frameAction("getUsageOpenAI", async () => {
     const usage = await getUsageOpenAI()
-    if (usage !== null) screen.value = usage
+    if (usage !== null) screen.value = JSON.stringify(usage, null, 2)
     else screen.value = "getUsageOpenAI responded with null"
+  })
+}
+async function onCreateEntity() {
+  frameAction("createEntity", async () => {
+    const entityData = {
+      _id: newId(),
+      name: "Test Entity Rox",
+      nature: "digi",
+    }
+    const result = await dbCreateEntity(entityData)
+    if (result && result.success) {
+      screen.value = `Entity created successfully:\n${JSON.stringify(
+        result.entity,
+        null,
+        2
+      )}`
+    } else {
+      screen.value = `Failed to create entity:\n${JSON.stringify(
+        result,
+        null,
+        2
+      )}`
+    }
   })
 }
 ////////////////////////////////// helpers /////////////////////////////////////

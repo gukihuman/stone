@@ -1,3 +1,4 @@
+// server/utils/dbConnect.js
 import mongoose from "mongoose"
 
 const MONGO_URI = process.env.MONGO_URI
@@ -26,7 +27,7 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false, // Disable buffering if connection goes down
-      dbName: "StoneCircleDB", // Explicitly set DB name
+      dbName: "StoneDB", // Explicitly set DB name
     }
 
     console.log(" Mongoose connectionString:", MONGO_URI)

@@ -1,3 +1,6 @@
-export default function () {
-  return Math.random().toString(36).slice(2, 10)
+// utils/misc/newId.js
+export default function newId() {
+  let id = ""
+  while (id.length < 12) id += Math.random().toString(36).slice(2)
+  return id.substring(0, 12)
 }
