@@ -9,14 +9,6 @@
   },
   "folder-path-color.folders": [
     {
-      "path": "_",
-      "color": "blue"
-    },
-    {
-      "path": "_",
-      "color": "yellow"
-    },
-    {
       "path": "server",
       "color": "red" // red
     },
@@ -31,6 +23,14 @@
     {
       "path": "components",
       "color": "green" // cyan
+    },
+    {
+      "path": "composables",
+      "color": "yellow" // cyan
+    },
+    {
+      "path": "utils",
+      "color": "blue" // cyan
     }
   ]
 }
