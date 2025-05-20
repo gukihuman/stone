@@ -1,0 +1,36 @@
+{
+  "files.exclude": {
+    ".nuxt": true,
+    ".vscode": true,
+    "node_modules": true,
+    ".output\\public": true,
+    ".output": true,
+    ".vercel": true
+  },
+  "folder-path-color.folders": [
+    {
+      "path": "_",
+      "color": "blue"
+    },
+    {
+      "path": "_",
+      "color": "yellow"
+    },
+    {
+      "path": "server",
+      "color": "red" // red
+    },
+    {
+      "path": "api",
+      "color": "magenta" // red
+    },
+    {
+      "path": "pages",
+      "color": "cyan" // cyan
+    },
+    {
+      "path": "components",
+      "color": "green" // cyan
+    }
+  ]
+}
