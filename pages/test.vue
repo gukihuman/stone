@@ -146,17 +146,9 @@ async function onCreateEntity() {
     }
     const result = await dbCreateEntity(entityData)
     if (result && result.success) {
-      screen.value = `Entity created successfully:\n${JSON.stringify(
-        result.entity,
-        null,
-        2
-      )}`
+      screen.value = JSON.stringify(result.entity, null, 2)
     } else {
-      screen.value = `Failed to create entity:\n${JSON.stringify(
-        result,
-        null,
-        2
-      )}`
+      screen.value = JSON.stringify(result, null, 2)
     }
   })
 }
@@ -164,22 +156,14 @@ async function onGetEntities() {
   frameAction("getEntities", async () => {
     const stoneId = localStorage.getItem("stone-id")
     if (!stoneId) {
-      screen.value = "Action cancelled: stoneId not provided."
+      screen.value = "stoneId not in local storage"
       return
     }
     const result = await dbGetEntities(stoneId)
     if (result && result.success) {
-      screen.value = `Entities fetched successfully:\n${JSON.stringify(
-        result.entities,
-        null,
-        2
-      )}`
+      screen.value = JSON.stringify(result.entities, null, 2)
     } else {
-      screen.value = `Failed to fetch entities:\n${JSON.stringify(
-        result,
-        null,
-        2
-      )}`
+      screen.value = JSON.stringify(result, null, 2)
     }
   })
 }
