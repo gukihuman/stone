@@ -43,6 +43,13 @@
           >
             create-entity
           </Button600>
+          <Button600
+            @click="onGetEntities"
+            :active="loading.getEntities"
+            :disabled="isAnythingLoading && !loading.getEntities"
+          >
+            get-entities
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -93,6 +100,7 @@ const loading = reactive({
   streamDurationTest: false,
   getUsageOpenAI: false,
   createEntity: false,
+  getEntities: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -145,6 +153,29 @@ async function onCreateEntity() {
       )}`
     } else {
       screen.value = `Failed to create entity:\n${JSON.stringify(
+        result,
+        null,
+        2
+      )}`
+    }
+  })
+}
+async function onGetEntities() {
+  frameAction("getEntities", async () => {
+    const stoneId = localStorage.getItem("stone-id")
+    if (!stoneId) {
+      screen.value = "Action cancelled: stoneId not provided."
+      return
+    }
+    const result = await dbGetEntities(stoneId)
+    if (result && result.success) {
+      screen.value = `Entities fetched successfully:\n${JSON.stringify(
+        result.entities,
+        null,
+        2
+      )}`
+    } else {
+      screen.value = `Failed to fetch entities:\n${JSON.stringify(
         result,
         null,
         2

@@ -1,8 +1,27 @@
 // server/routes/api-node/db-get-entities.js
 import dbConnect from "~/server/utils/dbConnect"
 import Entity from "~/server/models/Entity"
+import { setHeader, createError, readBody, defineEventHandler } from "h3"
 
 export default defineEventHandler(async (event) => {
+  setHeader(event, "Access-Control-Allow-Origin", "*")
+  setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
+  setHeader(
+    event,
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  )
+  if (event.node.req.method === "OPTIONS") {
+    event.node.res.statusCode = 204
+    event.node.res.end()
+    return
+  }
+  if (event.node.req.method !== "POST") {
+    throw createError({
+      statusCode: 405,
+      statusMessage: "Method Not Allowed. Please use POST.",
+    })
+  }
   await dbConnect()
   try {
     const body = await readBody(event)
