@@ -1,10 +1,6 @@
 // utils/api-node/getUsageOpenAI.js
 export default async function getUsageOpenAI() {
-  // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
-  const baseURL = import.meta.dev
-    ? "https://stone-git-space-odyssey-gukis-projects.vercel.app"
-    : ""
-
+  const baseURL = useRuntimeConfig().public.baseUrl
   try {
     const res = await fetch(`${baseURL}/api-node/get-usage-openai`)
     if (!res.ok) throw new Error(`usage api ${res.status} – ${res.statusText}`)

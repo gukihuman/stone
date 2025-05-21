@@ -8,10 +8,7 @@ export default async function gen({
   onError,
 }) {
   // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
-  const baseURL = import.meta.dev
-    ? "https://stone-git-space-odyssey-gukis-projects.vercel.app"
-    : ""
-
+  const baseURL = useRuntimeConfig().public.baseUrl
   const res = await fetch(`${baseURL}/api/gen`, {
     method: "POST",
     headers: {
