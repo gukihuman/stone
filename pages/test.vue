@@ -138,35 +138,29 @@ async function onGetUsageOpenAI() {
   })
 }
 async function onCreateEntity() {
-  frameAction("createEntity", async () => {
+  await frameAction("createEntity", async () => {
     const entityData = {
       _id: newId(),
       name: "Test Entity Rox",
       nature: "digi",
     }
-    const result = await dbCreateEntity(entityData)
-    if (result && result.success) {
-      screen.value = JSON.stringify(result.entity, null, 2)
-    } else {
-      screen.value = JSON.stringify(result, null, 2)
-    }
+    const { success, entity, ...rest } = await dbCreateEntity(entityData)
+    screen.value = JSON.stringify(success ? entity : rest, null, 2)
   })
 }
+
 async function onGetEntities() {
-  frameAction("getEntities", async () => {
-    const stoneId = localStorage.getItem("stone-id")
-    if (!stoneId) {
-      screen.value = "stoneId not in local storage"
-      return
-    }
-    const result = await dbGetEntities(stoneId)
-    if (result && result.success) {
-      screen.value = JSON.stringify(result.entities, null, 2)
-    } else {
-      screen.value = JSON.stringify(result, null, 2)
-    }
+  const stoneId = localStorage.getItem("stone-id")
+  if (!stoneId) {
+    screen.value = "stone-id not in local storage"
+    return
+  }
+  await frameAction("getEntities", async () => {
+    const { success, entities, ...rest } = await dbGetEntities(stoneId)
+    screen.value = JSON.stringify(success ? entities : rest, null, 2)
   })
 }
+
 ////////////////////////////////// helpers /////////////////////////////////////
 async function frameAction(key, action) {
   screen.value = ""
