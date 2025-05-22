@@ -8,8 +8,8 @@ export default async function dbRemoveEntity(entityId) {
       body: JSON.stringify({ entityId: entityId }),
     })
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}))
-      throw new Error(errData.statusMessage)
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.statusMessage)
     }
     return await response.json()
   } catch (error) {

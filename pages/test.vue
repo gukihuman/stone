@@ -64,6 +64,13 @@
           >
             create-fragment
           </Button600>
+          <Button600
+            @click="onGetFragments"
+            :active="loading.getFragments"
+            :disabled="isAnythingLoading && !loading.getFragments"
+          >
+            get-fragments
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -117,6 +124,7 @@ const loading = reactive({
   getEntities: false,
   removeEntity: false,
   createFragment: false,
+  getFragments: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -176,7 +184,7 @@ async function onGetEntities() {
   })
 }
 async function onRemoveEntity() {
-  const entityId = window.prompt("enter entity id to remove")
+  const entityId = window.prompt("❗ entity id to remove")
   if (!entityId) return
   frameAction("removeEntity", async () => {
     const { message } = await dbRemoveEntity(entityId)
@@ -195,6 +203,29 @@ async function onCreateFragment() {
   frameAction("createFragment", async () => {
     const fragmentData = { entity, space, data, parent }
     const result = await dbCreateFragment(fragmentData)
+    screen.value = JSON.stringify(result, null, 2)
+  })
+}
+async function onGetFragments() {
+  const spaceInput = window.prompt("space eg. g,r (optional, enter to skip)")
+  if (spaceInput) filters.space = spaceInput.split(",").map((s) => s.trim())
+
+  const kindInput = window.prompt("kind (optional, enter to skip)")
+  if (kindInput) filters.kind = kindInput
+
+  const tokensInput = window.prompt("tokens (optional, enter to skip)")
+  if (tokensInput) {
+    const parsedTokens = parseInt(tokensInput, 10)
+    if (!isNaN(parsedTokens)) filters.tokens = parsedTokens
+  }
+  const entityInput = window.prompt("entity (optional, enter to skip)")
+  if (entityInput) filters.entity = entityInput
+
+  const parentInput = window.prompt("parent (optional, enter to skip)")
+  if (parentInput) filters.parent = parentInput
+
+  frameAction("getFragments", async () => {
+    const result = await dbGetFragments(filters)
     screen.value = JSON.stringify(result, null, 2)
   })
 }

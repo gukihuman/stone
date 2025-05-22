@@ -8,12 +8,8 @@ export default async function dbGetEntities(stoneId) {
       body: JSON.stringify({ stoneId: stoneId }),
     })
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}))
-      throw new Error(
-        `API Error ${response.status}: ${
-          errData.statusMessage || response.statusText
-        }`
-      )
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.statusMessage)
     }
     return await response.json()
   } catch (error) {
