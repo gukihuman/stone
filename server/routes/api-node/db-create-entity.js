@@ -28,20 +28,20 @@ export default defineEventHandler(async (event) => {
     if (!body || !body._id || !body.name || !body.nature) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Missing required fields: _id, name, nature",
+        statusMessage: "missing required fields _id name nature",
       })
     }
     const newEntity = new Entity(body)
     await newEntity.save()
     return { success: true, entity: newEntity }
   } catch (error) {
-    console.error("Error creating entity:", error)
+    console.error("error creating entity", error)
     if (error.statusCode) {
       throw error
     }
     throw createError({
       statusCode: 500,
-      statusMessage: `Failed to create entity: ${error.message}`,
+      statusMessage: error.message,
     })
   }
 })

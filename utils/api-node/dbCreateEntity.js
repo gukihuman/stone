@@ -9,15 +9,11 @@ export default async function dbCreateEntity(entityData) {
     })
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}))
-      throw new Error(
-        `API Error ${response.status}: ${
-          errData.statusMessage || response.statusText
-        }`
-      )
+      throw new Error(errData.statusMessage)
     }
     return await response.json()
   } catch (error) {
-    console.error("Client error in createEntity:", error)
+    console.error(error)
     return { success: false, message: error.message, errorDetails: error }
   }
 }
