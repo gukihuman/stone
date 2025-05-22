@@ -41,7 +41,15 @@ html {
   );
   background-size: 16px 16px;
 }
-
+.bg-circles-gradient {
+  background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 0, 0, 0.05) 2px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
+  background-size: 16px 16px, 100% 100%;
+}
 .bg-lines {
   background-image: linear-gradient(
     to bottom,
@@ -57,26 +65,6 @@ html {
     transparent 4px
   );
   background-size: 100% 28px;
-}
-
-/* screen lines */
-@keyframes screen‑scroll {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 250px;
-  }
-}
-
-.screen-lines {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    rgba(255, 255, 255, 0.03) 250px
-  );
-  background-size: 100% 250px;
-  animation: screen‑scroll 10s linear infinite;
 }
 
 [contenteditable] {

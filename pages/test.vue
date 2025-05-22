@@ -2,7 +2,7 @@
 <template>
   <div class="p-2 h-screen flex justify-center">
     <div
-      class="w-[720px] h-full flex flex-col justify-between bg-stone-500 rounded-lg shadow-lg bg-circles"
+      class="w-[720px] h-full flex flex-col justify-between bg-stone-500 rounded-lg shadow-lg bg-circles-gradient"
     >
       <!-- # controls -->
       <div class="flex flex-col">
@@ -78,7 +78,7 @@
             copy screen
           </Button600>
           <div
-            class="w-full h-[250px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light screen-lines selection-light text-lg"
+            class="w-full h-[400px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light bg-screen cursor-text selection-light text-lg"
           >
             {{ screen }}
           </div>
@@ -206,3 +206,24 @@ async function frameAction(key, action) {
   loading[key] = false
 }
 </script>
+
+<style>
+@keyframes screen‑scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 400px;
+  }
+}
+.bg-screen {
+  background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      rgba(255, 255, 255, 0.02) 400px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
+  background-size: 100% 400px, 5px 5px;
+  animation: screen‑scroll 10s linear infinite;
+}
+</style>
