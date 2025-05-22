@@ -50,6 +50,13 @@
           >
             get-entities
           </Button600>
+          <Button600
+            @click="onRemoveEntity"
+            :active="loading.removeEntity"
+            :disabled="isAnythingLoading && !loading.removeEntity"
+          >
+            remove-entity
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -101,6 +108,7 @@ const loading = reactive({
   getUsageOpenAI: false,
   createEntity: false,
   getEntities: false,
+  removeEntity: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -160,7 +168,14 @@ async function onGetEntities() {
     screen.value = JSON.stringify(success ? entities : rest, null, 2)
   })
 }
-
+async function onRemoveEntity() {
+  const entityId = window.prompt("enter entity id to remove")
+  if (!entityId) return
+  frameAction("removeEntity", async () => {
+    const { message } = await dbRemoveEntity(entityId)
+    screen.value = message
+  })
+}
 ////////////////////////////////// helpers /////////////////////////////////////
 async function frameAction(key, action) {
   screen.value = ""
