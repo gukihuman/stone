@@ -1,7 +1,8 @@
-// server/routes/api-node/db-create-entity.js
+// server/routes/api-node/db-create-fragment.js
 import dbConnect from "~/server/utils/dbConnect"
-import Entity from "~/server/models/Entity"
+import Fragment from "~/server/models/Fragment"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
+import newId from "~/utils/misc/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")
@@ -19,24 +20,34 @@ export default defineEventHandler(async (event) => {
   if (event.node.req.method !== "POST") {
     throw createError({
       statusCode: 405,
-      statusMessage: "Method Not Allowed",
+      statusMessage: "method not allowed, please use POST",
     })
   }
   await dbConnect()
   try {
     const body = await readBody(event)
-    if (!body || !body._id || !body.name || !body.nature) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "missing required fields _id name nature",
-      })
+    if (
+      !body ||
+      !body.entity ||
+      !Array.isArray(body.space) ||
+      typeof body.data === "undefined"
+    ) {
+      throw createError({ statusCode: 400, statusMessage: "missing fields" })
     }
-    const newEntity = new Entity(body)
-    await newEntity.save()
-    return { success: true, entity: newEntity }
+    const fragmentData = {
+      _id: newId(),
+      entity: body.entity,
+      space: body.space,
+      data: body.data,
+      timestamp: Date.now(),
+      parent: body.parent || null,
+    }
+    const newFragment = new Fragment(fragmentData)
+    await newFragment.save()
+    return { success: true, fragment: newFragment }
   } catch (error) {
-    console.error("error creating entity", error)
     if (error.statusCode) throw error
+    console.error(error)
     throw createError({ statusCode: 500, statusMessage: error.message })
   }
 })

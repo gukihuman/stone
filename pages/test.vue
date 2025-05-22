@@ -57,6 +57,13 @@
           >
             remove-entity
           </Button600>
+          <Button600
+            @click="onCreateFragment"
+            :active="loading.createFragment"
+            :disabled="isAnythingLoading && !loading.createFragment"
+          >
+            create-fragment
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -109,6 +116,7 @@ const loading = reactive({
   createEntity: false,
   getEntities: false,
   removeEntity: false,
+  createFragment: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -146,7 +154,7 @@ async function onGetUsageOpenAI() {
   })
 }
 async function onCreateEntity() {
-  const entityName = window.prompt("enter entity name")
+  const entityName = window.prompt("enter entity name to create")
   if (!entityName) return
   await frameAction("createEntity", async () => {
     const entityData = { _id: newId(), name: entityName, nature: "digi" }
@@ -171,6 +179,21 @@ async function onRemoveEntity() {
   frameAction("removeEntity", async () => {
     const { message } = await dbRemoveEntity(entityId)
     screen.value = message
+  })
+}
+async function onCreateFragment() {
+  const entity = window.prompt("creator")
+  if (!entity) return
+  const spaceInput = window.prompt("space (comma-separated guki,roxanne)")
+  if (!spaceInput) return
+  const space = spaceInput.split(",").map((s) => s.trim())
+  const data = window.prompt("data")
+  if (typeof data !== "string") return
+  const parent = window.prompt("parent (optional, enter to skip)") || null
+  frameAction("createFragment", async () => {
+    const fragmentData = { entity, space, data, parent }
+    const result = await dbCreateFragment(fragmentData)
+    screen.value = JSON.stringify(result, null, 2)
   })
 }
 ////////////////////////////////// helpers /////////////////////////////////////

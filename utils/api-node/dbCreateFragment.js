@@ -1,11 +1,11 @@
-// utils/api-node/dbRemoveEntity.js
-export default async function dbRemoveEntity(entityId) {
+// utils/api-node/dbCreateFragment.js
+export default async function dbCreateFragment(fragmentData) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
-    const response = await fetch(`${baseURL}/api-node/db-remove-entity`, {
+    const response = await fetch(`${baseURL}/api-node/db-create-fragment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entityId: entityId }),
+      body: JSON.stringify(fragmentData),
     })
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}))
@@ -13,7 +13,7 @@ export default async function dbRemoveEntity(entityId) {
     }
     return await response.json()
   } catch (error) {
-    console.error(`client error in dbRemoveEntity for id ${entityId}`, error)
+    console.error("client error in dbCreateFragment", error)
     return { success: false, message: error.message, errorDetails: error }
   }
 }
