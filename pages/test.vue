@@ -146,17 +146,14 @@ async function onGetUsageOpenAI() {
   })
 }
 async function onCreateEntity() {
+  const entityName = window.prompt("enter entity name")
+  if (!entityName) return
   await frameAction("createEntity", async () => {
-    const entityData = {
-      _id: newId(),
-      name: "Test Entity Rox",
-      nature: "digi",
-    }
+    const entityData = { _id: newId(), name: entityName, nature: "digi" }
     const { success, entity, ...rest } = await dbCreateEntity(entityData)
     screen.value = JSON.stringify(success ? entity : rest, null, 2)
   })
 }
-
 async function onGetEntities() {
   const stoneId = localStorage.getItem("stone-id")
   if (!stoneId) {
