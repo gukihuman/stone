@@ -157,7 +157,7 @@ async function onCreateEntity() {
   const entityName = window.prompt("enter entity name to create")
   if (!entityName) return
   await frameAction("createEntity", async () => {
-    const entityData = { _id: newId(), name: entityName, nature: "digi" }
+    const entityData = { name: entityName, nature: "digi" }
     const { success, entity, ...rest } = await dbCreateEntity(entityData)
     screen.value = JSON.stringify(success ? entity : rest, null, 2)
   })

@@ -2,6 +2,7 @@
 import dbConnect from "~/server/utils/dbConnect"
 import Entity from "~/server/models/Entity"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
+import newId from "~/utils/misc/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")
@@ -25,13 +26,14 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
   try {
     const body = await readBody(event)
-    if (!body || !body._id || !body.name || !body.nature) {
+    if (!body || !body.name || !body.nature) {
       throw createError({
         statusCode: 400,
-        statusMessage: "missing required fields _id name nature",
+        statusMessage: "missing required fields name nature",
       })
     }
-    const newEntity = new Entity(body)
+    const entityData = { _id: newId(), name: body.name, nature: body.nature }
+    const newEntity = new Entity(entityData)
     await newEntity.save()
     return { success: true, entity: newEntity }
   } catch (error) {
