@@ -24,10 +24,10 @@ html {
   @apply w-4;
 }
 *::-webkit-scrollbar-thumb {
-  @apply bg-moss-600;
+  @apply bg-stone-600;
 }
 *::-webkit-scrollbar-thumb:hover {
-  @apply bg-moss-700 cursor-grab;
+  @apply bg-stone-700 cursor-grab;
 }
 .scroll-screen::-webkit-scrollbar-thumb {
   @apply bg-coffee-700;

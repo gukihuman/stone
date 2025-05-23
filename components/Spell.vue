@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden h-[130px] flex-shrink-0 border-dashed border-t-[3px] border-stone-550"
+    class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden h-[130px] flex-shrink-0 border-dashed border-t-[3px] border-coffee-650"
   >
     <div
       class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"

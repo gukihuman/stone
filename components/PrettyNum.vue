@@ -7,14 +7,14 @@
       :class="
         theme === 'light'
           ? [
-              i === groups.length - 3 ? 'text-stone-350' : '',
-              i === groups.length - 2 ? 'text-stone-350' : '',
+              i === groups.length - 3 ? 'text-stone-200' : '',
+              i === groups.length - 2 ? 'text-stone-300' : '',
               i === groups.length - 1 ? 'text-stone-400' : '',
             ]
           : [
-              i === groups.length - 3 ? 'text-stone-400' : '',
-              i === groups.length - 2 ? 'text-stone-400' : '',
-              i === groups.length - 1 ? 'text-stone-450' : '',
+              i === groups.length - 3 ? 'text-stone-200' : '',
+              i === groups.length - 2 ? 'text-stone-300' : '',
+              i === groups.length - 1 ? 'text-stone-400' : '',
             ]
       "
     >
