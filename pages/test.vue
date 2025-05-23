@@ -171,12 +171,13 @@ async function onGetUsageOpenAI() {
 }
 ///////////////////////////////// entities /////////////////////////////////////
 async function onCreateEntity() {
+  const entityId = window.prompt("id (optional, enter to automatic newId)")
   const entityName = window.prompt("name")
   if (!entityName) return
   const entityNature = window.prompt("nature (bio or digi)")
   if (!entityNature) return
   await frameAction("createEntity", async () => {
-    const entityData = { name: entityName, nature: entityNature }
+    const entityData = { _id: entityId, name: entityName, nature: entityNature }
     const { success, entity, ...rest } = await dbCreateEntity(entityData)
     screen.value = JSON.stringify(success ? entity : rest, null, 2)
   })

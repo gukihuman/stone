@@ -20,19 +20,39 @@ export default defineEventHandler(async (event) => {
   if (event.node.req.method !== "POST") {
     throw createError({
       statusCode: 405,
-      statusMessage: "Method Not Allowed",
+      statusMessage: "method not allowed",
     })
   }
+
   await dbConnect()
   try {
     const body = await readBody(event)
-    if (!body || !body.name || !body.nature) {
+    const { _id, name, nature, stoneId } = body || {}
+
+    const rootIdFromEnv = process.env.ROOT_ID
+    if (!rootIdFromEnv) {
+      console.error(
+        "ROOT_ID environment variable is not set for db-create-entity"
+      )
+      throw createError({
+        statusCode: 500,
+        statusMessage: "server configuration error",
+      })
+    }
+    if (!stoneId || stoneId !== rootIdFromEnv) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "unauthorized access to create entity",
+      })
+    }
+
+    if (!name || !nature) {
       throw createError({
         statusCode: 400,
         statusMessage: "missing required fields name nature",
       })
     }
-    const entityData = { _id: newId(), name: body.name, nature: body.nature }
+    const entityData = { _id: _id || newId(), name, nature }
     const newEntity = new Entity(entityData)
     await newEntity.save()
     return { success: true, entity: newEntity }
