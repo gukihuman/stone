@@ -13,13 +13,13 @@
             :states="fields"
             @change="emit('update-app-state', 'focusedField', field)"
           />
-          <Button600
+          <Button750
             @click="emit('update-app-state', 'focusedField', null)"
             :disabled="!field"
             theme="darker"
           >
             pretty
-          </Button600>
+          </Button750>
         </div>
       </div>
       <input
@@ -36,7 +36,7 @@
       >
         {{ event.date.substring(0, 10) }}
       </p>
-      <Button600 @click="emit('remove-event')">remove</Button600>
+      <Button750 @click="emit('remove-event')">remove</Button750>
     </div>
 
     <div
@@ -45,7 +45,7 @@
     >
       <div
         v-if="field === 'text' || field === 'memory'"
-        class="relative overflow-hidden rounded-xl scroll-light h-full"
+        class="relative overflow-hidden rounded-xl scroll-screen h-full"
       >
         <textarea
           ref="textareaEl"
@@ -55,7 +55,7 @@
           @scroll="onScroll"
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none"
+          class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none"
           :class="
             field === 'text'
               ? 'bg-stone-400 text-stone-800 text-xl'

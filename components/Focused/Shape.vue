@@ -17,7 +17,7 @@
       class="w-full relative flex-grow overflow-hidden px-3 py-2"
       :class="{ 'bg-stone-700': isTextareaFocused }"
     >
-      <div class="relative overflow-hidden rounded-b-lg scroll-light h-full">
+      <div class="relative overflow-hidden rounded-b-lg scroll-screen h-full">
         <textarea
           ref="textareaEl"
           :value="textarea"
@@ -31,7 +31,7 @@
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
           @scroll="onScroll"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
+          class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
           :style="{ backgroundPositionY: linesOffset }"
         />
       </div>

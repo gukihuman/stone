@@ -2,11 +2,11 @@
   <button
     class="px-3 pb-1 rounded-lg h-7 font-semibold"
     :class="{
-      'bg-stone-600 text-stone-300 hover:bg-stone-650 hover:text-stone-200':
+      'bg-coffee-750 text-coffee-300 hover:bg-coffee-850 hover:text-coffee-200':
         !disabled && !active,
       'cursor-default': disabled || active,
-      'bg-stone-550 text-stone-400': disabled,
-      'bg-amber-400 text-amber-900': active,
+      'bg-coffee-700 text-coffee-400': disabled,
+      'bg-carrot-400 text-carrot-800': active,
     }"
     :disabled="disabled || active"
   >

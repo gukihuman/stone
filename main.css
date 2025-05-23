@@ -7,7 +7,15 @@
 @tailwind utilities;
 
 html {
-  @apply bg-stone-600;
+  @apply bg-coffee-800;
+}
+html {
+  background-image: linear-gradient(
+    to left,
+    transparent 0%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  background-size: 100% 100%;
 }
 * {
   @apply focus:outline-none;
@@ -16,22 +24,22 @@ html {
   @apply w-4;
 }
 *::-webkit-scrollbar-thumb {
-  @apply bg-stone-600;
+  @apply bg-moss-600;
 }
 *::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+  @apply bg-moss-700 cursor-grab;
 }
-.scroll-light::-webkit-scrollbar-thumb {
-  @apply bg-stone-500;
+.scroll-screen::-webkit-scrollbar-thumb {
+  @apply bg-coffee-700;
 }
-.scroll-light::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+.scroll-screen::-webkit-scrollbar-thumb:hover {
+  @apply bg-coffee-550 cursor-grab;
 }
 *::selection {
-  @apply bg-stone-600 text-stone-300;
+  @apply bg-moss-700 text-moss-200;
 }
 .selection-light::selection {
-  @apply bg-stone-400 text-stone-800;
+  @apply bg-moss-300 text-moss-900;
 }
 .bg-circles {
   background-image: radial-gradient(
@@ -47,7 +55,7 @@ html {
       rgba(0, 0, 0, 0.05) 2px,
       transparent 1px
     ),
-    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.1) 100%);
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.15) 100%);
   background-size: 16px 16px, 100% 100%;
 }
 .bg-lines {

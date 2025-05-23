@@ -13,12 +13,12 @@
       </div>
     </div>
     <div class="w-full relative flex-grow overflow-hidden">
-      <div class="relative overflow-hidden rounded-b-xl scroll-light h-full">
+      <div class="relative overflow-hidden rounded-b-xl scroll-screen h-full">
         <textarea
           ref="textareaEl"
           v-model="textarea"
           @scroll="onScroll"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-400 text-stone-800"
+          class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-xl bg-stone-400 text-stone-800"
           :style="{ backgroundPositionY: linesOffset }"
           disabled
         />

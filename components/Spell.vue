@@ -18,13 +18,13 @@
         @focus="onFocus(emit)"
         @blur="onBlur(emit)"
         @scroll="onScroll"
-        class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-lg bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
+        class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-lg bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
         :style="{ backgroundPositionY: linesOffset }"
       />
       <div
         class="flex flex-col gap-2 items-center justify-between flex-shrink-0 h-full min-w-[80px]"
       >
-        <Button600
+        <Button750
           @click="
             () => {
               emit('cast', textarea)
@@ -34,9 +34,9 @@
           class="w-full"
         >
           cast
-        </Button600>
+        </Button750>
         <div class="flex flex-col gap-2 w-full">
-          <Button600
+          <Button750
             v-for="{ name, type } in contexts"
             :key="`context-${name}`"
             @click="emit('context', type)"
@@ -44,7 +44,7 @@
             class="w-full"
           >
             {{ name }}
-          </Button600>
+          </Button750>
         </div>
       </div>
     </div>

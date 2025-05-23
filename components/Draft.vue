@@ -3,13 +3,13 @@
     class="flex w-full items-center bg-circles bg-stone-500 overflow-hidden h-[170px] flex-shrink-0 -mt-2 z-10"
   >
     <!-- <div class="flex h-full p-3 bg-stone-700 justify-center flex-shrink-0">
-      <Button600 @click="emit('append')"> append </Button600>
+      <Button750 @click="emit('append')"> append </Button750>
     </div> -->
     <div
       class="w-full h-full relative flex-grow overflow-hidden p-3 py-2"
       :class="{ 'bg-stone-700 z-20': isTextareaFocused }"
     >
-      <div class="relative overflow-hidden rounded-xl scroll-light h-full">
+      <div class="relative overflow-hidden rounded-xl scroll-screen h-full">
         <textarea
           ref="textareaEl"
           :value="textarea"
@@ -17,7 +17,7 @@
           @focus="onFocus(emit)"
           @blur="onBlur(emit)"
           @scroll="onScroll"
-          class="w-full h-full py-5 px-8 scroll-light bg-lines resize-none text-xl bg-stone-400 text-stone-800 rounded-lg"
+          class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-xl bg-stone-400 text-stone-800 rounded-lg"
           :style="{ backgroundPositionY: linesOffset }"
         />
       </div>

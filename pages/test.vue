@@ -1,23 +1,22 @@
 <!-- pages/test.vue -->
 <template>
   <div class="p-2 h-screen flex justify-center">
+    <!-- # main panel -->
     <div
-      class="w-[720px] h-full flex flex-col justify-between bg-stone-500 rounded-lg shadow-lg bg-circles-gradient"
+      class="w-[720px] h-full flex flex-col bg-coffee-650 justify-between rounded-lg shadow-md bg-circles-gradient gap-3 p-3 pb-4"
     >
-      <!-- # controls -->
-      <div class="flex flex-col">
-        <div
-          class="flex flex-wrap gap-2 p-3 border-b-[3px] border-stone-450 border-dashed items-end"
-        >
-          <p class="font-pacifico text-stone-350 text-2xl pl-1">api /</p>
-          <Button600
+      <!-- ## controls top -->
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-wrap gap-2 items-end">
+          <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
+          <Button750
             @click="onStreamDurationTest"
             :active="loading.streamDurationTest"
             :disabled="isAnythingLoading && !loading.streamDurationTest"
           >
             stream-duration-test
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             v-for="(option, key) in GEN_OPTIONS"
             :key="key"
             @click="onGen(key, option.provider, option.model)"
@@ -25,76 +24,90 @@
             :disabled="isAnythingLoading && !loading[key]"
           >
             {{ key }}
-          </Button600>
+          </Button750>
         </div>
-        <div class="flex flex-wrap gap-2 p-3 flex-grow items-end">
-          <p class="font-pacifico text-stone-350 text-2xl pl-1">api-node /</p>
-          <Button600
+        <div class="flex flex-wrap gap-2 flex-grow items-end">
+          <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
+          <Button750
             @click="onGetUsageOpenAI"
             :active="loading.getUsageOpenAI"
             :disabled="isAnythingLoading && !loading.getUsageOpenAI"
           >
             get-usage-openai
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onCreateEntity"
             :active="loading.createEntity"
             :disabled="isAnythingLoading && !loading.createEntity"
           >
             create-entity
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onGetEntities"
             :active="loading.getEntities"
             :disabled="isAnythingLoading && !loading.getEntities"
           >
             get-entities
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onRemoveEntity"
             :active="loading.removeEntity"
             :disabled="isAnythingLoading && !loading.removeEntity"
           >
             remove-entity
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onCreateFragment"
             :active="loading.createFragment"
             :disabled="isAnythingLoading && !loading.createFragment"
           >
             create-fragment
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onGetFragments"
             :active="loading.getFragments"
             :disabled="isAnythingLoading && !loading.getFragments"
           >
             get-fragments
-          </Button600>
-          <Button600
+          </Button750>
+          <Button750
             @click="onRemoveFragment"
             :active="loading.removeFragment"
             :disabled="isAnythingLoading && !loading.removeFragment"
           >
             remove-fragment
-          </Button600>
+          </Button750>
         </div>
       </div>
-      <!-- # console output area -->
-      <div class="p-3">
-        <div class="relative overflow-hidden rounded-lg shadow-lg">
-          <Button600
-            @click="onCopyScreen"
-            :active="isCopyScreen"
-            :disabled="!screen"
-            class="absolute right-6 bottom-2"
-          >
-            copy screen
-          </Button600>
+      <!-- ## screen -->
+      <div class="overflow-hidden flex-grow">
+        <div class="overflow-hidden rounded-lg h-full">
           <div
-            class="w-full h-[400px] bg-stone-600 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-light bg-screen cursor-text selection-light text-lg"
+            class="w-full h-full bg-moss-450 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
           >
             {{ screen }}
+          </div>
+        </div>
+      </div>
+      <!-- ## controls bot -->
+      <div class="flex flex-wrap gap-2 justify-between">
+        <Button750
+          @click="onCopyScreen"
+          :active="isCopyScreen"
+          :disabled="!screen"
+        >
+          copy screen
+        </Button750>
+        <div class="flex gap-2 h-[36px]">
+          <div
+            class="w-[200px] bg-moss-450 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+          >
+            {{ entityIdScreen }}
+          </div>
+          <div
+            class="w-[200px] bg-moss-450 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+          >
+            {{ entityNameScreen }}
           </div>
         </div>
       </div>
@@ -139,7 +152,12 @@ const isAnythingLoading = computed(() => {
 })
 const screen = ref("")
 const isCopyScreen = ref(false)
-onMounted(() => (cleanupHotkeys = setupHotkeys(hotkeys)))
+const entityIdScreen = ref("")
+const entityNameScreen = ref("")
+onMounted(() => {
+  entityIdScreen.value = localStorage.getItem("stone-id") || ""
+  cleanupHotkeys = setupHotkeys(hotkeys)
+})
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -254,6 +272,7 @@ async function frameAction(key, action) {
 </script>
 
 <style>
+/* screen */
 @keyframes screen‑scroll {
   from {
     background-position: 0 0;
@@ -271,5 +290,24 @@ async function frameAction(key, action) {
     radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
   background-size: 100% 400px, 5px 5px;
   animation: screen‑scroll 10s linear infinite;
+}
+/* entity screen */
+@keyframes entity-screen‑scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 36px;
+  }
+}
+.bg-entity-screen {
+  background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      rgba(255, 255, 255, 0.02) 36px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
+  background-size: 100% 36px, 5px 5px;
+  animation: entity-screen‑scroll 2s linear infinite;
 }
 </style>
