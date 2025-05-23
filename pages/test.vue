@@ -207,6 +207,7 @@ async function onCreateFragment() {
   })
 }
 async function onGetFragments() {
+  const filters = {}
   const spaceInput = window.prompt("space eg. g,r (optional, enter to skip)")
   if (spaceInput) filters.space = spaceInput.split(",").map((s) => s.trim())
 

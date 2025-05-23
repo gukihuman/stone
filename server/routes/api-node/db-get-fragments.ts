@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const query = {}
 
     if (filters.space && filters.space.length > 0) {
-      query.space = { $all: filters.space }
+      query.space = { $all: filters.space, $size: filters.space.length }
     }
     if (filters.entity) {
       query.entity = filters.entity
