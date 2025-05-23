@@ -90,14 +90,23 @@
         </div>
       </div>
       <!-- ## controls bot -->
-      <div class="flex flex-wrap gap-2 justify-between">
-        <Button750
-          @click="onCopyScreen"
-          :active="isCopyScreen"
-          :disabled="!screen"
-        >
-          copy screen
-        </Button750>
+      <div class="flex flex-wrap justify-between">
+        <div class="flex gap-2">
+          <Button750
+            @click="onCopyScreen"
+            :active="isCopyScreen"
+            :disabled="!screen"
+          >
+            copy screen
+          </Button750>
+          <Button750
+            @click="onChangeEntity"
+            :active="loading.changeEntity"
+            :disabled="isAnythingLoading && !loading.changeEntity"
+          >
+            change entity
+          </Button750>
+        </div>
         <div class="flex gap-2 h-[36px]">
           <div
             class="w-[200px] bg-moss-450 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
@@ -143,6 +152,7 @@ const loading = reactive({
   createEntity: false,
   getEntities: false,
   removeEntity: false,
+  changeEntity: false,
   createFragment: false,
   getFragments: false,
   removeFragment: false,
@@ -155,8 +165,8 @@ const isCopyScreen = ref(false)
 const entityIdScreen = ref("")
 const entityNameScreen = ref("")
 onMounted(() => {
-  entityIdScreen.value = localStorage.getItem("stone-id") || ""
   cleanupHotkeys = setupHotkeys(hotkeys)
+  updateEntityInfo(localStorage.getItem("stone-id"))
 })
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
@@ -213,6 +223,23 @@ async function onRemoveEntity() {
     const { message } = await dbRemoveEntity(entityId)
     screen.value = message
   })
+}
+async function onChangeEntity() {
+  const newEntityId = window.prompt("new entity id")
+  entityIdScreen.value = ""
+  entityNameScreen.value = ""
+  frameAction("changeEntity", async () => await updateEntityInfo(newEntityId))
+}
+async function updateEntityInfo(stoneId) {
+  localStorage.setItem("stone-id", localStorage.getItem("stone-root-id"))
+  const { success, entities } = await dbGetEntities()
+  if (stoneId && success) {
+    entityIdScreen.value = stoneId
+    const entity = entities.find((entity) => entity._id === stoneId)
+    localStorage.setItem("stone-name", entity)
+    entityNameScreen.value = entity.name
+  }
+  localStorage.setItem("stone-id", stoneId)
 }
 ///////////////////////////////// fragments ////////////////////////////////////
 async function onCreateFragment() {
