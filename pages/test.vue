@@ -71,6 +71,13 @@
           >
             get-fragments
           </Button600>
+          <Button600
+            @click="onRemoveFragment"
+            :active="loading.removeFragment"
+            :disabled="isAnythingLoading && !loading.removeFragment"
+          >
+            remove-fragment
+          </Button600>
         </div>
       </div>
       <!-- # console output area -->
@@ -125,6 +132,7 @@ const loading = reactive({
   removeEntity: false,
   createFragment: false,
   getFragments: false,
+  removeFragment: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -161,6 +169,7 @@ async function onGetUsageOpenAI() {
     else screen.value = "getUsageOpenAI responded with null"
   })
 }
+///////////////////////////////// entities /////////////////////////////////////
 async function onCreateEntity() {
   const entityName = window.prompt("name")
   if (!entityName) return
@@ -191,6 +200,7 @@ async function onRemoveEntity() {
     screen.value = message
   })
 }
+///////////////////////////////// fragments ////////////////////////////////////
 async function onCreateFragment() {
   const entity = window.prompt("creator")
   if (!entity) return
@@ -227,6 +237,15 @@ async function onGetFragments() {
 
   frameAction("getFragments", async () => {
     const result = await dbGetFragments(filters)
+    screen.value = JSON.stringify(result, null, 2)
+  })
+}
+async function onRemoveFragment() {
+  const fragmentId = window.prompt("fragment id to remove")
+  if (!fragmentId) return
+
+  frameAction("removeFragment", async () => {
+    const result = await dbRemoveFragment({ fragmentId })
     screen.value = JSON.stringify(result, null, 2)
   })
 }
