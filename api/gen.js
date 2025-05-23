@@ -7,27 +7,57 @@ import { HumanMessage } from "@langchain/core/messages"
 export const config = { runtime: "edge" }
 
 export default async function handler(req) {
-  /* 🌐 CORS */
-
-  if (req.method === "OPTIONS")
+  if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
       },
     })
+  }
 
-  /* 📦 Body */
-  const { provider, model, input } = (await req.json().catch(() => ({}))) || {}
-  if (!provider || !model || !input)
-    return new Response(JSON.stringify({ error: "incorrect body" }), {
-      status: 400,
-      headers: { "Access-Control-Allow-Origin": "*" },
+  const body = (await req.json().catch(() => ({}))) || {}
+  const { provider, model, input, stoneId } = body
+
+  const rootIdFromEnv = process.env.ROOT_ID
+  if (!rootIdFromEnv) {
+    console.error("ROOT_ID environment variable is not set for /api/gen")
+    return new Response(
+      JSON.stringify({ error: "Server configuration error" }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+  }
+  if (!stoneId || stoneId !== rootIdFromEnv) {
+    return new Response(JSON.stringify({ error: "Unauthorized access" }), {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
     })
+  }
 
-  /* 🔮 LLM  */
+  if (!provider || !model || !input) {
+    return new Response(
+      JSON.stringify({ error: "Incorrect body parameters" }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    )
+  }
+
   const llm =
     provider === "openai"
       ? new ChatOpenAI({ modelName: model, temperature: 1 })
@@ -35,7 +65,6 @@ export default async function handler(req) {
       ? new ChatTogetherAI({ model, temperature: 1 })
       : new ChatGoogleGenerativeAI({ model, temperature: 1 })
 
-  /* 🚰 Stream */
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
   const enc = new TextEncoder()
@@ -47,7 +76,6 @@ export default async function handler(req) {
       ])) {
         if (chunk?.content) {
           console.log(chunk.content)
-
           await writer.write(enc.encode(chunk.content))
         }
       }

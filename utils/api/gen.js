@@ -7,18 +7,22 @@ export default async function gen({
   onComplete,
   onError,
 }) {
-  // const baseURL = import.meta.dev ? "https://stone-seven.vercel.app" : ""
   const baseURL = useRuntimeConfig().public.baseUrl
-  const res = await fetch(`${baseURL}/api/gen`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "text/event-stream",
-    },
-    body: JSON.stringify({ provider, model, input }),
-  })
-
+  let res
   try {
+    const stoneId = localStorage.getItem("stone-id")
+    if (!stoneId) {
+      throw new Error("stone-id not found in local storage for gen API call")
+    }
+    res = await fetch(`${baseURL}/api/gen`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({ provider, model, input, stoneId }),
+    })
+
     if (!res.ok) {
       let msg = `HTTP ${res.status} – ${res.statusText}`
       try {
@@ -38,13 +42,13 @@ export default async function gen({
       if (done) break
       const chunk = dec.decode(value, { stream: true })
       full += chunk
-      onChunk?.(chunk)
+      if (onChunk) onChunk(chunk)
     }
 
-    onComplete?.(full)
+    if (onComplete) onComplete(full)
     return full
   } catch (err) {
     console.error("gen error:", err)
-    onError?.(err)
+    if (onError) onError(err)
   }
 }
