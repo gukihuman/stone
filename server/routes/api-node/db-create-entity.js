@@ -27,23 +27,35 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
   try {
     const body = await readBody(event)
-    const { _id, name, nature, stoneId } = body || {}
+    const { _id: provided_id, name, nature, stoneId } = body || {}
 
     const rootIdFromEnv = process.env.ROOT_ID
     if (!rootIdFromEnv) {
-      console.error(
-        "ROOT_ID environment variable is not set for db-create-entity"
-      )
+      console.error("ROOT_ID environment variable is not set")
       throw createError({
         statusCode: 500,
         statusMessage: "server configuration error",
       })
     }
-    if (!stoneId || stoneId !== rootIdFromEnv) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "unauthorized access to create entity",
-      })
+
+    let final_id
+    if (provided_id) {
+      if (!stoneId || stoneId !== rootIdFromEnv) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "manual _id assignment is only allowed for root user",
+        })
+      }
+      final_id = provided_id
+    } else {
+      // 📜 only root checking now, but later this logic can allow more entities but still with some restrictions. like. one entity can create only one other entity or smth
+      if (!stoneId || stoneId !== rootIdFromEnv) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "unauthorized access to create entity",
+        })
+      }
+      final_id = newId()
     }
 
     if (!name || !nature) {
@@ -52,7 +64,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: "missing required fields name nature",
       })
     }
-    const entityData = { _id: _id || newId(), name, nature }
+    const entityData = { _id: final_id, name, nature }
     const newEntity = new Entity(entityData)
     await newEntity.save()
     return { success: true, entity: newEntity }

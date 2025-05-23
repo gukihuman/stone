@@ -28,23 +28,23 @@ export default defineEventHandler(async (event) => {
     const { stoneId } = body || {}
     const rootIdFromEnv = process.env.ROOT_ID
     if (!rootIdFromEnv) {
-      console.error("ROOT_ID environment variable is not set.")
+      console.error("ROOT_ID environment variable is not set")
       throw createError({
         statusCode: 500,
-        statusMessage: "Server configuration error.",
+        statusMessage: "server configuration error",
       })
     }
     if (!stoneId || stoneId !== rootIdFromEnv) {
       throw createError({
         statusCode: 403,
-        statusMessage: "Unauthorized access.",
+        statusMessage: "unauthorized access",
       })
     }
     const entities = await Entity.find({}).lean()
     return { success: true, entities: entities }
   } catch (error) {
     if (error.statusCode) throw error
-    console.error("Error in db-get-entities:", error)
+    console.error("error in db-get-entities", error)
     throw createError({
       statusCode: 500,
       statusMessage: `Failed to process request: ${error.message}`,
