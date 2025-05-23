@@ -182,13 +182,8 @@ async function onCreateEntity() {
   })
 }
 async function onGetEntities() {
-  const stoneId = localStorage.getItem("stone-id")
-  if (!stoneId) {
-    screen.value = "stone-id not in local storage"
-    return
-  }
   await frameAction("getEntities", async () => {
-    const { success, entities, ...rest } = await dbGetEntities(stoneId)
+    const { success, entities, ...rest } = await dbGetEntities()
     screen.value = JSON.stringify(success ? entities : rest, null, 2)
   })
 }
@@ -243,9 +238,8 @@ async function onGetFragments() {
 async function onRemoveFragment() {
   const fragmentId = window.prompt("fragment id to remove")
   if (!fragmentId) return
-
   frameAction("removeFragment", async () => {
-    const result = await dbRemoveFragment({ fragmentId })
+    const result = await dbRemoveFragment(fragmentId)
     screen.value = JSON.stringify(result, null, 2)
   })
 }
