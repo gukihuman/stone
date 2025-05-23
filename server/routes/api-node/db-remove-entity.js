@@ -25,7 +25,22 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
   try {
     const body = await readBody(event)
-    const { entityId } = body || {}
+    const { entityId, stoneId } = body || {}
+
+    const rootIdFromEnv = process.env.ROOT_ID
+    if (!rootIdFromEnv) {
+      console.error("ROOT_ID environment variable is not set")
+      throw createError({
+        statusCode: 500,
+        statusMessage: "server configuration error",
+      })
+    }
+    if (!stoneId || stoneId !== rootIdFromEnv) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "unauthorized access to remove entity",
+      })
+    }
     if (!entityId) {
       throw createError({
         statusCode: 400,

@@ -2,10 +2,17 @@
 export default async function dbRemoveEntity(entityId) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
+    const stoneId = localStorage.getItem("stone-id")
+    if (!stoneId) {
+      throw new Error(
+        "stone-id not found in local storage for dbRemoveEntity call"
+      )
+    }
+    const body = { entityId, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-remove-entity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entityId: entityId }),
+      body: JSON.stringify(body),
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
