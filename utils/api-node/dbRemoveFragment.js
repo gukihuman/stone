@@ -4,7 +4,7 @@ export default async function dbRemoveFragment(fragmentId) {
   try {
     const stoneId = localStorage.getItem("stone-id")
     if (!stoneId) throw new Error("stone-id not found in local storage")
-    const body = { fragmendId, stoneId }
+    const body = { fragmentId, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-remove-fragment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -16,7 +16,7 @@ export default async function dbRemoveFragment(fragmentId) {
     }
     return await response.json()
   } catch (error) {
-    console.error(`error in dbRemoveFragment for id ${id}`, error)
+    console.error(`error in dbRemoveFragment for id ${fragmentId}`, error)
     return { success: false, message: error.message, errorDetails: error }
   }
 }
