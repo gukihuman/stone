@@ -9,14 +9,6 @@
 html {
   @apply bg-coffee-750;
 }
-html {
-  background-image: linear-gradient(
-    to left,
-    transparent 0%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
-  background-size: 100% 100%;
-}
 * {
   @apply focus:outline-none;
 }

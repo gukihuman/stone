@@ -153,19 +153,19 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
           .split("\n")
           .map((line) => `${indent}${indent}${line}`)
           .join("\n")
-        contextParts.push(
-          `${indent}<record id=\"${escapeXml(
-            mem.id
-          )}\" source-event=\"${escapeXml(
-            mem.sourceEvent
-          )}\" tags=\"${escapeXml(mem.tags)}\">`
-        )
+        // contextParts.push(
+        //   `${indent}<record id=\"${escapeXml(
+        //     mem.id
+        //   )}\" source-event=\"${escapeXml(
+        //     mem.sourceEvent
+        //   )}\" tags=\"${escapeXml(mem.tags)}\">`
+        // )
         contextParts.push(indentedContent)
-        if (index !== memoriesToAdd.length - 1) {
-          contextParts.push(`${indent}</record>\n`)
-        } else {
-          contextParts.push(`${indent}</record>`)
-        }
+        // if (index !== memoriesToAdd.length - 1) {
+        //   contextParts.push(`${indent}</record>\n`)
+        // } else {
+        //   contextParts.push(`${indent}</record>`)
+        // }
       })
       contextParts.push(`</my_memory>\n\n`)
     }

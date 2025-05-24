@@ -3,10 +3,10 @@
   <div class="p-2 h-screen flex justify-center">
     <!-- # main panel -->
     <div
-      class="w-[720px] h-full flex flex-col bg-coffee-650 justify-between rounded-lg shadow-md bg-circles-gradient gap-3 p-3 pb-4"
+      class="w-[720px] h-full flex flex-col bg-coffee-650 justify-between rounded-xl shadow-md bg-circles-gradient"
     >
-      <!-- ## controls top -->
-      <div class="flex flex-col gap-2">
+      <!-- ## controls -->
+      <div class="flex flex-col gap-3 p-3">
         <div class="flex flex-wrap gap-2 items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
           <Button800
@@ -78,28 +78,13 @@
             remove-fragment
           </Button800>
         </div>
-      </div>
-      <!-- ## screen -->
-      <div class="flex-grow p-[6px] rounded-xl bg-moss-350 overflow-hidden">
-        <div class="overflow-hidden h-full">
-          <div class="overflow-hidden rounded-lg h-full">
-            <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
-            >
-              {{ screen }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- ## controls bot -->
-      <div class="flex flex-wrap justify-between">
-        <div class="flex gap-2">
+        <div class="flex gap-2 pt-2">
           <Button800
-            @click="onCopyScreen"
+            @click="onCopyResponse"
             :active="isCopyScreen"
-            :disabled="!screen"
+            :disabled="!responseScreen"
           >
-            copy screen
+            copy response
           </Button800>
           <Button800
             @click="onChangeEntity"
@@ -109,19 +94,28 @@
             change entity
           </Button800>
         </div>
-        <div class="flex gap-2 h-[42px]">
-          <div class="p-[6px] rounded-xl bg-moss-350">
+      </div>
+      <!-- ## screen -->
+      <div class="flex-grow p-[6px] rounded-b-xl bg-moss-350 overflow-hidden">
+        <div class="overflow-hidden h-full">
+          <div class="overflow-hidden rounded-lg h-full">
             <div
-              class="w-[200px] h-full bg-moss-400 text-stone-300 rounded-lg px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
             >
-              {{ entityIdScreen }}
-            </div>
-          </div>
-          <div class="p-[6px] rounded-xl bg-moss-350">
-            <div
-              class="w-[200px] h-full bg-moss-400 text-stone-300 rounded-lg px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
-            >
-              {{ entityNameScreen }}
+              <div class="flex text-moss-300">
+                <div class="w-[200px]">stone-id</div>
+                <div>stone-name</div>
+              </div>
+              <div class="flex text-moss-100 h-[40px]">
+                <div class="w-[200px]">{{ entityIdScreen }}</div>
+                <div>{{ entityNameScreen }}</div>
+              </div>
+              <div class="flex text-moss-300">
+                <div>response</div>
+              </div>
+              <div>
+                {{ responseScreen }}
+              </div>
             </div>
           </div>
         </div>
@@ -134,7 +128,7 @@
 // hotkeys
 const { setupHotkeys } = useHotkeys()
 let cleanupHotkeys // hold cleanup function
-const hotkeys = { m: onCopyScreen }
+const hotkeys = { m: onCopyResponse }
 
 const GEN_OPTIONS = {
   // 1m
@@ -166,10 +160,10 @@ const loading = reactive({
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
 })
-const screen = ref("")
 const isCopyScreen = ref(false)
 const entityIdScreen = ref("")
 const entityNameScreen = ref("")
+const responseScreen = ref("")
 onMounted(() => {
   cleanupHotkeys = setupHotkeys(hotkeys)
   updateEntityInfo(localStorage.getItem("stone-id"))
@@ -177,8 +171,8 @@ onMounted(() => {
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
 ////////////////////////////////////////////////////////////////////////////////
-async function onCopyScreen() {
-  await clipboard({ input: screen.value, locked: isCopyScreen })
+async function onCopyResponse() {
+  await clipboard({ input: responseScreen.value, locked: isCopyScreen })
 }
 async function onGen(key, provider, model) {
   frameAction(key, async () => {
@@ -186,21 +180,21 @@ async function onGen(key, provider, model) {
       provider,
       model,
       input: "tell a very short story about a puppy girl",
-      onChunk: (chunk) => (screen.value += chunk),
-      onError: (err) => (screen.value = err.message || "unknown error"),
+      onChunk: (chunk) => (responseScreen.value += chunk),
+      onError: (err) => (responseScreen.value = err.message || "unknown error"),
     })
   })
 }
 async function onStreamDurationTest() {
   frameAction("streamDurationTest", async () => {
-    await streamDurationTest((chunk) => (screen.value += chunk))
+    await streamDurationTest((chunk) => (responseScreen.value += chunk))
   })
 }
 async function onGetUsageOpenAI() {
   frameAction("getUsageOpenAI", async () => {
     const usage = await getUsageOpenAI()
-    if (usage !== null) screen.value = JSON.stringify(usage, null, 2)
-    else screen.value = "getUsageOpenAI responded with null"
+    if (usage !== null) responseScreen.value = JSON.stringify(usage, null, 2)
+    else responseScreen.value = "getUsageOpenAI responded with null"
   })
 }
 ///////////////////////////////// entities /////////////////////////////////////
@@ -213,13 +207,13 @@ async function onCreateEntity() {
   await frameAction("createEntity", async () => {
     const entityData = { _id: entityId, name: entityName, nature: entityNature }
     const { success, entity, ...rest } = await dbCreateEntity(entityData)
-    screen.value = JSON.stringify(success ? entity : rest, null, 2)
+    responseScreen.value = JSON.stringify(success ? entity : rest, null, 2)
   })
 }
 async function onGetEntities() {
   await frameAction("getEntities", async () => {
     const { success, entities, ...rest } = await dbGetEntities()
-    screen.value = JSON.stringify(success ? entities : rest, null, 2)
+    responseScreen.value = JSON.stringify(success ? entities : rest, null, 2)
   })
 }
 async function onRemoveEntity() {
@@ -227,7 +221,7 @@ async function onRemoveEntity() {
   if (!entityId) return
   frameAction("removeEntity", async () => {
     const { message } = await dbRemoveEntity(entityId)
-    screen.value = message
+    responseScreen.value = message
   })
 }
 async function onChangeEntity() {
@@ -261,7 +255,7 @@ async function onCreateFragment() {
   frameAction("createFragment", async () => {
     const fragmentData = { entity, space, data, parent }
     const result = await dbCreateFragment(fragmentData)
-    screen.value = JSON.stringify(result, null, 2)
+    responseScreen.value = JSON.stringify(result, null, 2)
   })
 }
 async function onGetFragments() {
@@ -285,7 +279,7 @@ async function onGetFragments() {
 
   frameAction("getFragments", async () => {
     const result = await dbGetFragments(filters)
-    screen.value = JSON.stringify(result, null, 2)
+    responseScreen.value = JSON.stringify(result, null, 2)
   })
 }
 async function onRemoveFragment() {
@@ -293,12 +287,12 @@ async function onRemoveFragment() {
   if (!fragmentId) return
   frameAction("removeFragment", async () => {
     const result = await dbRemoveFragment(fragmentId)
-    screen.value = JSON.stringify(result, null, 2)
+    responseScreen.value = JSON.stringify(result, null, 2)
   })
 }
 ////////////////////////////////// helpers /////////////////////////////////////
 async function frameAction(key, action) {
-  screen.value = ""
+  responseScreen.value = ""
   loading[key] = true
   await action()
   loading[key] = false
@@ -306,7 +300,6 @@ async function frameAction(key, action) {
 </script>
 
 <style>
-/* screen */
 @keyframes screen‑scroll {
   from {
     background-position: 0 0;
@@ -324,24 +317,5 @@ async function frameAction(key, action) {
     radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
   background-size: 100% 400px, 5px 5px;
   animation: screen‑scroll 10s linear infinite;
-}
-/* entity screen */
-@keyframes entity-screen‑scroll {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 36px;
-  }
-}
-.bg-entity-screen {
-  background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      rgba(255, 255, 255, 0.02) 36px
-    ),
-    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
-  background-size: 100% 36px, 5px 5px;
-  animation: entity-screen‑scroll 2s linear infinite;
 }
 </style>
