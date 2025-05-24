@@ -13,13 +13,13 @@
             :states="fields"
             @change="emit('update-app-state', 'focusedField', field)"
           />
-          <Button750
+          <Button800
             @click="emit('update-app-state', 'focusedField', null)"
             :disabled="!field"
             theme="darker"
           >
             pretty
-          </Button750>
+          </Button800>
         </div>
       </div>
       <input
@@ -36,7 +36,7 @@
       >
         {{ event.date.substring(0, 10) }}
       </p>
-      <Button750 @click="emit('remove-event')">remove</Button750>
+      <Button800 @click="emit('remove-event')">remove</Button800>
     </div>
 
     <div

@@ -9,14 +9,14 @@
       <div class="flex flex-col gap-2">
         <div class="flex flex-wrap gap-2 items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
-          <Button750
+          <Button800
             @click="onStreamDurationTest"
             :active="loading.streamDurationTest"
             :disabled="isAnythingLoading && !loading.streamDurationTest"
           >
             stream-duration-test
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             v-for="(option, key) in GEN_OPTIONS"
             :key="key"
             @click="onGen(key, option.provider, option.model)"
@@ -24,66 +24,66 @@
             :disabled="isAnythingLoading && !loading[key]"
           >
             {{ key }}
-          </Button750>
+          </Button800>
         </div>
         <div class="flex flex-wrap gap-2 flex-grow items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
-          <Button750
+          <Button800
             @click="onGetUsageOpenAI"
             :active="loading.getUsageOpenAI"
             :disabled="isAnythingLoading && !loading.getUsageOpenAI"
           >
             get-usage-openai
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onCreateEntity"
             :active="loading.createEntity"
             :disabled="isAnythingLoading && !loading.createEntity"
           >
             create-entity
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onGetEntities"
             :active="loading.getEntities"
             :disabled="isAnythingLoading && !loading.getEntities"
           >
             get-entities
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onRemoveEntity"
             :active="loading.removeEntity"
             :disabled="isAnythingLoading && !loading.removeEntity"
           >
             remove-entity
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onCreateFragment"
             :active="loading.createFragment"
             :disabled="isAnythingLoading && !loading.createFragment"
           >
             create-fragment
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onGetFragments"
             :active="loading.getFragments"
             :disabled="isAnythingLoading && !loading.getFragments"
           >
             get-fragments
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onRemoveFragment"
             :active="loading.removeFragment"
             :disabled="isAnythingLoading && !loading.removeFragment"
           >
             remove-fragment
-          </Button750>
+          </Button800>
         </div>
       </div>
       <!-- ## screen -->
       <div class="overflow-hidden flex-grow">
         <div class="overflow-hidden rounded-lg h-full">
           <div
-            class="w-full h-full bg-moss-450 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
+            class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
           >
             {{ screen }}
           </div>
@@ -92,29 +92,29 @@
       <!-- ## controls bot -->
       <div class="flex flex-wrap justify-between">
         <div class="flex gap-2">
-          <Button750
+          <Button800
             @click="onCopyScreen"
             :active="isCopyScreen"
             :disabled="!screen"
           >
             copy screen
-          </Button750>
-          <Button750
+          </Button800>
+          <Button800
             @click="onChangeEntity"
             :active="loading.changeEntity"
             :disabled="isAnythingLoading && !loading.changeEntity"
           >
             change entity
-          </Button750>
+          </Button800>
         </div>
         <div class="flex gap-2 h-[36px]">
           <div
-            class="w-[200px] bg-moss-450 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+            class="w-[200px] bg-moss-400 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
           >
             {{ entityIdScreen }}
           </div>
           <div
-            class="w-[200px] bg-moss-450 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+            class="w-[200px] bg-moss-400 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
           >
             {{ entityNameScreen }}
           </div>
@@ -226,6 +226,7 @@ async function onRemoveEntity() {
 }
 async function onChangeEntity() {
   const newEntityId = window.prompt("new entity id")
+  if (!newEntityId) return
   entityIdScreen.value = ""
   entityNameScreen.value = ""
   frameAction("changeEntity", async () => await updateEntityInfo(newEntityId))

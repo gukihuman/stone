@@ -39,7 +39,7 @@ html {
   @apply bg-moss-700 text-moss-200;
 }
 .selection-light::selection {
-  @apply bg-moss-300 text-moss-900;
+  @apply bg-moss-300 text-moss-700;
 }
 .bg-circles {
   background-image: radial-gradient(
