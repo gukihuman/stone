@@ -4,10 +4,17 @@ import type { FragmentFilters } from "~/types/fragments"
 export default async function dbGetFragments(filters: FragmentFilters) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
+    const stoneId = localStorage.getItem("stone-id")
+    if (!stoneId) {
+      throw new Error(
+        "stone-id not found in local storage for dbGetFragments call"
+      )
+    }
+    const body = { filters, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-get-fragments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
+      body: JSON.stringify(body),
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
