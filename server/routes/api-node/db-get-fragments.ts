@@ -32,20 +32,21 @@ export default defineEventHandler(async (event) => {
     const filters = (body.filters as FragmentFilters) || {}
     const { stoneId } = body
 
-    const rootIdFromEnv = process.env.ROOT_ID
-    if (!rootIdFromEnv) {
-      console.error("ROOT_ID environment variable is not set")
-      throw createError({
-        statusCode: 500,
-        statusMessage: "server configuration error",
-      })
-    }
-    if (!stoneId || stoneId !== rootIdFromEnv) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "unauthorized access to get fragments",
-      })
-    }
+    // must be ok without that
+    // const rootIdFromEnv = process.env.ROOT_ID
+    // if (!rootIdFromEnv) {
+    //   console.error("ROOT_ID environment variable is not set")
+    //   throw createError({
+    //     statusCode: 500,
+    //     statusMessage: "server configuration error",
+    //   })
+    // }
+    // if (!stoneId || stoneId !== rootIdFromEnv) {
+    //   throw createError({
+    //     statusCode: 403,
+    //     statusMessage: "unauthorized access to get fragments",
+    //   })
+    // }
 
     const allEntities = await Entity.find({}).lean()
     const requestingEntity = allEntities.find((e) => e._id === stoneId)
