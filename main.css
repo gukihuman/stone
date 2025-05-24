@@ -7,7 +7,7 @@
 @tailwind utilities;
 
 html {
-  @apply bg-coffee-800;
+  @apply bg-coffee-750;
 }
 html {
   background-image: linear-gradient(
@@ -30,10 +30,10 @@ html {
   @apply bg-stone-700 cursor-grab;
 }
 .scroll-screen::-webkit-scrollbar-thumb {
-  @apply bg-coffee-700;
+  @apply bg-moss-350;
 }
 .scroll-screen::-webkit-scrollbar-thumb:hover {
-  @apply bg-coffee-550 cursor-grab;
+  @apply bg-moss-300 cursor-grab;
 }
 *::selection {
   @apply bg-moss-700 text-moss-200;

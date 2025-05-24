@@ -90,16 +90,18 @@ export default defineEventHandler(async (event) => {
     const candidateFragments = await Fragment.find(query)
       .sort({ timestamp: -1 })
       .lean()
+    console.log(candidateFragments)
 
     const authorizedFragments = candidateFragments.filter((f) => {
       f.space.includes(requestingEntityName)
     })
+    console.log(authorizedFragments)
 
     let resultFragments = []
     if (filters.tokens && filters.tokens > 0) {
       let currentTokens = 0
       for (const f of authorizedFragments) {
-        const fragmentTokens = getTokens(f.data as string)
+        const fragmentTokens = getTokens(f.data)
         if (currentTokens + fragmentTokens <= filters.tokens) {
           resultFragments.push(f)
           currentTokens += fragmentTokens

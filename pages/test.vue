@@ -80,7 +80,7 @@
         </div>
       </div>
       <!-- ## screen -->
-      <div class="flex-grow p-[6px] rounded-xl bg-moss-350">
+      <div class="flex-grow p-[6px] rounded-xl bg-moss-350 overflow-hidden">
         <div class="overflow-hidden h-full">
           <div class="overflow-hidden rounded-lg h-full">
             <div
