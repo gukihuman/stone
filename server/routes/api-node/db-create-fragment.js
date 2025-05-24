@@ -1,6 +1,7 @@
 // server/routes/api-node/db-create-fragment.js
 import dbConnect from "~/server/utils/dbConnect"
 import Fragment from "~/server/models/Fragment"
+import Entity from "~/server/models/Entity"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import newId from "~/utils/misc/newId"
 
@@ -34,6 +35,35 @@ export default defineEventHandler(async (event) => {
     ) {
       throw createError({ statusCode: 400, statusMessage: "missing fields" })
     }
+
+    const allEntities = await Entity.find({}).lean()
+    const existingEntityNames = allEntities.map((e) => e.name)
+
+    if (!existingEntityNames.includes(body.entity)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `creator entity '${body.entity}' not found`,
+      })
+    }
+
+    if (body.space.length > 0) {
+      const uniqueSpaceEntities = new Set(body.space)
+      if (uniqueSpaceEntities.size !== body.space.length) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: "space cannot contain duplicate entity names",
+        })
+      }
+      for (const spaceEntityName of body.space) {
+        if (!existingEntityNames.includes(spaceEntityName)) {
+          throw createError({
+            statusCode: 400,
+            statusMessage: `entity '${spaceEntityName}' in space not found`,
+          })
+        }
+      }
+    }
+
     const fragmentData = {
       _id: newId(),
       entity: body.entity,
