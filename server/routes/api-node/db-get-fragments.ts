@@ -32,22 +32,6 @@ export default defineEventHandler(async (event) => {
     const filters = (body.filters as FragmentFilters) || {}
     const { stoneId } = body
 
-    // must be ok without that
-    // const rootIdFromEnv = process.env.ROOT_ID
-    // if (!rootIdFromEnv) {
-    //   console.error("ROOT_ID environment variable is not set")
-    //   throw createError({
-    //     statusCode: 500,
-    //     statusMessage: "server configuration error",
-    //   })
-    // }
-    // if (!stoneId || stoneId !== rootIdFromEnv) {
-    //   throw createError({
-    //     statusCode: 403,
-    //     statusMessage: "unauthorized access to get fragments",
-    //   })
-    // }
-
     const allEntities = await Entity.find({}).lean()
     const requestingEntity = allEntities.find((e) => e._id === stoneId)
     if (!requestingEntity) {
@@ -57,7 +41,6 @@ export default defineEventHandler(async (event) => {
       })
     }
     const requestingEntityName = requestingEntity.name
-    console.log(requestingEntityName)
 
     const query = {}
     if (filters.space && filters.space.length > 0) {
@@ -93,8 +76,7 @@ export default defineEventHandler(async (event) => {
       .lean()
 
     const authorizedFragments = candidateFragments.filter((f) => {
-      console.log(f.space)
-      f.space.includes(requestingEntityName)
+      return f.space.includes(requestingEntityName)
     })
 
     let resultFragments = []
