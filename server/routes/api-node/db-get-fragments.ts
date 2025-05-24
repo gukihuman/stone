@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     const requestingEntityName = requestingEntity.name
+    console.log(requestingEntityName)
 
     const query = {}
     if (filters.space && filters.space.length > 0) {
@@ -90,9 +91,10 @@ export default defineEventHandler(async (event) => {
       .sort({ timestamp: -1 })
       .lean()
 
-    const authorizedFragments = candidateFragments.filter(
-      (f) => Array.isArray(f.space) && f.space.includes(requestingEntityName)
-    )
+    const authorizedFragments = candidateFragments.filter((f) => {
+      return f.space.includes(requestingEntityName)
+    })
+    console.log("auth frag", authorizedFragments)
 
     let resultFragments = []
     if (filters.tokens && filters.tokens > 0) {
