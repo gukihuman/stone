@@ -81,8 +81,7 @@ export default defineEventHandler(async (event) => {
 
     if (space.length > 0) {
       const uniqueSpaceEntities = new Set(space)
-      if (uniqueSpaceEntities.size !== body.space.length) {
-        // Corrected to body.space for length check consistency
+      if (uniqueSpaceEntities.size !== space.length) {
         throw createError({
           statusCode: 400,
           statusMessage: "space cannot contain duplicate entity names",

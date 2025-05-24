@@ -80,12 +80,14 @@
         </div>
       </div>
       <!-- ## screen -->
-      <div class="overflow-hidden flex-grow">
-        <div class="overflow-hidden rounded-lg h-full">
-          <div
-            class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
-          >
-            {{ screen }}
+      <div class="flex-grow p-[6px] rounded-xl bg-moss-350">
+        <div class="overflow-hidden h-full">
+          <div class="overflow-hidden rounded-lg h-full">
+            <div
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
+            >
+              {{ screen }}
+            </div>
           </div>
         </div>
       </div>
@@ -107,16 +109,20 @@
             change entity
           </Button800>
         </div>
-        <div class="flex gap-2 h-[36px]">
-          <div
-            class="w-[200px] bg-moss-400 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
-          >
-            {{ entityIdScreen }}
+        <div class="flex gap-2 h-[42px]">
+          <div class="p-[6px] rounded-xl bg-moss-350">
+            <div
+              class="w-[200px] h-full bg-moss-400 text-stone-300 rounded-lg px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+            >
+              {{ entityIdScreen }}
+            </div>
           </div>
-          <div
-            class="w-[200px] bg-moss-400 text-stone-300 rounded-lg p-1 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
-          >
-            {{ entityNameScreen }}
+          <div class="p-[6px] rounded-xl bg-moss-350">
+            <div
+              class="w-[200px] h-full bg-moss-400 text-stone-300 rounded-lg px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-entity-screen cursor-text selection-light text-lg text-center"
+            >
+              {{ entityNameScreen }}
+            </div>
           </div>
         </div>
       </div>
