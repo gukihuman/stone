@@ -27,34 +27,68 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
   try {
     const body = await readBody(event)
-    if (
-      !body ||
-      !body.entity ||
-      !Array.isArray(body.space) ||
-      typeof body.data === "undefined"
-    ) {
-      throw createError({ statusCode: 400, statusMessage: "missing fields" })
+    const { fragmentData, stoneId } = body || {}
+    const { entity, space, data, parent } = fragmentData || {}
+
+    if (!entity || !Array.isArray(space) || typeof data === "undefined") {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "missing required fields (entity, space, data)",
+      })
+    }
+
+    const rootIdFromEnv = process.env.ROOT_ID
+    if (!rootIdFromEnv) {
+      console.error("ROOT_ID environment variable is not set")
+      throw createError({
+        statusCode: 500,
+        statusMessage: "server configuration error",
+      })
+    }
+    if (!stoneId) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "authentication token (stoneId) missing",
+      })
     }
 
     const allEntities = await Entity.find({}).lean()
     const existingEntityNames = allEntities.map((e) => e.name)
+    const requestingEntity = allEntities.find((e) => e._id === stoneId)
 
-    if (!existingEntityNames.includes(body.entity)) {
+    if (!requestingEntity) {
       throw createError({
-        statusCode: 400,
-        statusMessage: `creator entity '${body.entity}' not found`,
+        statusCode: 403,
+        statusMessage: "invalid authentication token (stoneId)",
       })
     }
 
-    if (body.space.length > 0) {
-      const uniqueSpaceEntities = new Set(body.space)
+    if (stoneId !== rootIdFromEnv) {
+      if (entity !== requestingEntity.name) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: `authenticated user '${requestingEntity.name}' cannot create fragments for '${entity}'`,
+        })
+      }
+    }
+
+    if (!existingEntityNames.includes(entity)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `creator entity '${entity}' not found`,
+      })
+    }
+
+    if (space.length > 0) {
+      const uniqueSpaceEntities = new Set(space)
       if (uniqueSpaceEntities.size !== body.space.length) {
+        // Corrected to body.space for length check consistency
         throw createError({
           statusCode: 400,
           statusMessage: "space cannot contain duplicate entity names",
         })
       }
-      for (const spaceEntityName of body.space) {
+      for (const spaceEntityName of space) {
         if (!existingEntityNames.includes(spaceEntityName)) {
           throw createError({
             statusCode: 400,
@@ -64,15 +98,15 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const fragmentData = {
+    const newFragmentData = {
       _id: newId(),
-      entity: body.entity,
-      space: body.space,
-      data: body.data,
+      entity,
+      space,
+      data,
       timestamp: Date.now(),
-      parent: body.parent || null,
+      parent: parent || null,
     }
-    const newFragment = new Fragment(fragmentData)
+    const newFragment = new Fragment(newFragmentData)
     await newFragment.save()
     return { success: true, fragment: newFragment }
   } catch (error) {

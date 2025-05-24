@@ -2,10 +2,17 @@
 export default async function dbCreateFragment(fragmentData) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
+    const stoneId = localStorage.getItem("stone-id")
+    if (!stoneId) {
+      throw new Error(
+        "stone-id not found in local storage for dbCreateFragment call"
+      )
+    }
+    const bodyToSend = { fragmentData, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-create-fragment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(fragmentData),
+      body: JSON.stringify(bodyToSend),
     })
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
