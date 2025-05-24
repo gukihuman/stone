@@ -57,6 +57,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     const requestingEntityName = requestingEntity.name
+    console.log(requestingEntityName)
 
     const query = {}
     if (filters.space && filters.space.length > 0) {
@@ -90,12 +91,11 @@ export default defineEventHandler(async (event) => {
     const candidateFragments = await Fragment.find(query)
       .sort({ timestamp: -1 })
       .lean()
-    console.log(candidateFragments)
 
     const authorizedFragments = candidateFragments.filter((f) => {
+      console.log(f.space)
       f.space.includes(requestingEntityName)
     })
-    console.log(authorizedFragments)
 
     let resultFragments = []
     if (filters.tokens && filters.tokens > 0) {
