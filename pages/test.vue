@@ -30,77 +30,25 @@
         <div class="flex flex-wrap gap-2 flex-grow items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
           <Button800
-            @click="onGetUsageOpenAI"
-            :active="loading.getUsageOpenAI"
-            :disabled="isAnythingLoading && !loading.getUsageOpenAI"
+            v-for="button in API_NODE_BUTTONS"
+            :key="button.label"
+            @click="button.action"
+            :active="loading[button.loadingKey]"
+            :disabled="isAnythingLoading && !loading[button.loadingKey]"
           >
-            get-usage-openai
-          </Button800>
-          <Button800
-            @click="onValidate"
-            :active="loading.validate"
-            :disabled="isAnythingLoading && !loading.validate"
-          >
-            validate
-          </Button800>
-          <Button800
-            @click="onCreateEntity"
-            :active="loading.createEntity"
-            :disabled="isAnythingLoading && !loading.createEntity"
-          >
-            create-entity
-          </Button800>
-          <Button800
-            @click="onGetEntities"
-            :active="loading.getEntities"
-            :disabled="isAnythingLoading && !loading.getEntities"
-          >
-            get-entities
-          </Button800>
-          <Button800
-            @click="onRemoveEntity"
-            :active="loading.removeEntity"
-            :disabled="isAnythingLoading && !loading.removeEntity"
-          >
-            remove-entity
-          </Button800>
-          <Button800
-            @click="onCreateFragment"
-            :active="loading.createFragment"
-            :disabled="isAnythingLoading && !loading.createFragment"
-          >
-            create-fragment
-          </Button800>
-          <Button800
-            @click="onGetFragments"
-            :active="loading.getFragments"
-            :disabled="isAnythingLoading && !loading.getFragments"
-          >
-            get-fragments
-          </Button800>
-          <Button800
-            @click="onRemoveFragment"
-            :active="loading.removeFragment"
-            :disabled="isAnythingLoading && !loading.removeFragment"
-          >
-            remove-fragment
+            {{ button.label }}
           </Button800>
         </div>
         <!-- # rest -->
         <div class="flex gap-2 pt-2">
           <Button800
-            @click="onCopyResponse"
-            :active="isCopyScreen"
-            :disabled="!responseScreen"
+            v-for="button in REST_BUTTONS"
+            :key="button.label"
+            @click="button.action"
+            :active="button.activeKey === 'isCopyScreen' ? isCopyScreen : loading[button.loadingKey]"
+            :disabled="button.customDisabled === '!responseScreen' ? !responseScreen : (isAnythingLoading && !loading[button.loadingKey])"
           >
-            copy response
-          </Button800>
-          <Button800
-            @click="onChangeEntity"
-            :active="loading.changeEntity"
-            :disabled="isAnythingLoading && !loading.changeEntity"
-          >
-            change entity
+            {{ button.label }}
           </Button800>
         </div>
       </div>
@@ -153,6 +101,23 @@ const GEN_OPTIONS = {
     model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
   },
 }
+
+const API_NODE_BUTTONS = [
+  { label: 'get-usage-openai', action: onGetUsageOpenAI, loadingKey: 'getUsageOpenAI' },
+  { label: 'validate', action: onValidate, loadingKey: 'validate' },
+  { label: 'create-entity', action: onCreateEntity, loadingKey: 'createEntity' },
+  { label: 'get-entities', action: onGetEntities, loadingKey: 'getEntities' },
+  { label: 'remove-entity', action: onRemoveEntity, loadingKey: 'removeEntity' },
+  { label: 'create-fragment', action: onCreateFragment, loadingKey: 'createFragment' },
+  { label: 'get-fragments', action: onGetFragments, loadingKey: 'getFragments' },
+  { label: 'remove-fragment', action: onRemoveFragment, loadingKey: 'removeFragment' },
+];
+
+const REST_BUTTONS = [
+  { label: 'copy response', action: onCopyResponse, activeKey: 'isCopyScreen', customDisabled: '!responseScreen' },
+  { label: 'change entity', action: onChangeEntity, loadingKey: 'changeEntity' },
+];
+
 const loading = reactive({
   // turn every gen option key into { key: false }
   ...Object.fromEntries(Object.keys(GEN_OPTIONS).map((key) => [key, false])),
