@@ -3,7 +3,7 @@
   <div class="p-2 h-screen flex justify-center">
     <!-- # main panel -->
     <div
-      class="w-[720px] h-full flex flex-col bg-coffee-650 justify-between rounded-xl shadow-md bg-circles-gradient"
+      class="w-[720px] h-full flex flex-col bg-coffee-700 justify-between rounded-xl shadow-md bg-circles-gradient"
     >
       <!-- ## controls -->
       <div class="flex flex-col gap-3 p-3">
@@ -96,11 +96,11 @@
         </div>
       </div>
       <!-- ## screen -->
-      <div class="flex-grow p-[6px] rounded-b-xl bg-moss-350 overflow-hidden">
+      <div class="flex-grow p-2 rounded-b-xl bg-moss-350 overflow-hidden">
         <div class="overflow-hidden h-full">
           <div class="overflow-hidden rounded-lg h-full">
             <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-screen text-lg"
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
               <div class="flex text-moss-300">
                 <div class="w-[200px]">stone-id</div>
