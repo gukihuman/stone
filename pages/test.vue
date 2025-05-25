@@ -114,6 +114,7 @@ const API_NODE = {
   onCreateFragment,
   onGetFragments,
   onRemoveFragment,
+  onGetMyName,
 }
 const cookieStoneId = useCookie("stone-id")
 
@@ -213,6 +214,10 @@ async function onRemoveFragment() {
   const fragmentId = window.prompt("fragment id to remove")
   if (!fragmentId) return
   const result = await dbRemoveFragment(fragmentId)
+  responseScreen.value = JSON.stringify(result, null, 2)
+}
+async function onGetMyName() {
+  const result = await dbGetMyName()
   responseScreen.value = JSON.stringify(result, null, 2)
 }
 //////////////////////////////////// rest //////////////////////////////////////
