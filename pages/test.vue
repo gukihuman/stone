@@ -43,7 +43,7 @@
         <div class="flex gap-2 pt-2">
           <Button800
             @click="onCopyResponse"
-            :active="isCopyResponse"
+            :active="isCopyResponseLoading"
             :disabled="!responseScreen"
           >
             copy response
@@ -87,9 +87,8 @@
 </template>
 
 <script setup>
-// hotkeys
 const { setupHotkeys } = useHotkeys()
-let cleanupHotkeys // hold cleanup function
+let cleanupHotkeys
 const hotkeys = { m: onCopyResponse }
 
 const GEN_OPTIONS = {
@@ -116,20 +115,20 @@ const API_NODE = {
   onGetFragments,
   onRemoveFragment,
 }
+const cookieStoneId = useCookie("stone-id")
+
 const loading = reactive({})
-const isAnythingLoading = computed(() => {
-  return Object.values(loading).some((state) => state)
-})
-const isCopyResponse = ref(false)
+const isAnythingLoading = computed(() => Object.values(loading).some((k) => k))
+const isCopyResponseLoading = ref(false)
+
 const entityIdScreen = ref("")
 const entityNameScreen = ref("")
 const responseScreen = ref("")
-const cookieStoneId = useCookie("stone-id")
 onMounted(() => {
   cleanupHotkeys = setupHotkeys(hotkeys)
   updateEntityInfo(cookieStoneId.value)
 })
-onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
+onUnmounted(cleanupHotkeys)
 
 //////////////////////////////////// api ///////////////////////////////////////
 async function onStreamDurationTest() {
@@ -218,7 +217,10 @@ async function onRemoveFragment() {
 }
 //////////////////////////////////// rest //////////////////////////////////////
 async function onCopyResponse() {
-  await clipboard({ input: responseScreen.value, locked: isCopyResponse })
+  await clipboard({
+    input: responseScreen.value,
+    locked: isCopyResponseLoading,
+  })
 }
 async function onChangeEntity() {
   const newEntityId = window.prompt("new entity id")
