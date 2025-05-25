@@ -2,8 +2,8 @@
 export default async function dbRemoveFragment(fragmentId) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
-    const stoneId = localStorage.getItem("stone-id")
-    if (!stoneId) throw new Error("stone-id not found in local storage")
+    const stoneId = useCookie("stone-id").value
+    if (!stoneId) throw new Error("stone-id not found for dbRemoveFragment")
     const body = { fragmentId, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-remove-fragment`, {
       method: "POST",

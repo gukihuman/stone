@@ -1,4 +1,4 @@
-// server/routes/api-node/validate-stone-id.js
+// ~/server/routes/api-node/validate-stone-id.js
 import dbConnect from "~/server/utils/dbConnect"
 import Entity from "~/server/models/Entity"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"

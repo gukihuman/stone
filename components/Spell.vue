@@ -2,21 +2,18 @@
   <div
     class="flex w-full items-center bg-circles rounded-b-lg bg-stone-500 overflow-hidden h-[130px] flex-shrink-0 border-dashed border-t-[3px] border-coffee-650"
   >
-    <div
-      class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2"
-      :class="{ 'bg-stone-700': isTextareaFocused }"
-    >
+    <div class="flex w-full relative h-full overflow-hidden p-3 pt-2 gap-2">
       <textarea
         ref="textareaEl"
         :value="textarea"
         @input="
           (event) => {
             textarea = event.target.value
-            adjustScrollTop
+            adjustScroll
           }
         "
-        @focus="onFocus(emit)"
-        @blur="onBlur(emit)"
+        @focus="emit('lock-hotkeys')"
+        @blur="emit('unlock-hotkeys')"
         @scroll="onScroll"
         class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-lg bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
         :style="{ backgroundPositionY: linesOffset }"
@@ -62,15 +59,7 @@ const props = defineProps([
 
 const emit = defineEmits(["context", "cast", "lock-hotkeys", "unlock-hotkeys"])
 
-const {
-  isTextareaFocused,
-  linesOffset,
-  onFocus,
-  onBlur,
-  onScroll,
-  focus,
-  adjustScrollTop,
-} = useFocused()
+const { linesOffset, onScroll, focus, adjustScroll } = usePaper()
 
 // els refs
 const textareaEl = ref(null)

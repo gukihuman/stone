@@ -200,7 +200,6 @@ const hotkeys = {
   y: () => switchToNextEntity(),
 
   q: () => appendDraftToEvent(),
-  c: () => focusedRef.value?.focusName(),
   u: () => focusedRef.value?.focus(),
   e: () => focusedDraftRef.value?.focus(),
   o: () => focusedSpellRef.value?.focus(),

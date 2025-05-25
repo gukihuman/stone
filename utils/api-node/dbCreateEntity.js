@@ -2,12 +2,9 @@
 export default async function dbCreateEntity(entityData) {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
-    const stoneId = localStorage.getItem("stone-id")
-    if (!stoneId) {
-      throw new Error(
-        "stone-id not found in local storage for dbCreateEntity call"
-      )
-    }
+    const stoneId = useCookie("stone-id").value
+    if (!stoneId) throw new Error("stone-id not found for dbCreateEntity")
+
     const bodyToSend = { ...entityData, stoneId }
     const response = await fetch(`${baseURL}/api-node/db-create-entity`, {
       method: "POST",

@@ -13,10 +13,7 @@
       </p>
     </div>
     <!-- # mid ---------------------------------------------------------------->
-    <div
-      class="w-full relative flex-grow overflow-hidden px-3 py-2"
-      :class="{ 'bg-stone-700': isTextareaFocused }"
-    >
+    <div class="w-full relative flex-grow overflow-hidden px-3 py-2">
       <div class="relative overflow-hidden rounded-b-lg scroll-screen h-full">
         <textarea
           ref="textareaEl"
@@ -25,11 +22,11 @@
             (event) => {
               textarea = event.target.value
               dEmitUpdateShape(shapeName, textarea)
-              adjustScrollTop(textareaEl)
+              adjustScroll(textareaEl)
             }
           "
-          @focus="onFocus(emit)"
-          @blur="onBlur(emit)"
+          @focus="emit('lock-hotkeys')"
+          @blur="emit('unlock-hotkeys')"
           @scroll="onScroll"
           class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none text-xl bg-stone-600 bg-lines-light selection-light text-stone-300 font-fira-code rounded-lg"
           :style="{ backgroundPositionY: linesOffset }"
@@ -42,15 +39,7 @@
 <script setup>
 const props = defineProps(["shapeName", "shapeDefinition"])
 const emit = defineEmits(["update-shape", "lock-hotkeys", "unlock-hotkeys"])
-const {
-  isTextareaFocused,
-  linesOffset,
-  onFocus,
-  onBlur,
-  onScroll,
-  focus,
-  adjustScrollTop,
-} = useFocused()
+const { linesOffset, onScroll, focus, adjustScroll } = usePaper()
 
 // els refs
 const textarea = ref(props.shapeDefinition)

@@ -164,9 +164,10 @@ const isCopyScreen = ref(false)
 const entityIdScreen = ref("")
 const entityNameScreen = ref("")
 const responseScreen = ref("")
+const cookieStoneId = useCookie("stone-id")
 onMounted(() => {
   cleanupHotkeys = setupHotkeys(hotkeys)
-  updateEntityInfo(localStorage.getItem("stone-id"))
+  updateEntityInfo(cookieStoneId.value)
 })
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
@@ -232,15 +233,17 @@ async function onChangeEntity() {
   frameAction("changeEntity", async () => await updateEntityInfo(newEntityId))
 }
 async function updateEntityInfo(stoneId) {
-  localStorage.setItem("stone-id", localStorage.getItem("stone-root-id"))
-  const { success, entities } = await dbGetEntities()
-  if (stoneId && success) {
-    entityIdScreen.value = stoneId
-    const entity = entities.find((entity) => entity._id === stoneId)
-    localStorage.setItem("stone-name", entity)
-    entityNameScreen.value = entity.name
-  }
-  localStorage.setItem("stone-id", stoneId)
+  // temporary access for dbGetEntities
+  cookieStoneId.value = localStorage.getItem("stone-dev-root-id")
+  nextTick(async () => {
+    const { success, entities } = await dbGetEntities()
+    if (stoneId && success) {
+      entityIdScreen.value = stoneId
+      const entity = entities.find((entity) => entity._id === stoneId)
+      entityNameScreen.value = entity.name
+    }
+    cookieStoneId.value = stoneId
+  })
 }
 ///////////////////////////////// fragments ////////////////////////////////////
 async function onCreateFragment() {

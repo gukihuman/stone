@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-const { linesOffset, onScroll } = useFocused()
+const { linesOffset, onScroll } = usePaper()
 const props = defineProps(["file"])
 
 // els refs

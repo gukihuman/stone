@@ -41,7 +41,7 @@
 
     <div
       class="w-full relative h-full overflow-hidden"
-      :class="{ 'bg-stone-700 z-20': isTextareaFocused, 'px-3 py-2': field }"
+      :class="{ 'px-3 py-2': field }"
     >
       <div
         v-if="field === 'text' || field === 'memory'"
@@ -53,8 +53,8 @@
           :value="field === 'memory' ? memoryContent : textContent"
           @input="handleTextareaInput"
           @scroll="onScroll"
-          @focus="onFocus(emit)"
-          @blur="onBlur(emit)"
+          @focus="emit('lock-hotkeys')"
+          @blur="emit('unlock-hotkeys')"
           class="w-full h-full py-5 px-8 scroll-screen bg-lines resize-none"
           :class="
             field === 'text'
@@ -91,16 +91,7 @@ const emit = defineEmits([
   "lock-hotkeys",
   "unlock-hotkeys",
 ])
-const {
-  isTextareaFocused,
-  linesOffset,
-  onFocus,
-  onBlur,
-  onScroll,
-  adjustScrollTop,
-  focusName,
-  focus,
-} = useFocused()
+const { linesOffset, onScroll, adjustScroll, focus } = usePaper()
 
 const nameEl = ref(null)
 const textareaEl = ref(null)
@@ -173,7 +164,7 @@ const handleTextareaInput = (e) => {
   } else if (props.field === "text") {
     textContent.value = value
   }
-  adjustScrollTop(textareaEl)
+  adjustScroll(textareaEl)
 }
 
 const dEmitUpdateEvent = debounce((key, v) => {
@@ -188,7 +179,6 @@ const dUpdateTokens = debounce((v) => {
 
 defineExpose({
   textareaEl,
-  focusName: () => focusName(nameEl),
   focus: () => focus(textareaEl),
 })
 </script>

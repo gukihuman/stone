@@ -10,10 +10,8 @@ export default async function gen({
   const baseURL = useRuntimeConfig().public.baseUrl
   let res
   try {
-    const stoneId = localStorage.getItem("stone-id")
-    if (!stoneId) {
-      throw new Error("stone-id not found in local storage for gen API call")
-    }
+    const stoneId = useCookie("stone-id").value
+    if (!stoneId) throw new Error("stone-id not found for gen")
     res = await fetch(`${baseURL}/api/gen`, {
       method: "POST",
       headers: {
