@@ -1,5 +1,5 @@
 // utils/api-node/getUsageOpenAI.js
-export default async function getUsageOpenAI() {
+export default async function () {
   const baseURL = useRuntimeConfig().public.baseUrl
   try {
     const res = await fetch(`${baseURL}/api-node/get-usage-openai`)

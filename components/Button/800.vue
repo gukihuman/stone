@@ -6,7 +6,7 @@
         !disabled && !active,
       'cursor-default': disabled || active,
       'bg-coffee-750 text-coffee-550 blur-[0.3px]': disabled,
-      'bg-carrot-400 text-carrot-800 ': active,
+      'bg-carrot-400 text-amber-900': active,
     }"
     :disabled="disabled || active"
   >

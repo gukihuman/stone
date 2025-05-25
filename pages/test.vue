@@ -10,16 +10,16 @@
         <div class="flex flex-wrap gap-2 items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
           <Button800
-            @click="onStreamDurationTest"
-            :active="loading.streamDurationTest"
-            :disabled="isAnythingLoading && !loading.streamDurationTest"
+            @click="wrapFn(onStreamDurationTest)"
+            :active="loading.onStreamDurationTest"
+            :disabled="isAnythingLoading && !loading.onStreamDurationTest"
           >
             stream-duration-test
           </Button800>
           <Button800
             v-for="(option, key) in GEN_OPTIONS"
             :key="key"
-            @click="onGen(key, option.provider, option.model)"
+            @click="wrapFn(() => onGen(option.provider, option.model), key)"
             :active="loading[key]"
             :disabled="isAnythingLoading && !loading[key]"
           >
@@ -30,25 +30,30 @@
         <div class="flex flex-wrap gap-2 flex-grow items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
           <Button800
-            v-for="button in API_NODE_BUTTONS"
-            :key="button.label"
-            @click="button.action"
-            :active="loading[button.loadingKey]"
-            :disabled="isAnythingLoading && !loading[button.loadingKey]"
+            v-for="(fn, name) in API_NODE"
+            :key="name"
+            @click="wrapFn(fn)"
+            :active="loading[name]"
+            :disabled="isAnythingLoading && !loading[name]"
           >
-            {{ button.label }}
+            {{ toKebab(name).replace(/^on-/, "") }}
           </Button800>
         </div>
         <!-- # rest -->
         <div class="flex gap-2 pt-2">
           <Button800
-            v-for="button in REST_BUTTONS"
-            :key="button.label"
-            @click="button.action"
-            :active="button.activeKey === 'isCopyScreen' ? isCopyScreen : loading[button.loadingKey]"
-            :disabled="button.customDisabled === '!responseScreen' ? !responseScreen : (isAnythingLoading && !loading[button.loadingKey])"
+            @click="onCopyResponse"
+            :active="isCopyResponse"
+            :disabled="!responseScreen"
           >
-            {{ button.label }}
+            copy response
+          </Button800>
+          <Button800
+            @click="onChangeEntity"
+            :active="loading.onChangeEntity"
+            :disabled="isAnythingLoading && !loading.onChangeEntity"
+          >
+            change entity
           </Button800>
         </div>
       </div>
@@ -101,41 +106,21 @@ const GEN_OPTIONS = {
     model: "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
   },
 }
-
-const API_NODE_BUTTONS = [
-  { label: 'get-usage-openai', action: onGetUsageOpenAI, loadingKey: 'getUsageOpenAI' },
-  { label: 'validate', action: onValidate, loadingKey: 'validate' },
-  { label: 'create-entity', action: onCreateEntity, loadingKey: 'createEntity' },
-  { label: 'get-entities', action: onGetEntities, loadingKey: 'getEntities' },
-  { label: 'remove-entity', action: onRemoveEntity, loadingKey: 'removeEntity' },
-  { label: 'create-fragment', action: onCreateFragment, loadingKey: 'createFragment' },
-  { label: 'get-fragments', action: onGetFragments, loadingKey: 'getFragments' },
-  { label: 'remove-fragment', action: onRemoveFragment, loadingKey: 'removeFragment' },
-];
-
-const REST_BUTTONS = [
-  { label: 'copy response', action: onCopyResponse, activeKey: 'isCopyScreen', customDisabled: '!responseScreen' },
-  { label: 'change entity', action: onChangeEntity, loadingKey: 'changeEntity' },
-];
-
-const loading = reactive({
-  // turn every gen option key into { key: false }
-  ...Object.fromEntries(Object.keys(GEN_OPTIONS).map((key) => [key, false])),
-  streamDurationTest: false,
-  getUsageOpenAI: false,
-  createEntity: false,
-  getEntities: false,
-  removeEntity: false,
-  changeEntity: false,
-  createFragment: false,
-  getFragments: false,
-  removeFragment: false,
-  validate: false,
-})
+const API_NODE = {
+  onGetUsageOpenai,
+  onValidateStoneId,
+  onCreateEntity,
+  onGetEntities,
+  onRemoveEntity,
+  onCreateFragment,
+  onGetFragments,
+  onRemoveFragment,
+}
+const loading = reactive({})
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
 })
-const isCopyScreen = ref(false)
+const isCopyResponse = ref(false)
 const entityIdScreen = ref("")
 const entityNameScreen = ref("")
 const responseScreen = ref("")
@@ -146,88 +131,50 @@ onMounted(() => {
 })
 onUnmounted(() => (cleanupHotkeys ? cleanupHotkeys() : {}))
 
-////////////////////////////////////////////////////////////////////////////////
-async function onCopyResponse() {
-  await clipboard({ input: responseScreen.value, locked: isCopyScreen })
-}
-async function onGen(key, provider, model) {
-  frameAction(key, async () => {
-    await gen({
-      provider,
-      model,
-      input: "tell a very short story about a puppy girl",
-      onChunk: (chunk) => (responseScreen.value += chunk),
-      onError: (err) => (responseScreen.value = err.message || "unknown error"),
-    })
-  })
-}
+//////////////////////////////////// api ///////////////////////////////////////
 async function onStreamDurationTest() {
-  frameAction("streamDurationTest", async () => {
-    await streamDurationTest((chunk) => (responseScreen.value += chunk))
+  await streamDurationTest((chunk) => (responseScreen.value += chunk))
+}
+async function onGen(provider, model) {
+  await gen({
+    provider,
+    model,
+    input: "tell a very short story about a puppy girl",
+    onChunk: (chunk) => (responseScreen.value += chunk),
+    onError: (err) => (responseScreen.value = err.message || "unknown error"),
   })
 }
-async function onGetUsageOpenAI() {
-  frameAction("getUsageOpenAI", async () => {
-    const usage = await getUsageOpenAI()
-    if (usage !== null) responseScreen.value = JSON.stringify(usage, null, 2)
-    else responseScreen.value = "getUsageOpenAI responded with null"
-  })
+////////////////////////////////// api-node ////////////////////////////////////
+async function onGetUsageOpenai() {
+  const usage = await getUsageOpenai()
+  if (usage !== null) responseScreen.value = JSON.stringify(usage, null, 2)
+  else responseScreen.value = "getUsageOpenAI responded with null"
 }
-async function onValidate() {
-  frameAction("validate", async () => {
-    const stoneId = prompt("stone-id to validate")
-    const { success } = await validateStoneId(stoneId)
-    responseScreen.value = success ? "validated" : "not validated"
-  })
+async function onValidateStoneId() {
+  const stoneId = prompt("stone-id to validate")
+  const { success } = await validateStoneId(stoneId)
+  responseScreen.value = success ? "validated" : "not validated"
 }
-///////////////////////////////// entities /////////////////////////////////////
 async function onCreateEntity() {
-  const entityId = window.prompt("id (optional, enter to automatic newId)")
+  const entityId = window.prompt("id (optional, automatic newId)")
   const entityName = window.prompt("name")
   if (!entityName) return
   const entityNature = window.prompt("nature (bio or digi)")
   if (!entityNature) return
-  await frameAction("createEntity", async () => {
-    const entityData = { _id: entityId, name: entityName, nature: entityNature }
-    const { success, entity, ...rest } = await dbCreateEntity(entityData)
-    responseScreen.value = JSON.stringify(success ? entity : rest, null, 2)
-  })
+  const entityData = { _id: entityId, name: entityName, nature: entityNature }
+  const { success, entity, ...rest } = await dbCreateEntity(entityData)
+  responseScreen.value = JSON.stringify(success ? entity : rest, null, 2)
 }
 async function onGetEntities() {
-  await frameAction("getEntities", async () => {
-    const { success, entities, ...rest } = await dbGetEntities()
-    responseScreen.value = JSON.stringify(success ? entities : rest, null, 2)
-  })
+  const { success, entities, ...rest } = await dbGetEntities()
+  responseScreen.value = JSON.stringify(success ? entities : rest, null, 2)
 }
 async function onRemoveEntity() {
   const entityId = window.prompt("❗ entity id to remove")
   if (!entityId) return
-  frameAction("removeEntity", async () => {
-    const { message } = await dbRemoveEntity(entityId)
-    responseScreen.value = message
-  })
+  const { message } = await dbRemoveEntity(entityId)
+  responseScreen.value = message
 }
-async function onChangeEntity() {
-  const newEntityId = window.prompt("new entity id")
-  if (!newEntityId) return
-  entityIdScreen.value = ""
-  entityNameScreen.value = ""
-  frameAction("changeEntity", async () => await updateEntityInfo(newEntityId))
-}
-async function updateEntityInfo(stoneId) {
-  // temporary access for dbGetEntities
-  cookieStoneId.value = localStorage.getItem("stone-dev-root-id")
-  nextTick(async () => {
-    const { success, entities } = await dbGetEntities()
-    if (stoneId && success) {
-      entityIdScreen.value = stoneId
-      const entity = entities.find((entity) => entity._id === stoneId)
-      entityNameScreen.value = entity.name
-    }
-    cookieStoneId.value = stoneId
-  })
-}
-///////////////////////////////// fragments ////////////////////////////////////
 async function onCreateFragment() {
   const entity = window.prompt("creator")
   if (!entity) return
@@ -236,50 +183,66 @@ async function onCreateFragment() {
   const space = spaceInput.split(",").map((s) => s.trim())
   const data = window.prompt("data")
   if (typeof data !== "string") return
-  const parent = window.prompt("parent (optional, enter to skip)") || null
-  frameAction("createFragment", async () => {
-    const fragmentData = { entity, space, data, parent }
-    const result = await dbCreateFragment(fragmentData)
-    responseScreen.value = JSON.stringify(result, null, 2)
-  })
+  const parent = window.prompt("parent (optional)") || null
+  const fragmentData = { entity, space, data, parent }
+  const result = await dbCreateFragment(fragmentData)
+  responseScreen.value = JSON.stringify(result, null, 2)
 }
 async function onGetFragments() {
   const filters = {}
-  const spaceInput = window.prompt("space eg. g,r (optional, enter to skip)")
+  const spaceInput = window.prompt("space eg. g,r (optional)")
   if (spaceInput) filters.space = spaceInput.split(",").map((s) => s.trim())
 
-  const kindInput = window.prompt("kind (optional, enter to skip)")
+  const kindInput = window.prompt("kind (optional)")
   if (kindInput) filters.kind = kindInput
 
-  const tokensInput = window.prompt("tokens (optional, enter to skip)")
+  const tokensInput = window.prompt("tokens (optional)")
   if (tokensInput) {
     const parsedTokens = parseInt(tokensInput, 10)
     if (!isNaN(parsedTokens)) filters.tokens = parsedTokens
   }
-  const entityInput = window.prompt("entity (optional, enter to skip)")
+  const entityInput = window.prompt("entity (optional)")
   if (entityInput) filters.entity = entityInput
 
-  const parentInput = window.prompt("parent (optional, enter to skip)")
+  const parentInput = window.prompt("parent (optional)")
   if (parentInput) filters.parent = parentInput
 
-  frameAction("getFragments", async () => {
-    const result = await dbGetFragments(filters)
-    responseScreen.value = JSON.stringify(result, null, 2)
-  })
+  const result = await dbGetFragments(filters)
+  responseScreen.value = JSON.stringify(result, null, 2)
 }
 async function onRemoveFragment() {
   const fragmentId = window.prompt("fragment id to remove")
   if (!fragmentId) return
-  frameAction("removeFragment", async () => {
-    const result = await dbRemoveFragment(fragmentId)
-    responseScreen.value = JSON.stringify(result, null, 2)
-  })
+  const result = await dbRemoveFragment(fragmentId)
+  responseScreen.value = JSON.stringify(result, null, 2)
+}
+//////////////////////////////////// rest //////////////////////////////////////
+async function onCopyResponse() {
+  await clipboard({ input: responseScreen.value, locked: isCopyResponse })
+}
+async function onChangeEntity() {
+  const newEntityId = window.prompt("new entity id")
+  if (!newEntityId) return
+
+  // temporary access for dbGetEntities, next tick because of cookie value
+  cookieStoneId.value = localStorage.getItem("stone-dev-root-id")
+  nextTick(() => wrapFn(() => updateEntityInfo(newEntityId), "onChangeEntity"))
 }
 ////////////////////////////////// helpers /////////////////////////////////////
-async function frameAction(key, action) {
+async function updateEntityInfo(stoneId) {
+  const { success, entities } = await dbGetEntities()
+  if (stoneId && success) {
+    const entity = entities.find((entity) => entity._id === stoneId)
+    if (!entity) return
+    entityIdScreen.value = stoneId
+    entityNameScreen.value = entity.name
+    cookieStoneId.value = stoneId
+  }
+}
+async function wrapFn(fn, key) {
   responseScreen.value = ""
-  loading[key] = true
-  await action()
-  loading[key] = false
+  loading[key || fn.name] = true
+  await fn()
+  loading[key || fn.name] = false
 }
 </script>
