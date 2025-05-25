@@ -17,10 +17,7 @@ export default defineEventHandler(async (event) => {
     return
   }
   if (event.node.req.method !== "POST") {
-    throw createError({
-      statusCode: 405,
-      statusMessage: "Method Not Allowed. Please use POST.",
-    })
+    throw createError({ statusCode: 405, statusMessage: "method not allowed" })
   }
   await dbConnect()
   try {
