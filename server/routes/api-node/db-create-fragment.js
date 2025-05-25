@@ -80,6 +80,13 @@ export default defineEventHandler(async (event) => {
     }
 
     if (space.length > 0) {
+      if (stoneId !== rootIdFromEnv && !space.includes(requestingEntity.name)) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: `creator '${requestingEntity.name}' must be part of the specified space to create a fragment in it`,
+        })
+      }
+
       const uniqueSpaceEntities = new Set(space)
       if (uniqueSpaceEntities.size !== space.length) {
         throw createError({
