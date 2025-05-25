@@ -10,7 +10,7 @@ const fragmentSchema = new mongoose.Schema(
     timestamp: { type: Number, required: true, default: Date.now },
     parent: { type: String, default: null },
   },
-  { collection: "fragments" }
+  { collection: "fragments", versionKey: false }
 )
 
 export default mongoose.models.Fragment ||

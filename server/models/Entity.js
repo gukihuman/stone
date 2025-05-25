@@ -16,7 +16,7 @@ const entitySchema = new mongoose.Schema(
     },
     nature: { type: String, required: true, enum: ["bio", "digi"] },
   },
-  { collection: "entities" }
+  { collection: "entities", versionKey: false }
 )
 
 export default mongoose.models.Entity || mongoose.model("Entity", entitySchema)
