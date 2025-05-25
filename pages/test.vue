@@ -1,12 +1,12 @@
 <!-- pages/test.vue -->
 <template>
   <div class="p-2 h-screen flex justify-center">
-    <!-- # main panel -->
     <div
       class="w-[720px] h-full flex flex-col bg-coffee-700 justify-between rounded-xl shadow-md bg-circles-gradient"
     >
-      <!-- ## controls -->
+      <!-- # buttons -->
       <div class="flex flex-col gap-3 p-3">
+        <!-- # api -->
         <div class="flex flex-wrap gap-2 items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
           <Button800
@@ -26,6 +26,7 @@
             {{ key }}
           </Button800>
         </div>
+        <!-- # api-node -->
         <div class="flex flex-wrap gap-2 flex-grow items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
           <Button800
@@ -34,6 +35,13 @@
             :disabled="isAnythingLoading && !loading.getUsageOpenAI"
           >
             get-usage-openai
+          </Button800>
+          <Button800
+            @click="onValidate"
+            :active="loading.validate"
+            :disabled="isAnythingLoading && !loading.validate"
+          >
+            validate
           </Button800>
           <Button800
             @click="onCreateEntity"
@@ -78,6 +86,7 @@
             remove-fragment
           </Button800>
         </div>
+        <!-- # rest -->
         <div class="flex gap-2 pt-2">
           <Button800
             @click="onCopyResponse"
@@ -95,7 +104,7 @@
           </Button800>
         </div>
       </div>
-      <!-- ## screen -->
+      <!-- # screen -->
       <div class="flex-grow p-2 rounded-b-xl bg-moss-350 overflow-hidden">
         <div class="overflow-hidden h-full">
           <div class="overflow-hidden rounded-lg h-full">
@@ -156,6 +165,7 @@ const loading = reactive({
   createFragment: false,
   getFragments: false,
   removeFragment: false,
+  validate: false,
 })
 const isAnythingLoading = computed(() => {
   return Object.values(loading).some((state) => state)
@@ -196,6 +206,13 @@ async function onGetUsageOpenAI() {
     const usage = await getUsageOpenAI()
     if (usage !== null) responseScreen.value = JSON.stringify(usage, null, 2)
     else responseScreen.value = "getUsageOpenAI responded with null"
+  })
+}
+async function onValidate() {
+  frameAction("validate", async () => {
+    const stoneId = prompt("stone-id to validate")
+    const { success } = await validateStoneId(stoneId)
+    responseScreen.value = success ? "validated" : "not validated"
   })
 }
 ///////////////////////////////// entities /////////////////////////////////////
