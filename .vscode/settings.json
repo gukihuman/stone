@@ -5,7 +5,9 @@
     "node_modules": true,
     ".output\\public": true,
     ".output": true,
-    ".vercel": true
+    ".vercel": true,
+    "tsconfig.json": true,
+    "package-lock.json": true
   },
   "folder-path-color.folders": [
     {

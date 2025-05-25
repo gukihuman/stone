@@ -100,7 +100,7 @@
         <div class="overflow-hidden h-full">
           <div class="overflow-hidden rounded-lg h-full">
             <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-light text-lg"
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-text selection-screen text-lg"
             >
               <div class="flex text-moss-300">
                 <div class="w-[200px]">stone-id</div>
@@ -298,24 +298,3 @@ async function frameAction(key, action) {
   loading[key] = false
 }
 </script>
-
-<style>
-@keyframes screen‑scroll {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 400px;
-  }
-}
-.bg-screen {
-  background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      rgba(255, 255, 255, 0.02) 400px
-    ),
-    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
-  background-size: 100% 400px, 5px 5px;
-  animation: screen‑scroll 10s linear infinite;
-}
-</style>

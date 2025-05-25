@@ -1,6 +1,6 @@
 import { openDB } from "idb"
 
-export default function useDatabase() {
+export default function () {
   const DB_VERSION = 1
   const DEFAULT_APP_FIELDS = {
     focusedField: "text",

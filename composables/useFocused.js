@@ -1,4 +1,4 @@
-export default function useFocusedItem() {
+export default function () {
   const LINES_OFFSET = -8
   const ADJUST_SCROLL = 24
 

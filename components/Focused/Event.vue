@@ -173,7 +173,7 @@ const handleTextareaInput = (e) => {
   } else if (props.field === "text") {
     textContent.value = value
   }
-  adjustScrollTop(textareaEl.value)
+  adjustScrollTop(textareaEl)
 }
 
 const dEmitUpdateEvent = debounce((key, v) => {
@@ -187,7 +187,6 @@ const dUpdateTokens = debounce((v) => {
 }, 500)
 
 defineExpose({
-  textareaEl,
   textareaEl,
   focusName: () => focusName(nameEl),
   focus: () => focus(textareaEl),

@@ -7,7 +7,7 @@
 @tailwind utilities;
 
 html {
-  @apply bg-coffee-750;
+  @apply bg-coffee-700;
 }
 * {
   @apply focus:outline-none;
@@ -15,11 +15,11 @@ html {
 *::-webkit-scrollbar {
   @apply w-4;
 }
-*::-webkit-scrollbar-thumb {
-  @apply bg-stone-600;
+.scroll-paper::-webkit-scrollbar-thumb {
+  @apply bg-coffee-600;
 }
-*::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+.scroll-paper::-webkit-scrollbar-thumb:hover {
+  @apply bg-coffee-800 cursor-grab;
 }
 .scroll-screen::-webkit-scrollbar-thumb {
   @apply bg-moss-350;
@@ -27,10 +27,10 @@ html {
 .scroll-screen::-webkit-scrollbar-thumb:hover {
   @apply bg-moss-300 cursor-grab;
 }
-*::selection {
-  @apply bg-moss-700 text-moss-200;
+.selection-paper::selection {
+  @apply bg-coffee-800 text-coffee-100;
 }
-.selection-light::selection {
+.selection-screen::selection {
   @apply bg-moss-300 text-moss-700;
 }
 .bg-circles {
@@ -65,6 +65,24 @@ html {
     transparent 4px
   );
   background-size: 100% 28px;
+}
+@keyframes screen‑scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 500px;
+  }
+}
+.bg-screen {
+  background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      rgba(255, 255, 255, 0.02) 500px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
+  background-size: 100% 500px, 5px 5px;
+  animation: screen‑scroll 10s linear infinite;
 }
 
 [contenteditable] {

@@ -76,8 +76,8 @@
             @lock-hotkeys="() => (hotkeysLockedByInput = true)"
             @unlock-hotkeys="() => (hotkeysLockedByInput = false)"
           />
-          <!-- Draft and Spell components remain below -->
-          <Draft
+          <!-- OldDraft and Spell components remain below -->
+          <OldDraft
             ref="focusedDraftRef"
             v-if="
               appState.draft !== undefined &&
