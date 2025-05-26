@@ -116,6 +116,8 @@ const API_NODE = {
   onRemoveFragment,
   onGetMyName,
   onDbGetCircle,
+  onDbAddCircleEntity,
+  onDbRemoveCircleEntity,
 }
 const loading = reactive({})
 const isAnythingLoading = computed(() => Object.values(loading).some((k) => k))
@@ -220,6 +222,18 @@ async function onGetMyName() {
 }
 async function onDbGetCircle() {
   const result = await dbGetCircle()
+  responseScreen.value = JSON.stringify(result, null, 2)
+}
+async function onDbAddCircleEntity() {
+  const entityName = window.prompt("entity name to add to circle")
+  if (!entityName) return
+  const result = await dbAddCircleEntity(entityName)
+  responseScreen.value = JSON.stringify(result, null, 2)
+}
+async function onDbRemoveCircleEntity() {
+  const entityName = window.prompt("entity name to remove from circle")
+  if (!entityName) return
+  const result = await dbRemoveCircleEntity(entityName)
   responseScreen.value = JSON.stringify(result, null, 2)
 }
 //////////////////////////////////// rest //////////////////////////////////////
