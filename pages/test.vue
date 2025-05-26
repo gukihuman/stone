@@ -40,7 +40,7 @@
           </Button800>
         </div>
         <!-- # rest -->
-        <div class="flex gap-2 pt-2">
+        <div class="flex gap-2 pt-3">
           <Button800
             @click="onCopyResponse"
             :active="isCopyResponseLoading"
@@ -49,11 +49,11 @@
             copy response
           </Button800>
           <Button800
-            @click="onChangeEntity"
-            :active="loading.onChangeEntity"
-            :disabled="isAnythingLoading && !loading.onChangeEntity"
+            @click="onChangeStoneId"
+            :active="loading.onChangeStoneId"
+            :disabled="isAnythingLoading && !loading.onChangeStoneId"
           >
-            change entity
+            change stone id
           </Button800>
         </div>
       </div>
@@ -115,6 +115,7 @@ const API_NODE = {
   onGetFragments,
   onRemoveFragment,
   onGetMyName,
+  onDbGetCircle,
 }
 const loading = reactive({})
 const isAnythingLoading = computed(() => Object.values(loading).some((k) => k))
@@ -124,7 +125,7 @@ const entityNameScreen = ref("")
 const responseScreen = ref("")
 onMounted(() => {
   cleanupHotkeys = setupHotkeys(hotkeys)
-  updateEntityInfo()
+  updateMyName()
 })
 onUnmounted(cleanupHotkeys)
 
@@ -217,6 +218,10 @@ async function onGetMyName() {
   const result = await dbGetMyName()
   responseScreen.value = JSON.stringify(result, null, 2)
 }
+async function onDbGetCircle() {
+  const result = await dbGetCircle()
+  responseScreen.value = JSON.stringify(result, null, 2)
+}
 //////////////////////////////////// rest //////////////////////////////////////
 async function onCopyResponse() {
   await clipboard({
@@ -224,16 +229,16 @@ async function onCopyResponse() {
     locked: isCopyResponseLoading,
   })
 }
-async function onChangeEntity() {
+async function onChangeStoneId() {
   const newStoneId = window.prompt("new stone id")
   if (!newStoneId) return
   // next tick because of cookie value reactivity
   cookieStoneId.value = newStoneId
   entityNameScreen.value = ""
-  nextTick(() => wrapFn(updateEntityInfo, "onChangeEntity"))
+  nextTick(() => wrapFn(updateMyName, "onChangeStoneId"))
 }
 ////////////////////////////////// helpers /////////////////////////////////////
-async function updateEntityInfo() {
+async function updateMyName() {
   const { success, name } = await dbGetMyName()
   if (success) entityNameScreen.value = name
 }

@@ -16,6 +16,6 @@ export default async function dbGetEntities() {
     return await response.json()
   } catch (error) {
     console.error("client error in dbGetEntities", error)
-    return { success: false, message: error.message, errorDetails: error }
+    return { success: false, message: error.message }
   }
 }
