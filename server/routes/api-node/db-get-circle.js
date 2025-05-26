@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     const circle = await Entity.find({
       name: { $in: requestingEntity.circle },
     })
-      .select("name nature state")
+      .select("name nature state -_id")
       .lean()
     return { success: true, circle }
   } catch (error) {

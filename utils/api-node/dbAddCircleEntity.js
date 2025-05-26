@@ -22,6 +22,6 @@ export default async function dbAddCircleEntity(entityName) {
       `error in dbAddCircleEntity utility for '${entityName}'`,
       error
     )
-    return { success: false, circle: [], message: error.message }
+    return { success: false, message: error.message }
   }
 }
