@@ -1,4 +1,4 @@
-// server/models/Entity.js
+// ~/server/models/Entity.js
 import mongoose from "mongoose"
 
 const entitySchema = new mongoose.Schema(
@@ -6,7 +6,6 @@ const entitySchema = new mongoose.Schema(
     _id: { type: String, required: true },
     name: {
       type: String,
-      default: "",
       required: true,
       unique: true,
       match: [
@@ -15,6 +14,12 @@ const entitySchema = new mongoose.Schema(
       ],
     },
     nature: { type: String, required: true, enum: ["bio", "digi"] },
+    state: {
+      type: String,
+      enum: ["awake", "sleep", null],
+      default: null,
+    },
+    circle: { type: [String], default: [] },
   },
   { collection: "entities", versionKey: false }
 )

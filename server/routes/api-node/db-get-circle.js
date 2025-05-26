@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!requestingEntity.circle || requestingEntity.circle.length === 0) {
-      return { success: true, circleEntities: [] }
+      return { success: true, circle: [] }
     }
     const circle = await Entity.find({
       name: { $in: requestingEntity.circle },
