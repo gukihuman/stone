@@ -69,7 +69,7 @@
                 <div>stone-name</div>
               </div>
               <div class="flex text-moss-100 h-[40px]">
-                <div class="w-[200px]">{{ entityIdScreen }}</div>
+                <div class="w-[200px]">{{ cookieStoneId }}</div>
                 <div>{{ entityNameScreen }}</div>
               </div>
               <div class="flex text-moss-300">
@@ -116,18 +116,15 @@ const API_NODE = {
   onRemoveFragment,
   onGetMyName,
 }
-const cookieStoneId = useCookie("stone-id")
-
 const loading = reactive({})
 const isAnythingLoading = computed(() => Object.values(loading).some((k) => k))
 const isCopyResponseLoading = ref(false)
-
-const entityIdScreen = ref("")
+const cookieStoneId = useCookie("stone-id")
 const entityNameScreen = ref("")
 const responseScreen = ref("")
 onMounted(() => {
   cleanupHotkeys = setupHotkeys(hotkeys)
-  updateEntityInfo(cookieStoneId.value)
+  updateEntityInfo()
 })
 onUnmounted(cleanupHotkeys)
 
@@ -228,23 +225,17 @@ async function onCopyResponse() {
   })
 }
 async function onChangeEntity() {
-  const newEntityId = window.prompt("new entity id")
-  if (!newEntityId) return
-
-  // temporary access for dbGetEntities, next tick because of cookie value
-  cookieStoneId.value = localStorage.getItem("stone-dev-root-id")
-  nextTick(() => wrapFn(() => updateEntityInfo(newEntityId), "onChangeEntity"))
+  const newStoneId = window.prompt("new stone id")
+  if (!newStoneId) return
+  // next tick because of cookie value reactivity
+  cookieStoneId.value = newStoneId
+  entityNameScreen.value = ""
+  nextTick(() => wrapFn(updateEntityInfo, "onChangeEntity"))
 }
 ////////////////////////////////// helpers /////////////////////////////////////
-async function updateEntityInfo(stoneId) {
-  const { success, entities } = await dbGetEntities()
-  if (stoneId && success) {
-    const entity = entities.find((entity) => entity._id === stoneId)
-    if (!entity) return
-    entityIdScreen.value = stoneId
-    entityNameScreen.value = entity.name
-    cookieStoneId.value = stoneId
-  }
+async function updateEntityInfo() {
+  const { success, name } = await dbGetMyName()
+  if (success) entityNameScreen.value = name
 }
 async function wrapFn(fn, key) {
   responseScreen.value = ""
