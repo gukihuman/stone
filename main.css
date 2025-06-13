@@ -7,7 +7,7 @@
 @tailwind utilities;
 
 html {
-  @apply bg-coffee-600 bg-circles-gradient;
+  @apply bg-coffee-600;
 }
 * {
   @apply focus:outline-none;

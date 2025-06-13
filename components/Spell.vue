@@ -21,7 +21,7 @@
       <div
         class="flex flex-col gap-2 items-center justify-between flex-shrink-0 h-full min-w-[80px]"
       >
-        <Button800
+        <Button
           @click="
             () => {
               emit('cast', textarea)
@@ -29,19 +29,21 @@
             }
           "
           class="w-full"
+          lock-active
         >
           cast
-        </Button800>
+        </Button>
         <div class="flex flex-col gap-2 w-full">
-          <Button800
+          <Button
             v-for="{ name, type } in contexts"
             :key="`context-${name}`"
             @click="emit('context', type)"
             :active="isContextLocked[type].value"
             class="w-full"
+            lock-active
           >
             {{ name }}
-          </Button800>
+          </Button>
         </div>
       </div>
     </div>

@@ -9,52 +9,57 @@
         <!-- # api -->
         <div class="flex flex-wrap gap-2 items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api /</p>
-          <Button800
+          <Button
             @click="wrapFn(onStreamDurationTest)"
             :active="loading.onStreamDurationTest"
             :disabled="isAnythingLoading && !loading.onStreamDurationTest"
+            lock-active
           >
             stream-duration-test
-          </Button800>
-          <Button800
+          </Button>
+          <Button
             v-for="(option, key) in GEN_OPTIONS"
             :key="key"
             @click="wrapFn(() => onGen(option.provider, option.model), key)"
             :active="loading[key]"
             :disabled="isAnythingLoading && !loading[key]"
+            lock-active
           >
             {{ key }}
-          </Button800>
+          </Button>
         </div>
         <!-- # api-node -->
         <div class="flex flex-wrap gap-2 flex-grow items-end">
           <p class="font-pacifico text-coffee-200 text-2xl pl-1">api-node /</p>
-          <Button800
+          <Button
             v-for="(fn, name) in API_NODE"
             :key="name"
             @click="wrapFn(fn)"
             :active="loading[name]"
             :disabled="isAnythingLoading && !loading[name]"
+            lock-active
           >
             {{ toKebab(name).replace(/^on-/, "") }}
-          </Button800>
+          </Button>
         </div>
         <!-- # rest -->
         <div class="flex gap-2 pt-3">
-          <Button800
+          <Button
             @click="onCopyResponse"
             :active="isCopyResponseLoading"
             :disabled="!responseScreen"
+            lock-active
           >
             copy response
-          </Button800>
-          <Button800
+          </Button>
+          <Button
             @click="onChangeStoneId"
             :active="loading.onChangeStoneId"
             :disabled="isAnythingLoading && !loading.onChangeStoneId"
+            lock-active
           >
             change stone id
-          </Button800>
+          </Button>
         </div>
       </div>
       <!-- # screen -->

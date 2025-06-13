@@ -2,7 +2,7 @@
 <template>
   <div class="h-[200px] flex-shrink-0 rounded-xl overflow-hidden p-2">
     <div
-      class="relative overflow-hidden rounded-lg h-full focus-within:ring-[8px] focus-within:ring-coffee-500"
+      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-500 focus-within:ring-coffee-700"
     >
       <textarea
         ref="textareaEl"
