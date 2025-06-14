@@ -1,6 +1,5 @@
 // api/stream-duration-test.js
 export const config = { runtime: "edge" }
-// export const runtime = "edge"
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -23,12 +22,11 @@ export default function handler(req) {
    * 🚰  Stream one number per second (100 seconds total)
    * ------------------------------------------------- */
   const encoder = new TextEncoder()
-
   const stream = new ReadableStream({
     async start(controller) {
       try {
         for (let i = 1; i <= 100; i++) {
-          controller.enqueue(encoder.encode(`${i}\n`)) // 👈 encode!
+          controller.enqueue(encoder.encode(`${i} `)) // 👈 encode!
           await sleep(1000)
         }
       } finally {
