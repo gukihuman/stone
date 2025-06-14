@@ -14,6 +14,7 @@
             :active="loading.onStreamDurationTest"
             :disabled="isAnythingLoading && !loading.onStreamDurationTest"
             lock-active
+            class="px-3 pb-1"
           >
             stream-duration-test
           </Button>
@@ -24,6 +25,7 @@
             :active="loading[key]"
             :disabled="isAnythingLoading && !loading[key]"
             lock-active
+            class="px-3 pb-1"
           >
             {{ key }}
           </Button>
@@ -38,6 +40,7 @@
             :active="loading[name]"
             :disabled="isAnythingLoading && !loading[name]"
             lock-active
+            class="px-3 pb-1"
           >
             {{ toKebab(name).replace(/^on-/, "") }}
           </Button>
@@ -49,6 +52,7 @@
             :active="isCopyResponseLoading"
             :disabled="!responseScreen"
             lock-active
+            class="px-3 pb-1"
           >
             copy response
           </Button>
@@ -57,6 +61,7 @@
             :active="loading.onChangeStoneId"
             :disabled="isAnythingLoading && !loading.onChangeStoneId"
             lock-active
+            class="px-3 pb-1"
           >
             change stone id
           </Button>

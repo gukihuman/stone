@@ -1,7 +1,7 @@
 // ~/components/Button/Stateful.vue
 <template>
   <button
-    class="px-3 pb-1 rounded-lg h-7 font-semibold relative overflow-hidden flex items-center justify-center gap-2"
+    class="rounded-lg h-7 font-semibold relative overflow-hidden flex items-center justify-center gap-2"
     :class="{
       'bg-coffee-800 text-coffee-300 hover:bg-coffee-850 hover:text-coffee-200 inner-shadow':
         !disabled && !active,
