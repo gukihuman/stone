@@ -1,6 +1,6 @@
 // api/stream-duration-test.js
-// export const config = { runtime: "edge" }
-export const runtime = "edge"
+export const config = { runtime: "edge" }
+// export const runtime = "edge"
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
