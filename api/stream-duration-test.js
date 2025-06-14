@@ -22,11 +22,13 @@ export default function handler(req) {
   /* ------------------------------------------------- *
    * 🚰  Stream one number per second (100 seconds total)
    * ------------------------------------------------- */
+  const encoder = new TextEncoder()
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
         for (let i = 1; i <= 100; i++) {
-          controller.enqueue(`${i} `)
+          controller.enqueue(encoder.encode(`${i}\n`)) // 👈 encode!
           await sleep(1000)
         }
       } finally {
