@@ -1,3 +1,4 @@
+// ❗ old
 export default async function (params) {
   if (!params.path) return
   try {

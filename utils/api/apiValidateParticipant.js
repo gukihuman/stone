@@ -1,3 +1,4 @@
+// ❗ old
 /**
  * Calls the backend API to validate a participant ID (invite code).
  * @param {string} participantId The invite code to validate.

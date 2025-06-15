@@ -1,3 +1,4 @@
+// ❗ old
 /**
  * Calls the backend API to fetch a specific Circle Event.
  * @param {string} eventId The ID of the event to fetch (e.g., '23punecc').

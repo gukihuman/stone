@@ -1,11 +1,9 @@
 // utils/api-node/validateStoneId.js
 export default async function validateStoneId(stoneId) {
   const { baseUrl } = useRuntimeConfig().public
-  const fullUrl = `${baseUrl}/api-node/validate-stone-id`
-  console.log("[validateStoneId] baseUrl = ", baseUrl)
-  console.log("[validateStoneId] fullUrl = ", fullUrl)
+  const url = new URL("/api-node/validate-stone-id", baseUrl).href
   try {
-    const response = await fetch(`${baseUrl}/api-node/validate-stone-id`, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stoneId }),

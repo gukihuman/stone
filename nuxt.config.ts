@@ -1,6 +1,6 @@
 // nuxt.config.ts
-const devBaseUrl = "https://stone-git-space-odyssey-gukis-projects.vercel.app"
-// const devBaseUrl = "https://stone-seven.vercel.app"
+const devBaseUrl = "stone-git-space-odyssey-gukis-projects.vercel.app"
+// const devBaseUrl = "stone-seven.vercel.app"
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -11,8 +11,7 @@ export default defineNuxtConfig({
     public: {
       human: process.env.HUMAN || "Human",
       entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
-      // baseUrl: process.env.VERCEL_ENV === "development" ? devBaseUrl : "",
-      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || process.env.VERCEL_URL,
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || devBaseUrl,
     },
   },
   imports: { dirs: ["utils/**"] },
