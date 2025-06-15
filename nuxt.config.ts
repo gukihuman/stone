@@ -11,7 +11,8 @@ export default defineNuxtConfig({
     public: {
       human: process.env.HUMAN || "Human",
       entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
-      baseUrl: process.env.VERCEL_ENV === "development" ? devBaseUrl : "",
+      // baseUrl: process.env.VERCEL_ENV === "development" ? devBaseUrl : "",
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || process.env.VERCEL_URL,
     },
   },
   imports: { dirs: ["utils/**"] },
