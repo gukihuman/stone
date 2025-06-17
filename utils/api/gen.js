@@ -7,13 +7,12 @@ export default async function gen({
   onComplete,
   onError,
 }) {
-  const baseUrl = useRuntimeConfig().public.baseUrl
-  const url = new URL("/api/gen", baseUrl).href
+  const { baseUrl } = useRuntimeConfig().public
   let res
   try {
     const stoneId = useCookie("stone-id").value
     if (!stoneId) throw new Error("stone-id not found for gen")
-    res = await fetch(url, {
+    res = await fetch(`${baseUrl}/api/gen`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -75,7 +75,6 @@ export default async function handler(req) {
         new HumanMessage({ content: input }),
       ])) {
         if (chunk?.content) {
-          console.log(chunk.content)
           await writer.write(enc.encode(chunk.content))
         }
       }

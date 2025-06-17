@@ -1,8 +1,9 @@
 // utils/api/streamDurationTest.js
 export default async function streamDurationTest(onChunk) {
-  const baseUrl = useRuntimeConfig().public.baseUrl
-  const url = new URL("/api/stream-duration-test", baseUrl).href
-  const res = await fetch(url, { headers: { Accept: "text/event-stream" } })
+  const { baseUrl } = useRuntimeConfig().public
+  const res = await fetch(`${baseUrl}/api/stream-duration-test`, {
+    headers: { Accept: "text/event-stream" },
+  })
   if (!res.ok) throw new Error(`HTTP ${res.status} – ${res.statusText}`)
   if (!res.body) throw new Error("readable stream missing")
   const reader = res.body.getReader()
