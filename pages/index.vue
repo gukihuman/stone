@@ -76,22 +76,13 @@ onMounted(async () => {
     ...circleEntities.value.map((e) => e.name),
   ].filter(Boolean)
 
-  let finalSpace = [myEntity.value.name] // Always include self
+  let finalSpace = myEntity.value.name !== "guki" ? [myEntity.value.name] : []
 
   if (savedSpaceJSON) {
-    try {
-      const savedNames = JSON.parse(savedSpaceJSON)
-      if (Array.isArray(savedNames)) {
-        savedNames.forEach((name) => {
-          // Add saved name only if it exists in the current circle and isn't the user themself
-          if (name !== myEntity.value.name && allKnownNames.includes(name)) {
-            finalSpace.push(name)
-          }
-        })
-      }
-    } catch (e) {
-      console.error("error parsing selected space from local storage", e)
-    }
+    const savedNames = JSON.parse(savedSpaceJSON)
+    savedNames.forEach((name) => {
+      if (allKnownNames.includes(name)) finalSpace.push(name)
+    })
   }
 
   selectedSpace.value = [...new Set(finalSpace)] // Ensure uniqueness
