@@ -75,7 +75,11 @@ export default defineEventHandler(async (event) => {
       .sort({ timestamp: -1 })
       .lean()
 
+    const rootIdFromEnv = process.env.ROOT_ID
+    if (!rootIdFromEnv) console.error("ROOT_ID env variable is not set")
+
     const authorizedFragments = candidateFragments.filter((f) => {
+      if (stoneId === rootIdFromEnv) return true
       return f.space.includes(requestingEntityName)
     })
 
