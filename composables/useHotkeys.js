@@ -1,3 +1,4 @@
+// ~/composables/useHotkeys.js
 export default function () {
   const hotkeysLockedByInput = ref(false)
 

@@ -1,4 +1,4 @@
-// components/Draft.vue
+// ~/components/Draft.vue
 <template>
   <div class="h-[200px] flex-shrink-0 rounded-xl overflow-hidden p-2">
     <div
@@ -28,14 +28,21 @@ onMounted(() => {
   const savedDraft = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY)
   if (savedDraft) draft.value = savedDraft
 })
-defineExpose({ focus: () => focus(textareaEl) })
 ////////////////////////////////////////////////////////////////////////////////
 const debouncedSaveDraft = debounce((text) => {
   localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, text)
-  console.log(`✅ draft saved to localStorage [${timestamp()}]`)
 })
 function handleInput() {
   adjustScroll(textareaEl)
   debouncedSaveDraft(draft.value)
 }
+function clearDraft() {
+  draft.value = ""
+  localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, "")
+}
+defineExpose({
+  focus: () => focus(textareaEl),
+  draft,
+  clearDraft,
+})
 </script>

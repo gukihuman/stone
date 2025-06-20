@@ -1,4 +1,4 @@
-// server/models/Fragment.js
+// ~/server/models/Fragment.js
 import mongoose from "mongoose"
 
 const fragmentSchema = new mongoose.Schema(

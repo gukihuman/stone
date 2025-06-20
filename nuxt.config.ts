@@ -1,4 +1,4 @@
-// nuxt.config.ts
+// ~/nuxt.config.ts
 const devBaseUrl = "stone-git-space-odyssey-gukis-projects.vercel.app"
 // const devBaseUrl = "stone-seven.vercel.app"
 
