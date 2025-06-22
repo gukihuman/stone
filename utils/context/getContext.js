@@ -148,11 +148,8 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
 
     if (memoriesToAdd.length > 0) {
       contextParts.push(`<my_memory>`)
+      let memoryPart = ""
       memoriesToAdd.forEach((mem, index) => {
-        const indentedContent = mem.text
-          .split("\n")
-          .map((line) => `${indent}${indent}${line}`)
-          .join("\n")
         // contextParts.push(
         //   `${indent}<record id=\"${escapeXml(
         //     mem.id
@@ -160,14 +157,19 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
         //     mem.sourceEvent
         //   )}\" tags=\"${escapeXml(mem.tags)}\">`
         // )
-        contextParts.push(indentedContent)
+        // const indentedContent = mem.text
+        //   .split("\n")
+        //   .map((line) => `${indent}${indent}${line}`)
+        //   .join("\n")
+        // whole logic of indentation might be needed only for files. here i simply removed quickly it this clunky way for memories because it feels like its not needed
+        memoryPart += mem.text + ""
         // if (index !== memoriesToAdd.length - 1) {
         //   contextParts.push(`${indent}</record>\n`)
         // } else {
         //   contextParts.push(`${indent}</record>`)
         // }
       })
-      contextParts.push(`</my_memory>\n\n`)
+      contextParts.push(`${memoryPart}\n</my_memory>\n`)
     }
   }
 
