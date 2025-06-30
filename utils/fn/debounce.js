@@ -1,3 +1,4 @@
+// ~/utils/fn/debounce.js
 export default function (func, delay = 300) {
   let timeoutId
   return function (...args) {

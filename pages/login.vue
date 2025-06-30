@@ -1,3 +1,4 @@
+// ~/pages/login.vue
 <template>
   <div class="min-h-screen flex items-center justify-center">
     <div class="flex flex-col gap-5 w-[220px]">

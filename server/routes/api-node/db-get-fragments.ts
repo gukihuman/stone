@@ -1,8 +1,8 @@
 // @ts-nocheck fuck ts... no i love it *smiling* but not... to limit me
 // server/routes/api-node/db-get-fragments.ts
 import dbConnect from "~/server/utils/dbConnect"
-import Fragment from "~/server/models/Fragment"
-import Entity from "~/server/models/Entity"
+import Fragment from "~/server/models/Wave"
+import Entity from "~/server/models/Core"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import type { FragmentFilters } from "~/types/fragments"
 import getTokens from "~/utils/query/getTokens"

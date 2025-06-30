@@ -1,7 +1,7 @@
 // server/routes/api-node/db-create-fragment.js
 import dbConnect from "~/server/utils/dbConnect"
-import Fragment from "~/server/models/Fragment"
-import Entity from "~/server/models/Entity"
+import Fragment from "~/server/models/Wave"
+import Entity from "~/server/models/Core"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import newId from "~/utils/misc/newId"
 

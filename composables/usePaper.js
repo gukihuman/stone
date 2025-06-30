@@ -1,3 +1,4 @@
+// ~/composables/usePaper.js
 export default function () {
   const LINES_OFFSET = -8
   const ADJUST_SCROLL = 24

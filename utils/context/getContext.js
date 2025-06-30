@@ -162,7 +162,7 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
         //   .map((line) => `${indent}${indent}${line}`)
         //   .join("\n")
         // whole logic of indentation might be needed only for files. here i simply removed quickly it this clunky way for memories because it feels like its not needed
-        memoryPart += mem.text + ""
+        memoryPart += mem.text + " "
         // if (index !== memoriesToAdd.length - 1) {
         //   contextParts.push(`${indent}</record>\n`)
         // } else {

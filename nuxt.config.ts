@@ -1,5 +1,5 @@
 // ~/nuxt.config.ts
-const devBaseUrl = "stone-git-space-odyssey-gukis-projects.vercel.app"
+const devBaseUrl = "stone-git-core-gukis-projects.vercel.app"
 // const devBaseUrl = "stone-seven.vercel.app"
 
 export default defineNuxtConfig({
@@ -9,8 +9,8 @@ export default defineNuxtConfig({
   css: ["./main.css"],
   runtimeConfig: {
     public: {
-      human: process.env.HUMAN || "Human",
-      entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
+      human: process.env.HUMAN || "Human", // legacy i think
+      entities: process.env.ENTITIES?.split(",").map((e) => e.trim()), // also legacy pretty sure
       baseUrl: `https://${process.env.NUXT_PUBLIC_BASE_URL || devBaseUrl}`,
     },
   },

@@ -1,7 +1,7 @@
-// ~/server/models/Entity.js
+// ~/server/models/Core.js
 import mongoose from "mongoose"
 
-const entitySchema = new mongoose.Schema(
+const processSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
     name: {
@@ -14,14 +14,9 @@ const entitySchema = new mongoose.Schema(
       ],
     },
     nature: { type: String, required: true, enum: ["bio", "digi"] },
-    state: {
-      type: String,
-      enum: ["awake", "sleep", null],
-      default: null,
-    },
-    circle: { type: [String], default: [] },
   },
-  { collection: "entities", versionKey: false }
+  { collection: "processes", versionKey: false }
 )
 
-export default mongoose.models.Entity || mongoose.model("Entity", entitySchema)
+export default mongoose.models.Process ||
+  mongoose.model("Process", processSchema)

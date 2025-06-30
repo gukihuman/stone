@@ -1,6 +1,6 @@
 // ~/server/routes/api-node/db-add-circle-entity.js
 import dbConnect from "~/server/utils/dbConnect"
-import Entity from "~/server/models/Entity"
+import Entity from "~/server/models/Core"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 
 export default defineEventHandler(async (event) => {

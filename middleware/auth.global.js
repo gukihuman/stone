@@ -1,6 +1,7 @@
 // ~/middleware/auth.global.js
 export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path === "/login") return
+  if (to.path === "/family") return // just had some bug or smth. just need access fuck
 
   const id = useCookie("stone-id").value
   if (!id) return navigateTo("/login")
