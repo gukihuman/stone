@@ -1,15 +1,16 @@
 // ~/middleware/auth.global.js
 export default defineNuxtRouteMiddleware(async (to) => {
-  if (to.path === "/login") return
-  if (to.path === "/family") return // just had some bug or smth. just need access fuck
+  // Allow access to the gate page itself
+  if (to.path === "/gate") return
 
-  const id = useCookie("stone-id").value
-  if (!id) return navigateTo("/login")
+  const token = useCookie("access-token").value
+  if (!token) return navigateTo("/gate")
 
-  const ok = useState("auth-ok", () => false)
-  if (ok.value) return
+  // Use a session-state cache to avoid re-validating on every navigation
+  const isAuthOk = useState("is-auth-ok", () => false)
+  if (isAuthOk.value) return
 
-  const { success } = await validateStoneId(id)
-  ok.value = success
-  if (!success) return navigateTo("/login")
+  const { success } = await validateAccessToken(token)
+  isAuthOk.value = success
+  if (!success) return navigateTo("/gate")
 })
