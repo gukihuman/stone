@@ -19,11 +19,11 @@ export default async function handler(req) {
   }
 
   const body = (await req.json().catch(() => ({}))) || {}
-  const { provider, model, input, stoneId } = body
+  const { provider, model, input, accessToken } = body
 
-  const rootIdFromEnv = process.env.ROOT_ID
-  if (!rootIdFromEnv) {
-    console.error("ROOT_ID environment variable is not set for /api/gen")
+  const secret = process.env.ACCESS_TOKEN
+  if (!secret) {
+    console.error("ACCESS_TOKEN environment variable is not set for /api/gen")
     return new Response(
       JSON.stringify({ error: "Server configuration error" }),
       {
@@ -35,7 +35,7 @@ export default async function handler(req) {
       }
     )
   }
-  if (!stoneId || stoneId !== rootIdFromEnv) {
+  if (!accessToken || accessToken !== secret) {
     return new Response(JSON.stringify({ error: "Unauthorized access" }), {
       status: 403,
       headers: {

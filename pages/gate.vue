@@ -5,9 +5,8 @@
       <input
         ref="inputEl"
         class="py-1 rounded-lg bg-coffee-400 text-coffee-800 focus:ring-[6px] focus:ring-coffee-800 w-full text-center font-semibold text-lg selection-paper"
-        type="password"
         v-model="input"
-        maxlength="22"
+        maxlength="20"
         @input="dValidateAndSetToken"
       />
     </div>

@@ -10,15 +10,15 @@ export default async function gen({
   const { baseUrl } = useRuntimeConfig().public
   let res
   try {
-    const stoneId = useCookie("stone-id").value
-    if (!stoneId) throw new Error("stone-id not found for gen")
+    const accessToken = useCookie("access-token").value
+    if (!accessToken) throw new Error("access-token not found for gen")
     res = await fetch(`${baseUrl}/api/gen`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
       },
-      body: JSON.stringify({ provider, model, input, stoneId }),
+      body: JSON.stringify({ provider, model, input, accessToken }),
     })
 
     if (!res.ok) {
