@@ -54,7 +54,12 @@ export default defineEventHandler(async (event) => {
     const parsed = parseLoom(loomContent)
 
     if (parsed.waves && parsed.waves.length > 0) {
-      await Wave.insertMany(parsed.waves)
+      const wavesToCreate = parsed.waves.map((wave) => ({
+        ...wave,
+        _id: newId(),
+        timestamp: Date.now(),
+      }))
+      await Wave.insertMany(wavesToCreate)
     }
 
     return { success: true, message: "commit successful" }
