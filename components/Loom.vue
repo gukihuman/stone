@@ -1,0 +1,78 @@
+// ~/components/Loom.vue
+<template>
+  <div class="h-[200px] flex-shrink-0 rounded-xl overflow-hidden p-2">
+    <div
+      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-500"
+      :class="{
+        'focus-within:ring-coffee-750': mode !== 'confirmation',
+        'ring-orange-800': mode === 'confirmation',
+      }"
+    >
+      <textarea
+        ref="textareaEl"
+        v-model="loomContent"
+        @scroll="onScroll"
+        @input="onInput"
+        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-350 text-coffee-850 rounded-lg placeholder:text-coffee-600 selection-paper scroll-paper"
+        :style="{ backgroundPositionY: linesOffset }"
+        :readOnly="mode === 'confirmation'"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  mode: {
+    type: String,
+    default: "normal",
+  },
+})
+const emit = defineEmits(["enter-confirmation-mode"])
+
+const LOCAL_STORAGE_KEY = "stone-loom"
+
+const { linesOffset, onScroll, adjustScroll, focus: focusTextarea } = usePaper()
+const textareaEl = ref(null)
+const loomContent = ref("")
+
+onMounted(() => {
+  const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
+  if (savedContent) loomContent.value = savedContent
+})
+
+const dSaveLoom = debounce((text) => {
+  localStorage.setItem(LOCAL_STORAGE_KEY, text)
+})
+
+function onInput() {
+  adjustScroll(textareaEl)
+  dSaveLoom(loomContent.value)
+
+  // Client-side parser reflex
+  if (loomContent.value.includes("#commit")) {
+    emit("enter-confirmation-mode")
+  }
+}
+
+function clearLoom() {
+  loomContent.value = ""
+  localStorage.setItem(LOCAL_STORAGE_KEY, "")
+}
+
+function removeCommitTag() {
+  loomContent.value = loomContent.value.replace("#commit", "").trim()
+  dSaveLoom(loomContent.value) // Save the cleaned content
+}
+
+function focus() {
+  focusTextarea(textareaEl)
+}
+
+defineExpose({
+  focus,
+  content: loomContent,
+  clear: clearLoom,
+  removeCommitTag,
+})
+</script>

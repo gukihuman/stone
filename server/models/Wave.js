@@ -4,8 +4,8 @@ import mongoose from "mongoose"
 const schema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
+    source: { type: String, required: true },
     data: { type: String, required: true },
-    core: { type: String, required: true, enum: ["guki", "roxanne"] },
     timestamp: { type: Number, required: true, default: Date.now },
     priority: { type: Number, default: 5, min: 0 },
     density: { type: Number, default: 0 },

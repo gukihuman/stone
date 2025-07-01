@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-const { setupHotkeys } = useHotkeys()
+const { setupHotkeys } = useHotkeysOld()
 let cleanupHotkeys
 const hotkeys = { m: onCopyResponse }
 
