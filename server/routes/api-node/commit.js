@@ -3,6 +3,7 @@ import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import dbConnect from "~/server/utils/dbConnect"
 import Wave from "~/server/models/Wave"
 import parseLoom from "~/server/utils/parser"
+import newId from "~/shared/utils/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")

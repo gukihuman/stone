@@ -174,7 +174,6 @@ import reflect from "/utils/memory/reflect"
 import renameTag from "/utils/memory/renameTag"
 import getMemoriesByEvent from "/utils/query/getMemoriesByEvent"
 import getMemoriesByTag from "/utils/query/getMemoriesByTag"
-import newId from "/utils/misc/newId"
 
 const { hotkeysLockedByInput, setupHotkeys } = useHotkeysOld()
 const { entities, events, shapes, appState } = useDatabase()
