@@ -16,7 +16,12 @@
               <div
                 class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
               >
-                {{ screen }}
+                <div v-for="wave in waves" :key="wave._id">
+                  <span class="text-coffee-100 font-bold"
+                    >{{ wave.source }}:</span
+                  >
+                  {{ wave.data }}
+                </div>
               </div>
             </div>
           </div>
@@ -33,6 +38,7 @@ const { currentMode, setMode, setupHotkeys } = useHotkeys()
 
 const loomRef = ref(null)
 const screen = ref("")
+const waves = ref([])
 
 let cleanupHotkeys
 
@@ -52,10 +58,15 @@ const inputModeShortcuts = {
 }
 
 const confirmationModeShortcuts = {
-  Enter: () => {
-    commit(loomRef.value.content)
+  Enter: async () => {
+    // First, we commit the new wave
+    const { success } = await commit(loomRef.value.content)
+    // If the commit was successful, we fetch the updated flow
+    if (success) {
+      await fetchFlow()
+    }
     loomRef.value?.clear()
-    screen.value = ""
+    screen.value = "" // We can remove this later if the screen shows the flow
     setMode("normal")
   },
   Escape: () => {
@@ -71,6 +82,7 @@ onMounted(() => {
     input: inputModeShortcuts,
     confirmation: confirmationModeShortcuts,
   })
+  fetchFlow() // Fetch the initial flow when the page loads
 })
 
 function enterConfirmationMode() {
@@ -79,5 +91,15 @@ function enterConfirmationMode() {
   const previewContent = loomContent.replace("#commit", "").trim()
   screen.value = `[CONFIRM COMMIT]\n\n${previewContent}`
   document.activeElement?.blur()
+}
+
+async function fetchFlow() {
+  const { success, waves: fetchedWaves } = await getFlow()
+  if (success) {
+    waves.value = fetchedWaves
+  } else {
+    console.error("failed to fetch flow")
+    // We could display an error on the screen here if we want
+  }
 }
 </script>
