@@ -27,13 +27,18 @@
 
       <!-- # middle column -->
       <div class="flex-grow h-full flex flex-col gap-2">
-        <Loom
-          ref="loomRef"
-          :mode="currentMode"
-          @enter-confirmation-mode="enterConfirmationMode"
-          @set-mode="onSetMode"
-        />
-        <div class="flex-grow p-2 rounded-xl bg-moss-350 overflow-hidden">
+        <!-- ## loom -->
+        <div class="h-[200px]">
+          <Loom
+            ref="loomRef"
+            v-show="currentMode !== 'confirmation'"
+            :mode="currentMode"
+            @enter-confirmation-mode="enterConfirmationMode"
+            @set-mode="onSetMode"
+          />
+        </div>
+        <!-- ## screen -->
+        <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
           <div class="overflow-hidden h-full">
             <div
               class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
@@ -63,7 +68,7 @@ const selectedWaveId = ref(null)
 const isCommitting = ref(false)
 
 // --- Computed Properties ---
-const displayWaves = computed(() => waves.value.slice(-20).reverse())
+const displayWaves = computed(() => waves.value.slice(-10).reverse())
 
 const focusedWave = computed(() => {
   if (!selectedWaveId.value) return null
@@ -78,7 +83,7 @@ const screenContent = computed(() => {
   // Priority 2: Show confirmation preview if in that mode
   if (currentMode.value === "confirmation") {
     const loomContent = loomRef.value?.content || ""
-    const previewContent = loomContent.replace("#commit", "").trim()
+    const previewContent = loomContent.replace("#cm", "").trim()
     return `[CONFIRM COMMIT]\n\n${previewContent}`
   }
   // Default: Show the focused wave's data

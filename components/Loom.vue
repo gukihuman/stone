@@ -1,12 +1,8 @@
 // ~/components/Loom.vue
 <template>
-  <div class="h-[200px] flex-shrink-0 rounded-xl overflow-hidden p-2">
+  <div class="h-full flex-shrink-0 rounded-xl overflow-hidden p-2">
     <div
-      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-500"
-      :class="{
-        'focus-within:ring-coffee-750': mode !== 'confirmation',
-        'ring-orange-800': mode === 'confirmation',
-      }"
+      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-500 focus-within:ring-coffee-750"
     >
       <textarea
         ref="textareaEl"
@@ -15,7 +11,7 @@
         @input="onInput"
         @focus="onFocus"
         @blur="onBlur"
-        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-350 text-coffee-850 rounded-lg placeholder:text-coffee-600 selection-paper scroll-paper"
+        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-350 rounded-lg text-coffee-900 selection-paper scroll-paper"
         :style="{ backgroundPositionY: linesOffset }"
         :readOnly="mode === 'confirmation'"
       />
