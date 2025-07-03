@@ -13,6 +13,8 @@
         v-model="loomContent"
         @scroll="onScroll"
         @input="onInput"
+        @focus="onFocus"
+        @blur="onBlur"
         class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-350 text-coffee-850 rounded-lg placeholder:text-coffee-600 selection-paper scroll-paper"
         :style="{ backgroundPositionY: linesOffset }"
         :readOnly="mode === 'confirmation'"
@@ -22,13 +24,8 @@
 </template>
 
 <script setup>
-const props = defineProps({
-  mode: {
-    type: String,
-    default: "normal",
-  },
-})
-const emit = defineEmits(["enter-confirmation-mode"])
+const props = defineProps(["mode"])
+const emit = defineEmits(["enter-confirmation-mode", "set-mode"])
 
 const LOCAL_STORAGE_KEY = "stone-loom"
 
@@ -44,13 +41,19 @@ onMounted(() => {
 const dSaveLoom = debounce((text) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, text)
 })
+function onFocus() {
+  emit("set-mode", "input")
+}
+function onBlur() {
+  emit("set-mode", "normal")
+}
 
 function onInput() {
   adjustScroll(textareaEl)
   dSaveLoom(loomContent.value)
 
   // Client-side parser reflex
-  if (loomContent.value.includes("#commit")) {
+  if (loomContent.value.includes("#cm")) {
     emit("enter-confirmation-mode")
   }
 }
@@ -61,7 +64,7 @@ function clearLoom() {
 }
 
 function removeCommitTag() {
-  loomContent.value = loomContent.value.replace("#commit", "").trim()
+  loomContent.value = loomContent.value.replace("#cm", "").trim()
   dSaveLoom(loomContent.value) // Save the cleaned content
 }
 
