@@ -20,6 +20,8 @@
 </template>
 
 <script setup>
+import { SPELLS } from "~/shared/lexicon"
+
 const props = defineProps(["mode"])
 const emit = defineEmits(["enter-confirmation-mode", "set-mode"])
 
@@ -49,7 +51,7 @@ function onInput() {
   dSaveLoom(loomContent.value)
 
   // Client-side parser reflex
-  if (loomContent.value.includes("#cm")) {
+  if (loomContent.value.includes(SPELLS.COMMIT)) {
     emit("enter-confirmation-mode")
   }
 }
@@ -60,7 +62,7 @@ function clearLoom() {
 }
 
 function removeCommitTag() {
-  loomContent.value = loomContent.value.replace("#cm", "").trim()
+  loomContent.value = loomContent.value.replace(SPELLS.COMMIT, "").trim()
   dSaveLoom(loomContent.value) // Save the cleaned content
 }
 

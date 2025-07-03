@@ -11,7 +11,7 @@
             <div
               v-for="wave in displayWaves"
               :key="wave._id"
-              class="mb-3 p-1 rounded-md transition-colors"
+              class="mb-3 p-1 rounded-md"
               :class="{ 'bg-coffee-750': wave._id === selectedWaveId }"
             >
               <span class="text-coffee-100 font-bold">{{ wave.source }}:</span>
@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import Loom from "~/components/Loom.vue"
+import { SPELLS } from "~/shared/lexicon"
 
 const { currentMode, setMode, setupHotkeys } = useHotkeys()
 
@@ -83,7 +83,7 @@ const screenContent = computed(() => {
   // Priority 2: Show confirmation preview if in that mode
   if (currentMode.value === "confirmation") {
     const loomContent = loomRef.value?.content || ""
-    const previewContent = loomContent.replace("#cm", "").trim()
+    const previewContent = loomContent.replace(SPELLS.COMMIT, "").trim()
     return `[CONFIRM COMMIT]\n\n${previewContent}`
   }
   // Default: Show the focused wave's data

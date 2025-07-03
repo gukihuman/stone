@@ -1,9 +1,10 @@
 // ~/server/utils/parser.js
+import { LABELS, SPELLS } from "~/shared/lexicon"
+
 export default function parseLoom(loomContent) {
-  // We will expand this logic later to handle @spells
   const waveData = {
-    source: "guki", // Default for guki's flow for now
-    data: loomContent.replace("#cm", "").trim(),
+    source: "guki",
+    data: loomContent.replace(SPELLS.COMMIT, "").trim(),
     priority: 5,
     density: 0,
     provenance: [],
