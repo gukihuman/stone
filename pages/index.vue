@@ -3,23 +3,43 @@
   <div class="flex justify-center">
     <div class="w-[1280px] flex h-screen p-1 gap-2">
       <!-- # left column (The Stream) -->
-      <div class="w-[260px] flex-shrink-0 flex flex-col gap-2">
-        <div
-          class="p-3 rounded-xl bg-coffee-600 text-stone-300 font-fira-code text-sm overflow-auto h-full scroll-screen cursor-default selection-paper"
-        >
-          <transition-group name="flow-list" tag="div">
+      <div class="w-[260px] flex-shrink-0 flex flex-col gap-2 p-1">
+        <div class="bg-coffee-600 overflow-auto h-full scroll-screen">
+          <transition-group
+            name="flow-list"
+            tag="div"
+            class="flex flex-col gap-2"
+          >
             <div
               v-for="wave in displayWaves"
               :key="wave._id"
-              class="mb-3 p-1 rounded-md"
-              :class="{ 'bg-coffee-750': wave._id === selectedWaveId }"
+              class="h-[65px] flex rounded-xl gap-[6px]"
             >
-              <span class="text-coffee-100 font-bold">{{ wave.source }}:</span>
-              <p
-                class="whitespace-pre-wrap pl-2 text-stone-200 selection-paper"
+              <div
+                v-if="wave._id === selectedWaveId"
+                class="bg-carrot-500 my-1 w-[10px] rounded-md"
+              ></div>
+              <div
+                class="px-4 py-2 w-full rounded-xl"
+                :class="{
+                  'bg-coffee-500 selection-paper': wave.source === 'guki',
+                  'bg-moss-350 selection-screen': wave.source === 'roxanne',
+                  'bg-coffee-700 selection-paper': wave.source === 'body',
+                }"
               >
-                {{ wave.data }}
-              </p>
+                <p
+                  class="line-clamp-2"
+                  :class="{
+                    'text-coffee-850 text-lg leading-[22px]':
+                      wave.source === 'guki',
+                    'text-moss-100 font-fira-code': wave.source === 'roxanne',
+                    'text-coffee-200 text-lg font-fira-code':
+                      wave.source === 'body',
+                  }"
+                >
+                  {{ wave.data }}
+                </p>
+              </div>
             </div>
           </transition-group>
         </div>
@@ -68,7 +88,7 @@ const selectedWaveId = ref(null)
 const isCommitting = ref(false)
 
 // --- Computed Properties ---
-const displayWaves = computed(() => waves.value.slice(-10).reverse())
+const displayWaves = computed(() => waves.value.slice(-9).reverse())
 
 const focusedWave = computed(() => {
   if (!selectedWaveId.value) return null

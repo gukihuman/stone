@@ -2,28 +2,6 @@
 import { LABELS, SPELLS } from "~/shared/lexicon"
 import newId from "~/shared/utils/newId"
 
-// A helper to parse parameters like -source roxanne -priority 8
-function parseParameters(line) {
-  const params = {}
-  const parts = line.split(/\s+/) // Split by whitespace
-
-  for (let i = 1; i < parts.length; i++) {
-    if (parts[i].startsWith("-")) {
-      const key = parts[i].substring(1)
-      const value = parts[i + 1]
-      // Basic assignment, can be expanded later (e.g., for numbers)
-      if (value && !value.startsWith("-")) {
-        params[key] = value
-        i++ // Skip the next part since it's a value
-      } else {
-        // Handle boolean flags like -isDense
-        params[key] = true
-      }
-    }
-  }
-  return params
-}
-
 export default function parseLoom(loomContent) {
   const lines = loomContent.replace(SPELLS.COMMIT, "").trim().split("\n")
   const output = { waves: [], spells: [] }
@@ -70,4 +48,25 @@ export default function parseLoom(loomContent) {
   finalizeCurrentWave()
 
   return output
+}
+
+// A helper to parse parameters like -source roxanne -priority 8
+function parseParameters(line) {
+  const params = {}
+  const parts = line.split(/\s+/) // Split by whitespace
+
+  for (let i = 1; i < parts.length; i++) {
+    if (parts[i].startsWith("-")) {
+      const key = parts[i].substring(1)
+      const value = parts[i + 1]
+      // Basic assignment, can be expanded later (e.g., for numbers)
+      if (value && !value.startsWith("-")) {
+        params[key] = value
+        i++ // Skip the next part since it's a value
+      } else {
+        params[key] = true // Handle boolean flags like -isDense
+      }
+    }
+  }
+  return params
 }
