@@ -61,7 +61,7 @@
         <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
           <div class="overflow-hidden h-full">
             <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
               {{ screenContent }}
             </div>

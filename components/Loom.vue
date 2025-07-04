@@ -50,8 +50,11 @@ function onInput() {
   adjustScroll(textareaEl)
   dSaveLoom(loomContent.value)
 
-  // Client-side parser reflex
-  if (loomContent.value.includes(SPELLS.COMMIT)) {
+  // Upgraded client-side parser reflex
+  const lines = loomContent.value.trim().split("\n")
+  const lastLine = lines[lines.length - 1]
+
+  if (lastLine.trim() === SPELLS.COMMIT) {
     emit("enter-confirmation-mode")
   }
 }
