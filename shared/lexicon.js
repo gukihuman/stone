@@ -1,9 +1,17 @@
-export const LABELS = {
-  WAVE: "≡wave",
-  RECORD: "≡record",
+// ~/shared/lexicon.js
+export const SOURCE_GLYPHS = {
+  OPEN: "◉",
+  CLOSE: "◎",
 }
 
-export const SPELLS = {
-  COMMIT: "▷cm",
-  DENSIFY: "▷densify",
+export const SPELL_GLYPHS = {
+  OPEN: "⫸",
+  CLOSE: "▷",
+}
+
+export const SOURCES = {
+  GUKI: "guki",
+  ROXANNE: "roxanne",
+  BODY: "body",
+  EXTERNAL: "external",
 }

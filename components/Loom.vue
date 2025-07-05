@@ -20,10 +20,10 @@
 </template>
 
 <script setup>
-import { SPELLS } from "~/shared/lexicon"
+import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
 
 const props = defineProps(["mode"])
-const emit = defineEmits(["enter-confirmation-mode", "set-mode"])
+const emit = defineEmits(["set-mode"])
 
 const LOCAL_STORAGE_KEY = "stone-loom"
 
@@ -49,24 +49,35 @@ function onBlur() {
 function onInput() {
   adjustScroll(textareaEl)
   dSaveLoom(loomContent.value)
+}
 
-  // Upgraded client-side parser reflex
-  const lines = loomContent.value.trim().split("\n")
-  const lastLine = lines[lines.length - 1]
-
-  if (lastLine.trim() === SPELLS.COMMIT) {
-    emit("enter-confirmation-mode")
+function getWrappedContent() {
+  let lines = loomContent.value.trim()
+    ? loomContent.value.trim().split("\n")
+    : []
+  // step 1 is prepend opening glyph if missing
+  if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
+    lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.GUKI}`)
   }
+  // step 2 is append closing glyph if missing, using the robust reverse loop
+  const lastLine = lines[lines.length - 1]?.trim()
+  if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {
+    let sourceToClose // guaranteed by step 1
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim()
+      if (line.startsWith(SOURCE_GLYPHS.OPEN)) {
+        sourceToClose = line.substring(1).trim()
+        break // found the last opened source
+      }
+    }
+    lines.push(`${SOURCE_GLYPHS.CLOSE}${sourceToClose}`)
+  }
+  return lines.join("\n")
 }
 
 function clearLoom() {
   loomContent.value = ""
   localStorage.setItem(LOCAL_STORAGE_KEY, "")
-}
-
-function removeCommitTag() {
-  loomContent.value = loomContent.value.replace(SPELLS.COMMIT, "").trim()
-  dSaveLoom(loomContent.value) // Save the cleaned content
 }
 
 function focus() {
@@ -75,8 +86,7 @@ function focus() {
 
 defineExpose({
   focus,
-  content: loomContent,
   clear: clearLoom,
-  removeCommitTag,
+  getWrappedContent,
 })
 </script>

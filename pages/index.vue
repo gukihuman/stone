@@ -53,7 +53,6 @@
             ref="loomRef"
             v-show="currentMode !== 'confirmation'"
             :mode="currentMode"
-            @enter-confirmation-mode="enterConfirmationMode"
             @set-mode="onSetMode"
           />
         </div>
@@ -78,8 +77,6 @@
 </template>
 
 <script setup>
-import { SPELLS } from "~/shared/lexicon"
-
 const { currentMode, setMode, setupHotkeys } = useHotkeys()
 
 const loomRef = ref(null)
@@ -96,17 +93,11 @@ const focusedWave = computed(() => {
 })
 
 const screenContent = computed(() => {
-  // Priority 1: Show committing status if active
-  if (isCommitting.value) {
-    return "[COMMITTING...]"
-  }
-  // Priority 2: Show confirmation preview if in that mode
+  if (isCommitting.value) return "[COMMITTING...]"
   if (currentMode.value === "confirmation") {
-    const loomContent = loomRef.value?.content || ""
-    const previewContent = loomContent.replace(SPELLS.COMMIT, "").trim()
-    return `[CONFIRM COMMIT]\n\n${previewContent}`
+    const loomContent = loomRef.value?.getWrappedContent() || ""
+    return `[CONFIRM COMMIT]\n\n${loomContent}`
   }
-  // Default: Show the focused wave's data
   return focusedWave.value ? focusedWave.value.data : ""
 })
 
@@ -139,6 +130,35 @@ function selectPreviousWave() {
   }
 }
 
+async function onCommit() {
+  if (!loomRef.value || isCommitting.value) return
+  const contentToCommit = loomRef.value.getWrappedContent()
+  if (!contentToCommit) return
+
+  isCommitting.value = true
+  try {
+    const { success } = await commit(contentToCommit)
+    if (success) {
+      await fetchFlow()
+    }
+    loomRef.value?.clear()
+  } catch (error) {
+    console.error("error during commit", error)
+  } finally {
+    isCommitting.value = false
+    setMode("normal")
+  }
+}
+
+// only commit confirmation. mb expand as a mode with options like
+// how to proceed next on enter, what to show on screen etc.
+function enterConfirmationMode() {
+  if (loomRef.value?.getWrappedContent()?.trim()) {
+    setMode("confirmation")
+    document.activeElement?.blur()
+  }
+}
+
 const normalModeShortcuts = {
   o: () => {
     setMode("input")
@@ -146,6 +166,7 @@ const normalModeShortcuts = {
   },
   g: selectNextWave,
   i: selectPreviousWave,
+  h: enterConfirmationMode,
 }
 
 const inputModeShortcuts = {
@@ -156,26 +177,8 @@ const inputModeShortcuts = {
 }
 
 const confirmationModeShortcuts = {
-  Enter: async () => {
-    isCommitting.value = true // Set pending state ON
-    try {
-      const { success } = await commit(loomRef.value.content)
-      if (success) {
-        await fetchFlow() // This will now auto-select the new wave
-      }
-      loomRef.value?.clear()
-    } catch (error) {
-      console.error("error during commit", error)
-      // We could show an error on screen here
-    } finally {
-      isCommitting.value = false // Set pending state OFF
-      setMode("normal")
-    }
-  },
-  Escape: () => {
-    loomRef.value?.removeCommitTag()
-    setMode("normal")
-  },
+  Enter: onCommit,
+  Escape: () => setMode("normal"),
 }
 
 // --- Lifecycle & Data ---
@@ -205,19 +208,10 @@ async function fetchFlow() {
   }
 }
 
-function enterConfirmationMode() {
-  setMode("confirmation")
-  document.activeElement?.blur()
-}
-
-// Custom handler for @set-mode to guard against blur in confirmation
 function onSetMode(newMode) {
-  if (currentMode.value !== "confirmation") {
-    setMode(newMode)
-  }
+  if (currentMode.value !== "confirmation") setMode(newMode)
 }
 </script>
-
 <style scoped>
 .flow-list-move,
 .flow-list-enter-active,

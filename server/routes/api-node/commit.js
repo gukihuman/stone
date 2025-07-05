@@ -3,7 +3,6 @@ import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import dbConnect from "~/server/utils/dbConnect"
 import Wave from "~/server/models/Wave"
 import parseLoom from "~/server/utils/parser"
-import newId from "~/shared/utils/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")
@@ -52,10 +51,20 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const parsed = parseLoom(loomContent)
+    const parsedLoom = parseLoom(loomContent)
 
-    if (parsed.waves && parsed.waves.length > 0) {
-      await Wave.insertMany(parsed.waves)
+    // 1. Persist the waves from the loom
+    if (parsedLoom.waves && parsedLoom.waves.length > 0) {
+      await Wave.insertMany(parsedLoom.waves)
+    }
+
+    // 2. Execute any spells found in the loom sequentially
+    if (parsedLoom.spells && parsedLoom.spells.length > 0) {
+      for (const spell of parsedLoom.spells) {
+        // Placeholder for spell execution logic
+        // We will build this out with a switch statement for each verb
+        console.log("Executing spell:", spell)
+      }
     }
 
     return { success: true, message: "commit successful" }

@@ -1,70 +1,92 @@
 // ~/server/utils/parser.js
-import { LABELS, SPELLS } from "~/shared/lexicon"
+import { SOURCE_GLYPHS, SPELL_GLYPHS, SOURCES } from "~/shared/lexicon"
 import newId from "~/shared/utils/newId"
 
 export default function parseLoom(loomContent) {
-  const lines = loomContent.replace(SPELLS.COMMIT, "").trim().split("\n")
-  const output = { waves: [], spells: [] }
+  const lines = loomContent.trim().split("\n")
+  const parsedLoom = { waves: [], spells: [] }
 
+  let currentWave = null
   let currentWaveData = []
-  let currentState = { source: "guki", priority: 5 }
+  let currentSpell = null
+  let currentSpellData = []
 
-  function finalizeCurrentWave() {
-    if (currentWaveData.length > 0) {
-      output.waves.push({
-        _id: newId(),
-        timestamp: Date.now(),
-        source: currentState.source,
-        priority: Number(currentState.priority) || 5,
-        density: 0,
-        provenance: [],
-        apotheosis: null,
-        data: currentWaveData.join("\n").trim(),
-      })
+  function finalizeWave() {
+    if (currentWave) {
+      currentWave.data = currentWaveData.join("\n").trim()
+      if (currentWave.data) parsedLoom.waves.push(currentWave)
+      currentWave = null
       currentWaveData = []
     }
   }
 
-  for (const line of lines) {
-    if (line.startsWith(LABELS.WAVE)) {
-      // Finalize the previous wave before starting a new one
-      finalizeCurrentWave()
-      // Parse parameters and update the state for the new wave
-      const params = parseParameters(line)
-      currentState = {
-        source: params.source || "guki",
-        priority: params.priority || 5,
+  function finalizeSpell(isClosedWithGlyph = false) {
+    if (currentSpell) {
+      if (isClosedWithGlyph) {
+        currentSpell.data = currentSpellData.join("\n").trim()
       }
-      continue // Move to the next line, don't add the label itself as data
+      parsedLoom.spells.push(currentSpell)
+      currentSpell = null
+      currentSpellData = []
     }
-
-    // We can add spell parsing here later, e.g., if (line.startsWith(SPELLS.DENSIFY))
-
-    // If it's not a label or spell, it's data for the current wave
-    currentWaveData.push(line)
   }
 
-  // Finalize the last wave after the loop finishes
-  finalizeCurrentWave()
+  for (const line of lines) {
+    const trimmedLine = line.trim()
 
-  return output
+    if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
+      finalizeWave() // forgiving parser, finilizes unclosed wave just in case
+      finalizeSpell() // same for spells, just in case
+      const source = trimmedLine.substring(1).trim()
+      if (Object.values(SOURCES).includes(source)) {
+        currentWave = {
+          _id: newId(),
+          timestamp: Date.now(),
+          source: source,
+          density: 0,
+          provenance: [],
+          apotheosis: null,
+        }
+      }
+    } else if (trimmedLine.startsWith(SOURCE_GLYPHS.CLOSE)) {
+      finalizeWave()
+      finalizeSpell() // one line spells without data
+    } else if (trimmedLine.startsWith(SPELL_GLYPHS.OPEN)) {
+      finalizeSpell() // one line spells without data
+      const [verb, ...params] = trimmedLine.substring(1).trim().split(/\s+/)
+      currentSpell = {
+        verb,
+        params: parseParameters(params),
+        data: null,
+      }
+      currentWaveData.push(line) // spells still part of the wave data
+    } else if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
+      finalizeSpell(true) // multi line spells with data
+      currentWaveData.push(line) // spells still part of the wave data
+    } else {
+      // this is a data line
+      if (currentWave) currentWaveData.push(line)
+      if (currentSpell) currentSpellData.push(line)
+    }
+  }
+
+  finalizeSpell()
+  finalizeWave()
+
+  return parsedLoom
 }
 
-// A helper to parse parameters like -source roxanne -priority 8
-function parseParameters(line) {
+function parseParameters(parts) {
   const params = {}
-  const parts = line.split(/\s+/) // Split by whitespace
-
-  for (let i = 1; i < parts.length; i++) {
+  for (let i = 0; i < parts.length; i++) {
     if (parts[i].startsWith("-")) {
       const key = parts[i].substring(1)
       const value = parts[i + 1]
-      // Basic assignment, can be expanded later (e.g., for numbers)
       if (value && !value.startsWith("-")) {
         params[key] = value
-        i++ // Skip the next part since it's a value
+        i++
       } else {
-        params[key] = true // Handle boolean flags like -isDense
+        params[key] = true
       }
     }
   }
