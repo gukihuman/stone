@@ -84,9 +84,16 @@ function focus() {
   focusTextarea(textareaEl)
 }
 
+function setContent(text) {
+  loomContent.value = text
+  adjustScroll(textareaEl)
+  dSaveLoom(loomContent.value)
+}
+
 defineExpose({
   focus,
   clear: clearLoom,
   getWrappedContent,
+  setContent,
 })
 </script>

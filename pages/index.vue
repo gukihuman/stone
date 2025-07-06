@@ -24,7 +24,8 @@
                 :class="{
                   'bg-coffee-500 selection-paper': wave.source === 'guki',
                   'bg-moss-350 selection-screen': wave.source === 'roxanne',
-                  'bg-coffee-700 selection-paper': wave.source === 'body',
+                  'bg-coffee-700 selection-paper':
+                    wave.source !== 'guki' && wave.source !== 'roxanne',
                 }"
               >
                 <p
@@ -32,9 +33,7 @@
                   :class="{
                     'text-coffee-850 text-lg leading-[22px]':
                       wave.source === 'guki',
-                    'text-moss-100 font-fira-code': wave.source === 'roxanne',
-                    'text-coffee-200 text-lg font-fira-code':
-                      wave.source === 'body',
+                    'text-moss-100 font-fira-code': wave.source !== 'guki',
                   }"
                 >
                   {{ wave.data }}
@@ -98,7 +97,9 @@ const screenContent = computed(() => {
     const loomContent = loomRef.value?.getWrappedContent() || ""
     return `[CONFIRM COMMIT]\n\n${loomContent}`
   }
-  return focusedWave.value ? focusedWave.value.data : ""
+  return focusedWave.value
+    ? `[${focusedWave.value.source}]\n\n${focusedWave.value.data}`
+    : ""
 })
 
 let cleanupHotkeys
@@ -167,6 +168,7 @@ const normalModeShortcuts = {
   g: selectNextWave,
   i: selectPreviousWave,
   h: enterConfirmationMode,
+  r: onCommitFromClipboard,
 }
 
 const inputModeShortcuts = {
@@ -210,6 +212,17 @@ async function fetchFlow() {
 
 function onSetMode(newMode) {
   if (currentMode.value !== "confirmation") setMode(newMode)
+}
+async function onCommitFromClipboard() {
+  try {
+    const clipboardText = await navigator.clipboard.readText()
+    if (clipboardText && loomRef.value) {
+      loomRef.value.setContent(clipboardText)
+      enterConfirmationMode()
+    }
+  } catch (error) {
+    console.error("failed to read clipboard", error)
+  }
 }
 </script>
 <style scoped>

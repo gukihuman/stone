@@ -35,8 +35,8 @@ export default function parseLoom(loomContent) {
     const trimmedLine = line.trim()
 
     if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
-      finalizeWave() // forgiving parser, finilizes unclosed wave just in case
-      finalizeSpell() // same for spells, just in case
+      finalizeWave()
+      finalizeSpell()
       const source = trimmedLine.substring(1).trim()
       if (Object.values(SOURCES).includes(source)) {
         currentWave = {
@@ -50,21 +50,32 @@ export default function parseLoom(loomContent) {
       }
     } else if (trimmedLine.startsWith(SOURCE_GLYPHS.CLOSE)) {
       finalizeWave()
-      finalizeSpell() // one line spells without data
+      finalizeSpell()
     } else if (trimmedLine.startsWith(SPELL_GLYPHS.OPEN)) {
-      finalizeSpell() // one line spells without data
-      const [verb, ...params] = trimmedLine.substring(1).trim().split(/\s+/)
+      finalizeSpell()
+      const parts = trimmedLine.substring(1).trim().split(/\s+/)
+      const verbParts = []
+      const paramParts = []
+      let foundParams = false
+
+      for (const part of parts) {
+        if (part.startsWith("-")) foundParams = true
+        if (foundParams) paramParts.push(part)
+        else verbParts.push(part)
+      }
+
+      const verb = verbParts.join("_")
+
       currentSpell = {
         verb,
-        params: parseParameters(params),
+        params: parseParameters(paramParts),
         data: null,
       }
-      currentWaveData.push(line) // spells still part of the wave data
+      currentWaveData.push(line)
     } else if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
-      finalizeSpell(true) // multi line spells with data
-      currentWaveData.push(line) // spells still part of the wave data
+      finalizeSpell(true)
+      currentWaveData.push(line)
     } else {
-      // this is a data line
       if (currentWave) currentWaveData.push(line)
       if (currentSpell) currentSpellData.push(line)
     }
@@ -78,6 +89,7 @@ export default function parseLoom(loomContent) {
 
 function parseParameters(parts) {
   const params = {}
+  // The parts array now only contains parameters, so we start from index 0
   for (let i = 0; i < parts.length; i++) {
     if (parts[i].startsWith("-")) {
       const key = parts[i].substring(1)

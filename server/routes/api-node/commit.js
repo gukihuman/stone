@@ -2,7 +2,10 @@
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import dbConnect from "~/server/utils/dbConnect"
 import Wave from "~/server/models/Wave"
+import { SOURCES } from "~/shared/lexicon"
 import parseLoom from "~/server/utils/parser"
+import spellbook from "~/server/utils/spellbook"
+import newId from "~/shared/utils/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")
@@ -58,13 +61,31 @@ export default defineEventHandler(async (event) => {
       await Wave.insertMany(parsedLoom.waves)
     }
 
-    // 2. Execute any spells found in the loom sequentially
+    // 2. Execute spells and collect feedback
+    const bodyFeedback = []
     if (parsedLoom.spells && parsedLoom.spells.length > 0) {
       for (const spell of parsedLoom.spells) {
-        // Placeholder for spell execution logic
-        // We will build this out with a switch statement for each verb
-        console.log("Executing spell:", spell)
+        if (spellbook[spell.verb]) {
+          const feedback = await spellbook[spell.verb](spell.params, spell.data)
+          bodyFeedback.push(feedback)
+        } else {
+          bodyFeedback.push(`[unknown spell verb: '${spell.verb}']`)
+        }
       }
+    }
+
+    // 3. Create a single, consolidated Body wave if there's feedback
+    if (bodyFeedback.length > 0) {
+      const bodyWave = {
+        _id: newId(),
+        timestamp: Date.now(),
+        source: SOURCES.BODY,
+        data: bodyFeedback.join("\n"),
+        density: 0,
+        provenance: [], // we can add provenance logic later if needed
+        apotheosis: null,
+      }
+      await Wave.create(bodyWave)
     }
 
     return { success: true, message: "commit successful" }

@@ -14,4 +14,11 @@ export const SOURCES = {
   ROXANNE: "roxanne",
   BODY: "body",
   EXTERNAL: "external",
+  // we decided to add lore later, so its not here now
+}
+
+export const SPELL_VERBS = {
+  RECORD_SET: "record_set",
+  RECORD_GET: "record_get",
+  RECORD_REMOVE: "record_remove",
 }
