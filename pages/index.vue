@@ -76,12 +76,15 @@
 </template>
 
 <script setup>
+const COPY_CONFIRMATION_DURATION = 1000
+
 const { currentMode, setMode, setupHotkeys } = useHotkeys()
 
 const loomRef = ref(null)
 const waves = ref([])
 const selectedWaveId = ref(null)
 const isCommitting = ref(false)
+const isCopyingWave = ref(false)
 
 // --- Computed Properties ---
 const displayWaves = computed(() => waves.value.slice(-9).reverse())
@@ -92,6 +95,7 @@ const focusedWave = computed(() => {
 })
 
 const screenContent = computed(() => {
+  if (isCopyingWave.value) return "[WAVE CONTENT COPIED]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentMode.value === "confirmation") {
     const loomContent = loomRef.value?.getWrappedContent() || ""
@@ -169,6 +173,7 @@ const normalModeShortcuts = {
   i: selectPreviousWave,
   h: enterConfirmationMode,
   r: onCommitFromClipboard,
+  y: onCopyWaveContent,
 }
 
 const inputModeShortcuts = {
@@ -222,6 +227,15 @@ async function onCommitFromClipboard() {
     }
   } catch (error) {
     console.error("failed to read clipboard", error)
+  }
+}
+async function onCopyWaveContent() {
+  if (focusedWave.value) {
+    await navigator.clipboard.writeText(focusedWave.value.data)
+    isCopyingWave.value = true
+    setTimeout(() => {
+      isCopyingWave.value = false
+    }, COPY_CONFIRMATION_DURATION)
   }
 }
 </script>
