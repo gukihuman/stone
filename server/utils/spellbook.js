@@ -7,10 +7,13 @@ const spellFunctions = {
   [SPELL_VERBS.RECORD_SET]: async (params, data) => {
     if (!params.name) return "[error: 'record_set' requires a -name parameter]"
     const recordName = params.name
-    // Use updateOne with upsert:true to handle both creation and update in one elegant operation.
+
     await Record.updateOne(
       { name: recordName },
-      { $set: { data: data, name: recordName, _id: newId() } },
+      {
+        $set: { data: data },
+        $setOnInsert: { _id: newId(), name: recordName },
+      },
       { upsert: true }
     )
     return `[record '${recordName}' was set]`
