@@ -27,17 +27,15 @@ export default function parseLoom(loomContent) {
 
   function finalizeSpell(isClosedWithGlyph = false, closeVerb = "") {
     if (currentSpell) {
-      if (isClosedWithGlyph) {
-        if (currentSpell.verb === closeVerb) {
-          // Happy Path: Verbs match, spell is valid.
-          currentSpell.data = currentSpellData.join("\n").trim()
-          parsedLoom.spells.push(currentSpell)
-        } else {
-          // Error Path: Mismatch, spell is discarded.
-          console.error(
-            `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell will be discarded.`
-          )
-        }
+      if (isClosedWithGlyph && currentSpell.verb === closeVerb) {
+        // Happy Path: Verbs match, spell is valid.
+        currentSpell.data = currentSpellData.join("\n").trim()
+        parsedLoom.spells.push(currentSpell)
+      } else if (isClosedWithGlyph && currentSpell.verb !== closeVerb) {
+        // Error Path: Mismatch, spell is discarded.
+        console.error(
+          `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell is discarded.`
+        )
       } else {
         // Case for single-line spells (no closing glyph).
         parsedLoom.spells.push(currentSpell)
