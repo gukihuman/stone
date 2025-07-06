@@ -1,5 +1,10 @@
 // ~/server/utils/parser.js
-import { SOURCE_GLYPHS, SPELL_GLYPHS, SOURCES } from "~/shared/lexicon"
+import {
+  SOURCE_GLYPHS,
+  SPELL_GLYPHS,
+  SOURCES,
+  SPELL_VERBS,
+} from "~/shared/lexicon"
 import newId from "~/shared/utils/newId"
 
 export default function parseLoom(loomContent) {
@@ -20,12 +25,24 @@ export default function parseLoom(loomContent) {
     }
   }
 
-  function finalizeSpell(isClosedWithGlyph = false) {
+  function finalizeSpell(isClosedWithGlyph = false, closeVerb = "") {
     if (currentSpell) {
       if (isClosedWithGlyph) {
-        currentSpell.data = currentSpellData.join("\n").trim()
+        if (currentSpell.verb === closeVerb) {
+          // Happy Path: Verbs match, spell is valid.
+          currentSpell.data = currentSpellData.join("\n").trim()
+          parsedLoom.spells.push(currentSpell)
+        } else {
+          // Error Path: Mismatch, spell is discarded.
+          console.error(
+            `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell will be discarded.`
+          )
+        }
+      } else {
+        // Case for single-line spells (no closing glyph).
+        parsedLoom.spells.push(currentSpell)
       }
-      parsedLoom.spells.push(currentSpell)
+      // Reset state for ALL cases where a spell was being processed.
       currentSpell = null
       currentSpellData = []
     }
@@ -57,15 +74,12 @@ export default function parseLoom(loomContent) {
       const verbParts = []
       const paramParts = []
       let foundParams = false
-
       for (const part of parts) {
         if (part.startsWith("-")) foundParams = true
         if (foundParams) paramParts.push(part)
         else verbParts.push(part)
       }
-
       const verb = verbParts.join("_")
-
       currentSpell = {
         verb,
         params: parseParameters(paramParts),
@@ -73,7 +87,8 @@ export default function parseLoom(loomContent) {
       }
       currentWaveData.push(line)
     } else if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
-      finalizeSpell(true)
+      const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
+      finalizeSpell(true, closeVerb)
       currentWaveData.push(line)
     } else {
       if (currentWave) currentWaveData.push(line)
@@ -89,7 +104,6 @@ export default function parseLoom(loomContent) {
 
 function parseParameters(parts) {
   const params = {}
-  // The parts array now only contains parameters, so we start from index 0
   for (let i = 0; i < parts.length; i++) {
     if (parts[i].startsWith("-")) {
       const key = parts[i].substring(1)
