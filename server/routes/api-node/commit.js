@@ -58,7 +58,9 @@ export default defineEventHandler(async (event) => {
 
     // 1. Persist the waves from the loom
     if (parsedLoom.waves && parsedLoom.waves.length > 0) {
-      await Wave.insertMany(parsedLoom.waves)
+      for (const wave of parsedLoom.waves) {
+        await Wave.create(wave) // guarantees sequential insertion
+      }
     }
 
     // 2. Execute spells and collect feedback

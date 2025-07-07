@@ -76,6 +76,8 @@
 </template>
 
 <script setup>
+import { SOURCE_GLYPHS } from "~/shared/lexicon"
+
 const COPY_CONFIRMATION_DURATION = 1000
 
 const { currentMode, setMode, setupHotkeys } = useHotkeys()
@@ -85,6 +87,7 @@ const waves = ref([])
 const selectedWaveId = ref(null)
 const isCommitting = ref(false)
 const isCopyingWave = ref(false)
+const isCopyingContext = ref(false)
 
 // --- Computed Properties ---
 const displayWaves = computed(() => waves.value.slice(-9).reverse())
@@ -95,7 +98,8 @@ const focusedWave = computed(() => {
 })
 
 const screenContent = computed(() => {
-  if (isCopyingWave.value) return "[WAVE CONTENT COPIED]"
+  if (isCopyingContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
+  if (isCopyingWave.value) return "[WAVE COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentMode.value === "confirmation") {
     const loomContent = loomRef.value?.getWrappedContent() || ""
@@ -145,6 +149,7 @@ async function onCommit() {
     const { success } = await commit(contentToCommit)
     if (success) {
       await fetchFlow()
+      await onCopyContext()
     }
     loomRef.value?.clear()
   } catch (error) {
@@ -174,6 +179,7 @@ const normalModeShortcuts = {
   h: enterConfirmationMode,
   r: onCommitFromClipboard,
   y: onCopyWaveContent,
+  q: onCopyContext,
 }
 
 const inputModeShortcuts = {
@@ -237,6 +243,41 @@ async function onCopyWaveContent() {
       isCopyingWave.value = false
     }, COPY_CONFIRMATION_DURATION)
   }
+}
+// This is a snippet for pages/index.vue <script setup> block
+
+function formatContext(waves) {
+  if (!waves.length) return ""
+
+  const formattedLines = []
+  let previousSource = null
+
+  waves.forEach((wave, index) => {
+    const currentSource = wave.source
+    // If the source has changed, close the previous block and open a new one.
+    if (currentSource !== previousSource) {
+      if (index > 0) {
+        formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
+      }
+      formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
+    }
+    // Always add the wave's data.
+    formattedLines.push(wave.data)
+    previousSource = currentSource
+  })
+
+  // Close the final, unclosed block at the very end.
+  formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}`)
+
+  return formattedLines.join("\n")
+}
+async function onCopyContext() {
+  const contextString = formatContext(waves.value)
+  await navigator.clipboard.writeText(contextString)
+  isCopyingContext.value = true
+  setTimeout(() => {
+    isCopyingContext.value = false
+  }, COPY_CONFIRMATION_DURATION)
 }
 </script>
 <style scoped>
