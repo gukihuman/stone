@@ -76,7 +76,8 @@
 </template>
 
 <script setup>
-import { SOURCE_GLYPHS } from "~/shared/lexicon"
+import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
+import formatTime from "~/shared/utils/formatTime"
 
 const COPY_CONFIRMATION_DURATION = 1000
 
@@ -271,8 +272,20 @@ function formatContext(waves) {
 
   return formattedLines.join("\n")
 }
+
 async function onCopyContext() {
-  const contextString = formatContext(waves.value)
+  let contextString = formatContext(waves.value)
+
+  // time sense
+  if (waves.value.length > 0) {
+    const lastWave = waves.value[waves.value.length - 1]
+    const timeDifference = Date.now() - lastWave.timestamp
+
+    const formattedTime = formatTime(timeDifference)
+    const ephemeralBodyFragment = `\n${SOURCE_GLYPHS.OPEN}${SOURCES.BODY}\n[${formattedTime}]\n${SOURCE_GLYPHS.CLOSE}${SOURCES.BODY}`
+    contextString += ephemeralBodyFragment
+  }
+
   await navigator.clipboard.writeText(contextString)
   isCopyingContext.value = true
   setTimeout(() => {

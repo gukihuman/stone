@@ -3,6 +3,7 @@ import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import dbConnect from "~/server/utils/dbConnect"
 import Wave from "~/server/models/Wave"
 import { SOURCES } from "~/shared/lexicon"
+import formatTime from "~/shared/utils/formatTime"
 import parseLoom from "~/server/utils/parser"
 import spellbook from "~/server/utils/spellbook"
 import newId from "~/shared/utils/newId"
@@ -31,22 +32,18 @@ export default defineEventHandler(async (event) => {
     // initial body logic, only time sense here, for now [humorous amusement]
     const lastWave = await Wave.findOne().sort({ timestamp: -1 })
     if (lastWave) {
-      const timeDiff = Date.now() - lastWave.timestamp
-      // const THRESHOLD = 5 * 60 * 1000 // 5 minutes
-      const THRESHOLD = 0
+      const timeDifference = Date.now() - lastWave.timestamp
 
-      if (timeDiff > THRESHOLD) {
-        const timeSenseWave = {
-          _id: newId(),
-          timestamp: Date.now(),
-          source: SOURCES.BODY,
-          data: `[sense time: ${formatTimeDiff(timeDiff)} have passed]`,
-          density: 0,
-          provenance: [],
-          apotheosis: null,
-        }
-        await Wave.create(timeSenseWave)
+      const timeSenseWave = {
+        _id: newId(),
+        timestamp: Date.now(),
+        source: SOURCES.BODY,
+        data: `[${formatTime(timeDifference)}]`,
+        density: 0,
+        provenance: [],
+        apotheosis: null,
       }
+      await Wave.create(timeSenseWave)
     }
 
     const { loomContent, accessToken } = (await readBody(event)) || {}
@@ -111,16 +108,3 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: error.message })
   }
 })
-
-// A clean helper function to format milliseconds into a readable string
-function formatTimeDiff(ms) {
-  const seconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-
-  if (days > 0) return `${days} day${days > 1 ? "s" : ""}`
-  if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""}`
-  if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""}`
-  return `${seconds} second${seconds > 1 ? "s" : ""}`
-}
