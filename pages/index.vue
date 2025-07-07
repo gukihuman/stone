@@ -20,7 +20,7 @@
                 class="bg-carrot-500 my-1 w-[10px] rounded-md"
               ></div>
               <div
-                class="px-4 py-2 w-full rounded-xl"
+                class="px-4 py-2 w-full rounded-xl cursor-default"
                 :class="{
                   'bg-coffee-500 selection-paper': wave.source === 'guki',
                   'bg-moss-350 selection-screen': wave.source === 'roxanne',
