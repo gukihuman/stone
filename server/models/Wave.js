@@ -15,6 +15,7 @@ const schema = new mongoose.Schema(
   { collection: "waves", versionKey: false }
 )
 
+console.log(process.env.ACCESS_TOKEN)
 const secret = process.env.ACCESS_TOKEN
 if (secret) {
   schema.plugin(encrypt, {
