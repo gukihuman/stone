@@ -3,7 +3,7 @@ import { ONE_LINE_SPELLS, MULTI_LINE_SPELLS } from "~/shared/lexicon"
 import Record from "~/server/models/Record"
 import newId from "~/shared/utils/newId"
 
-const spellFunctions = {
+export default {
   [MULTI_LINE_SPELLS.RECORD_SET]: async (params, data) => {
     if (!params.name) return "[error: 'record_set' requires a -name parameter]"
     const recordName = params.name
@@ -39,5 +39,3 @@ const spellFunctions = {
     return `[record '${recordName}' was removed]`
   },
 }
-
-export default spellFunctions

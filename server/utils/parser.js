@@ -89,7 +89,7 @@ export default function parseLoom(loomContent) {
           params: parseParameters(paramParts),
           data: null,
         }
-      } else {
+      } else if (Object.values(ONE_LINE_SPELLS).includes(verb)) {
         // It's a one-line spell, create and push it immediately.
         parsedLoom.spells.push({
           verb,
