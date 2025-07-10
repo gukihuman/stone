@@ -26,20 +26,11 @@ export default function parseLoom(loomContent) {
     }
   }
 
-  // FinalizeSpell is now only for multi-line spells
-  function finalizeSpell(closeVerb = "") {
-    if (currentSpell) {
-      if (currentSpell.verb === closeVerb) {
-        currentSpell.data = currentSpellData.join("\n").trim()
-        parsedLoom.spells.push(currentSpell)
-      } else {
-        console.error(
-          `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell will be discarded.`
-        )
-      }
-      currentSpell = null
-      currentSpellData = []
-    }
+  function finalizeSpell(closeVerb) {
+    currentSpell.data = currentSpellData.join("\n").trim()
+    parsedLoom.spells.push(currentSpell)
+    currentSpell = null
+    currentSpellData = []
   }
 
   for (const line of lines) {
@@ -49,7 +40,9 @@ export default function parseLoom(loomContent) {
       // inside a multi-line spell all lines are data until the closer glyph
       if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
         const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
-        finalizeSpell(closeVerb)
+        if (currentSpell.verb === closeVerb) {
+          finalizeSpell(closeVerb)
+        }
         currentWaveData.push(line)
       } else {
         currentSpellData.push(line)
@@ -89,7 +82,7 @@ export default function parseLoom(loomContent) {
           params: parseParameters(paramParts),
           data: null,
         }
-      } else if (Object.values(ONE_LINE_SPELLS).includes(verb)) {
+      } else {
         // It's a one-line spell, create and push it immediately.
         parsedLoom.spells.push({
           verb,
