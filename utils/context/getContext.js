@@ -126,7 +126,7 @@ export default function (events, focusedEvent, shapes, files, entity, config) {
 
     // Iterate events chronologically to potentially favor newer memories if needed
     events.forEach((event) => {
-      if (!event.memory || !event.memory[entity]) return
+      if (!event.memory || !event.memory[entity] || event.name === "now") return
 
       event.memory[entity].forEach((memory) => {
         const hasSelectedTag =

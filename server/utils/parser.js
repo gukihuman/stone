@@ -26,7 +26,7 @@ export default function parseLoom(loomContent) {
     }
   }
 
-  function finalizeSpell(closeVerb) {
+  function finalizeSpell() {
     currentSpell.data = currentSpellData.join("\n").trim()
     parsedLoom.spells.push(currentSpell)
     currentSpell = null
@@ -37,19 +37,23 @@ export default function parseLoom(loomContent) {
     const trimmedLine = line.trim()
 
     if (currentSpell) {
-      // inside a multi-line spell all lines are data until the closer glyph
       if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
         const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
         if (currentSpell.verb === closeVerb) {
           finalizeSpell(closeVerb)
         }
-        currentSpellData.push(line)
-        currentWaveData.push(line)
       } else {
+        // Any other line, even one with a `⫸`, is just data.
         currentSpellData.push(line)
+      }
+      // Always add the line to the wave data for historical purity.
+      if (currentWave) {
         currentWaveData.push(line)
       }
-    } else if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
+      continue // Skip all other checks for this line.
+    }
+
+    if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
       finalizeWave()
       const source = trimmedLine.substring(1).trim()
       if (Object.values(SOURCES).includes(source)) {
