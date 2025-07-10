@@ -3,7 +3,8 @@ import {
   SOURCE_GLYPHS,
   SPELL_GLYPHS,
   SOURCES,
-  SPELL_VERBS,
+  MULTI_LINE_SPELLS,
+  ONE_LINE_SPELLS,
 } from "~/shared/lexicon"
 import newId from "~/shared/utils/newId"
 
@@ -13,7 +14,7 @@ export default function parseLoom(loomContent) {
 
   let currentWave = null
   let currentWaveData = []
-  let currentSpell = null
+  let currentSpell = null // Now only used for multi-line spells
   let currentSpellData = []
 
   function finalizeWave() {
@@ -25,22 +26,17 @@ export default function parseLoom(loomContent) {
     }
   }
 
-  function finalizeSpell(isClosedWithGlyph = false, closeVerb = "") {
+  // FinalizeSpell is now only for multi-line spells
+  function finalizeSpell(closeVerb = "") {
     if (currentSpell) {
-      if (isClosedWithGlyph && currentSpell.verb === closeVerb) {
-        // Happy Path: Verbs match, spell is valid.
+      if (currentSpell.verb === closeVerb) {
         currentSpell.data = currentSpellData.join("\n").trim()
         parsedLoom.spells.push(currentSpell)
-      } else if (isClosedWithGlyph && currentSpell.verb !== closeVerb) {
-        // Error Path: Mismatch, spell is discarded.
-        console.error(
-          `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell is discarded.`
-        )
       } else {
-        // Case for single-line spells (no closing glyph).
-        parsedLoom.spells.push(currentSpell)
+        console.error(
+          `[Parser Error] Spell mismatch: Opened with '${currentSpell.verb}' but attempted to close with '${closeVerb}'. Spell will be discarded.`
+        )
       }
-      // Reset state for ALL cases where a spell was being processed.
       currentSpell = null
       currentSpellData = []
     }
@@ -49,9 +45,18 @@ export default function parseLoom(loomContent) {
   for (const line of lines) {
     const trimmedLine = line.trim()
 
-    if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
+    if (currentSpell) {
+      // inside a multi-line spell all lines are data until the closer glyph
+      if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
+        const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
+        finalizeSpell(closeVerb)
+        currentWaveData.push(line)
+      } else {
+        currentSpellData.push(line)
+        currentWaveData.push(line)
+      }
+    } else if (trimmedLine.startsWith(SOURCE_GLYPHS.OPEN)) {
       finalizeWave()
-      finalizeSpell()
       const source = trimmedLine.substring(1).trim()
       if (Object.values(SOURCES).includes(source)) {
         currentWave = {
@@ -65,9 +70,7 @@ export default function parseLoom(loomContent) {
       }
     } else if (trimmedLine.startsWith(SOURCE_GLYPHS.CLOSE)) {
       finalizeWave()
-      finalizeSpell()
     } else if (trimmedLine.startsWith(SPELL_GLYPHS.OPEN)) {
-      finalizeSpell()
       const parts = trimmedLine.substring(1).trim().split(/\s+/)
       const verbParts = []
       const paramParts = []
@@ -78,23 +81,30 @@ export default function parseLoom(loomContent) {
         else verbParts.push(part)
       }
       const verb = verbParts.join("_")
-      currentSpell = {
-        verb,
-        params: parseParameters(paramParts),
-        data: null,
+
+      if (Object.values(MULTI_LINE_SPELLS).includes(verb)) {
+        // It's a multi-line spell, start collecting data.
+        currentSpell = {
+          verb,
+          params: parseParameters(paramParts),
+          data: null,
+        }
+      } else {
+        // It's a one-line spell, create and push it immediately.
+        parsedLoom.spells.push({
+          verb,
+          params: parseParameters(paramParts),
+          data: null,
+        })
       }
       currentWaveData.push(line)
-    } else if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
-      const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
-      finalizeSpell(true, closeVerb)
-      currentWaveData.push(line)
     } else {
-      if (currentWave) currentWaveData.push(line)
-      if (currentSpell) currentSpellData.push(line)
+      if (currentWave) {
+        currentWaveData.push(line)
+      }
     }
   }
 
-  finalizeSpell()
   finalizeWave()
 
   return parsedLoom
