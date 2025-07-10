@@ -43,6 +43,7 @@ export default function parseLoom(loomContent) {
         if (currentSpell.verb === closeVerb) {
           finalizeSpell(closeVerb)
         }
+        currentSpellData.push(line)
         currentWaveData.push(line)
       } else {
         currentSpellData.push(line)
