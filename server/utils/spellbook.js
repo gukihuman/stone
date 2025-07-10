@@ -1,10 +1,10 @@
 // ~/server/utils/spellbook.js
-import { SPELL_VERBS } from "~/shared/lexicon"
+import { ONE_LINE_SPELLS, MULTI_LINE_SPELLS } from "~/shared/lexicon"
 import Record from "~/server/models/Record"
 import newId from "~/shared/utils/newId"
 
 const spellFunctions = {
-  [SPELL_VERBS.RECORD_SET]: async (params, data) => {
+  [MULTI_LINE_SPELLS.RECORD_SET]: async (params, data) => {
     if (!params.name) return "[error: 'record_set' requires a -name parameter]"
     const recordName = params.name
 
@@ -19,7 +19,7 @@ const spellFunctions = {
     return `[record '${recordName}' was set]`
   },
 
-  [SPELL_VERBS.RECORD_GET]: async (params) => {
+  [ONE_LINE_SPELLS.RECORD_GET]: async (params) => {
     if (!params.name) return "[error: 'record_get' requires a -name parameter]"
     const recordName = params.name
     const record = await Record.findOne({ name: recordName })
@@ -28,7 +28,7 @@ const spellFunctions = {
     return `<record name="${record.name}">\n${record.data}\n</record>`
   },
 
-  [SPELL_VERBS.RECORD_REMOVE]: async (params) => {
+  [ONE_LINE_SPELLS.RECORD_REMOVE]: async (params) => {
     if (!params.name)
       return "[error: 'record_remove' requires a -name parameter]"
     const recordName = params.name
