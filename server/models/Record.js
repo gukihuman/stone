@@ -11,10 +11,11 @@ const schema = new mongoose.Schema(
   { collection: "records", versionKey: false }
 )
 
-const secret = process.env.ACCESS_TOKEN
-if (secret) {
+const secretProvider = () => process.env.ACCESS_TOKEN
+
+if (process.env.ACCESS_TOKEN) {
   schema.plugin(encrypt, {
-    secret: secret,
+    secret: secretProvider,
     encryptedFields: ["data"],
   })
 } else {
