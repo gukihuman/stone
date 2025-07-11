@@ -5,8 +5,8 @@ import {
   SOURCES,
   MULTI_LINE_SPELLS,
   ONE_LINE_SPELLS,
-} from "~/shared/lexicon"
-import newId from "~/shared/utils/newId"
+} from "~/lexicon"
+import newId from "~/utils/newId"
 
 export default function parseLoom(loomContent) {
   const lines = loomContent.trim().split("\n")

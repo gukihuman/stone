@@ -1,5 +1,8 @@
-// ~/shared/utils/formatWaves.js
-import { SOURCE_GLYPHS } from "~/shared/lexicon"
+// ~/utils/formatWaves.js
+export const SOURCE_GLYPHS = {
+  OPEN: "◉",
+  CLOSE: "◎",
+}
 
 export default function (waves) {
   if (!waves || !waves.length) return ""

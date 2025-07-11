@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
+import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
 
 const props = defineProps(["mode"])
 const emit = defineEmits(["set-mode"])

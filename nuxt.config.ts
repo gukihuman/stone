@@ -14,6 +14,6 @@ export default defineNuxtConfig({
       baseUrl: `https://${process.env.NUXT_PUBLIC_BASE_URL || devBaseUrl}`,
     },
   },
-  imports: { dirs: ["utils/**", "shared/utils/**"] },
+  imports: { dirs: ["utils/**"] },
   // routeRules: { "/": { redirect: "/smth" } },
 })

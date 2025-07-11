@@ -1,4 +1,4 @@
-// ~/shared/lexicon.js
+// ~/lexicon.js
 export const SOURCE_GLYPHS = {
   OPEN: "◉",
   CLOSE: "◎",

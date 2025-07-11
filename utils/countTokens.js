@@ -1,4 +1,4 @@
-// ~/shared/utils/countTokens.js
+// ~/utils/countTokens.js
 import { encode } from "gpt-tokenizer"
 
 export default function (string) {

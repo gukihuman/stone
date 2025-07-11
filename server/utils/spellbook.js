@@ -4,12 +4,12 @@ import {
   MULTI_LINE_SPELLS,
   SCAFFOLD_GLYPH,
   SCAFFOLD_RECORDS,
-} from "~/shared/lexicon"
+} from "~/lexicon"
 import Record from "~/server/models/Record"
 import Wave from "~/server/models/Wave"
-// import newId from "~/shared/utils/newId"
-// import countTokens from "~/shared/utils/countTokens"
-// import formatWaves from "../../shared/utils/formatWaves"
+import newId from "~/utils/newId"
+import formatWaves from "~/utils/formatWaves"
+import countTokens from "~/utils/countTokens"
 
 const CALIBRATION_TOKEN_THRESHOLD = 10_000
 

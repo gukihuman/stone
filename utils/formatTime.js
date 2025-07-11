@@ -1,4 +1,4 @@
-// ~/shared/utils/formatTime.js
+// ~/utils/formatTime.js
 export default function formatTime(ms) {
   const seconds = ms / 1000
   const minutes = seconds / 60

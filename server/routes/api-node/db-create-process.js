@@ -2,7 +2,7 @@
 import dbConnect from "~/server/utils/dbConnect"
 import Process from "~/server/models/Core"
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
-import newId from "~/shared/utils/newId"
+import newId from "~/utils/newId"
 
 export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Origin", "*")

@@ -76,9 +76,7 @@
 </template>
 
 <script setup>
-import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
-// import formatTime from "~/shared/utils/formatTime"
-// import formatWaves from "~/shared/utils/formatWaves"
+import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
 
 const COPY_CONFIRMATION_DURATION = 1000
 
