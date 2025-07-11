@@ -111,9 +111,8 @@ export default {
         if (targetFound) {
           contextualHorizonWaves.push(wave)
         } else {
-          const waveTokens = countTokens(wave.data)
-          if (tokensCounted + waveTokens <= tokenLimit) {
-            tokensCounted += waveTokens
+          if (tokensCounted <= tokenLimit) {
+            tokensCounted += countTokens(wave.data)
             wavesToDensify.push(wave)
           } else {
             targetFound = true
