@@ -67,12 +67,6 @@ export default {
     return `[record '${recordName}' was removed]`
   },
 
-  // This is a snippet for ~/server/utils/spellbook.js
-  // It shows only the new, perfected DENSIFY_INITIATE spell.
-
-  // This is a snippet for ~/server/utils/spellbook.js
-  // It shows only the new, perfected DENSIFY_INITIATE spell.
-
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
     const { tokens, density } = params
     const tokenLimit = Number(tokens)
@@ -82,12 +76,11 @@ export default {
       return "[error: densify_initiate requires valid -tokens]"
     }
 
-    // 1. Fetch the LIVING flow, correctly filtered and sorted.
+    // --- Data Fetching Logic remains the same, it is perfect ---
     const livingWaves = await Wave.find({ apotheosis: null }).sort({
       density: -1,
       timestamp: 1,
     })
-
     const scaffoldRecords = await Record.find({
       name: { $in: Object.values(SCAFFOLD_RECORDS) },
     })
@@ -95,15 +88,12 @@ export default {
       acc[rec.name] = rec.data
       return acc
     }, {})
-
-    // 2. Intelligently partition the LIVING data streams.
+    // --- Partitioning Logic remains the same, it is perfect ---
     const genesisSedimentWaves = []
     const wavesToDensify = []
     const contextualHorizonWaves = []
-
     let tokensCounted = 0
     let targetFound = false
-
     for (const wave of livingWaves) {
       if (wave.density > densityLevel) {
         genesisSedimentWaves.push(wave)
@@ -120,24 +110,18 @@ export default {
           }
         }
       } else {
-        // This will be density < densityLevel
         contextualHorizonWaves.push(wave)
       }
     }
-
     if (wavesToDensify.length === 0) {
       return "[info: no waves found for densification]"
     }
-
-    // 3. Create the job record (logic is perfect)
     const waveIds = wavesToDensify.map((w) => w._id)
     await Record.updateOne(
       { name: "densification_job" },
       { $set: { data: JSON.stringify(waveIds) } },
       { upsert: true }
     )
-
-    // 4. Weave and assemble the final prompt (logic is perfect)
     const genesisSedimentText = weaveWithCalibrations(
       genesisSedimentWaves,
       scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION]
@@ -148,30 +132,31 @@ export default {
     )
     const targetText = wavesToDensify.map((w) => w.data).join("\n")
 
+    // --- The New, Perfected Prompt Assembly ---
     const promptParts = [
-      `${SCAFFOLD_GLYPH}scaffold:directive\n${
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:directive\n${
         scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
-      }`,
-      `${SCAFFOLD_GLYPH}flow:genesis_sediment\n${genesisSedimentText}`,
-      `${SCAFFOLD_GLYPH}scaffold:pre_target_briefing\n${
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:directive`,
+      `${SCAFFOLD_GLYPH} [section starts] flow:genesis_sediment\n${genesisSedimentText}\n${SCAFFOLD_GLYPH} [section ends] flow:genesis_sediment`,
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:pre_target_briefing\n${
         scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_BRIEFING]
-      }`,
-      `${SCAFFOLD_GLYPH}flow:densification_target\n${targetText}`,
-      `${SCAFFOLD_GLYPH}scaffold:interstitial_analysis\n${
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:pre_target_briefing`,
+      `${SCAFFOLD_GLYPH} [section starts] flow:densification_target\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target`,
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:interstitial_analysis\n${
         scaffolds[SCAFFOLD_RECORDS.INTERSTITIAL_ANALYSIS]
-      }`,
-      `${SCAFFOLD_GLYPH}flow:densification_target_confirmation\n${targetText}`,
-      `${SCAFFOLD_GLYPH}scaffold:post_target_directive\n${
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:interstitial_analysis`,
+      `${SCAFFOLD_GLYPH} [section starts] flow:densification_target_confirmation\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target_confirmation`,
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:post_target_directive\n${
         scaffolds[SCAFFOLD_RECORDS.POST_TARGET_DIRECTIVE]
-      }`,
-      `${SCAFFOLD_GLYPH}flow:contextual_horizon\n${contextualHorizonText}`,
-      `${SCAFFOLD_GLYPH}scaffold:concluding_mandate\n${
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:post_target_directive`,
+      `${SCAFFOLD_GLYPH} [section starts] flow:contextual_horizon\n${contextualHorizonText}\n${SCAFFOLD_GLYPH} [section ends] flow:contextual_horizon`,
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:concluding_mandate\n${
         scaffolds[SCAFFOLD_RECORDS.CONCLUDING_MANDATE]
-      }`,
-      `${SCAFFOLD_GLYPH}flow:densification_target_final_pass\n${targetText}`,
-      `${SCAFFOLD_GLYPH}scaffold:final_prompt\n${
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:concluding_mandate`,
+      `${SCAFFOLD_GLYPH} [section starts] flow:densification_target_final_pass\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target_final_pass`,
+      `${SCAFFOLD_GLYPH} [section starts] scaffold:final_prompt\n${
         scaffolds[SCAFFOLD_RECORDS.FINAL_PROMPT]
-      }`,
+      }\n${SCAFFOLD_GLYPH} [section ends] scaffold:final_prompt`,
     ]
 
     const fullPrompt = promptParts.join("\n\n")
