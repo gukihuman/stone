@@ -38,7 +38,7 @@ function formatFragments(waves) {
   return formattedLines.join("\n")
 }
 
-const CALIBRATION_TOKEN_THRESHOLD = 1000
+const CALIBRATION_TOKEN_THRESHOLD = 10_000
 
 function weaveWithCalibrations(waves, calibrationText, sectionName) {
   if (!waves || !waves.length) return ""
@@ -166,7 +166,10 @@ export default {
     const waveIds = wavesToDensify.map((w) => w._id)
     await Record.updateOne(
       { name: "densification_job" },
-      { $set: { data: JSON.stringify(waveIds) } },
+      {
+        $set: { data: JSON.stringify(waveIds) },
+        $setOnInsert: { _id: newId(), name: "densification_job" },
+      },
       { upsert: true }
     )
     const genesisSedimentText = weaveWithCalibrations(
