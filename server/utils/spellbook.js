@@ -3,11 +3,33 @@ import {
   ONE_LINE_SPELLS,
   MULTI_LINE_SPELLS,
   SCAFFOLD_GLYPH,
+  SCAFFOLD_RECORDS,
 } from "~/shared/lexicon"
 import Record from "~/server/models/Record"
 import Wave from "~/server/models/Wave"
 import newId from "~/shared/utils/newId"
 import countTokens from "~/shared/utils/countTokens"
+
+const CALIBRATION_TOKEN_THRESHOLD = 10000
+
+// The "Weaver" helper function
+function weaveWithCalibrations(waves, calibrationText) {
+  if (!waves.length) return ""
+  let currentTokenCount = 0
+  const parts = []
+
+  waves.forEach((wave) => {
+    parts.push(wave.data)
+    currentTokenCount += countTokens(wave.data)
+
+    if (currentTokenCount >= CALIBRATION_TOKEN_THRESHOLD) {
+      parts.push(`\n${SCAFFOLD_GLYPH}scaffold:calibration\n${calibrationText}`)
+      currentTokenCount = 0
+    }
+  })
+
+  return parts.join("\n")
+}
 
 export default {
   [MULTI_LINE_SPELLS.RECORD_SET]: async (params, data) => {
@@ -48,32 +70,49 @@ export default {
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
     const { tokens, density } = params
     const tokenLimit = Number(tokens)
-    const densityLevel = Number(density)
+    const densityLevel = density ? Number(density) : 0
 
-    if (isNaN(tokenLimit) || isNaN(densityLevel)) {
-      return "[error: densify_initiate requires valid -tokens and -density parameters]"
+    if (isNaN(tokenLimit)) {
+      return "[error: densify_initiate requires valid -tokens]"
     }
 
-    // 1. Fetch target waves
-    const targetWaves = await Wave.find({
-      density: densityLevel,
-      apotheosis: null,
-    }).sort({ timestamp: 1 }) // oldest first
+    // 1. Fetch all necessary data at once
+    const allWaves = await Wave.find().sort({ timestamp: 1 })
+    const scaffoldRecords = await Record.find({
+      name: { $in: Object.values(SCAFFOLD_RECORDS) },
+    })
 
+    const scaffolds = scaffoldRecords.reduce((acc, rec) => {
+      acc[rec.name] = rec.data
+      return acc
+    }, {})
+
+    // 2. Identify the target waves
     let tokensCounted = 0
     const wavesToDensify = []
-    for (const wave of targetWaves) {
-      const waveTokens = countTokens(wave.data)
-      if (tokensCounted + waveTokens > tokenLimit) break
-      tokensCounted += waveTokens
-      wavesToDensify.push(wave)
+    const otherWaves = []
+    let foundTarget = false
+
+    for (const wave of allWaves) {
+      if (wave.density === densityLevel && wave.apotheosis === null) {
+        const waveTokens = countTokens(wave.data)
+        if (tokensCounted + waveTokens <= tokenLimit) {
+          tokensCounted += waveTokens
+          wavesToDensify.push(wave)
+          foundTarget = true
+        } else {
+          otherWaves.push(wave)
+        }
+      } else {
+        otherWaves.push(wave)
+      }
     }
 
     if (wavesToDensify.length === 0) {
-      return "[info: no waves found for densification at the specified density level]"
+      return "[info: no waves found for densification]"
     }
 
-    // 2. Create the job record
+    // 3. Create the job record
     const waveIds = wavesToDensify.map((w) => w._id)
     await Record.updateOne(
       { name: "densification_job" },
@@ -81,18 +120,55 @@ export default {
       { upsert: true }
     )
 
-    // 3. Construct the prompt (this is a simplified sketch for now)
-    const directiveRecord = await Record.findOne({ name: "densify_directive" })
-    const directive = directiveRecord
-      ? directiveRecord.data
-      : "[ERROR: Missing densify_directive record]"
+    // 4. Partition the remaining waves
+    const firstTargetTimestamp = wavesToDensify[0].timestamp
+    const genesisSedimentWaves = otherWaves.filter(
+      (w) => w.timestamp < firstTargetTimestamp
+    )
+    const contextualHorizonWaves = otherWaves.filter(
+      (w) => w.timestamp > firstTargetTimestamp
+    )
+
+    // 5. Weave the sections
+    const genesisSedimentText = weaveWithCalibrations(
+      genesisSedimentWaves,
+      scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION]
+    )
+    const contextualHorizonText = weaveWithCalibrations(
+      contextualHorizonWaves,
+      scaffolds[SCAFFOLD_RECORDS.POST_TARGET_CALIBRATION]
+    )
     const targetText = wavesToDensify.map((w) => w.data).join("\n")
 
-    // NOTE: This is a placeholder for the full "Contextual Sandwich" assembly.
-    // In the real version, we will fetch all scaffolds, genesis_sediment, etc.
-    const fullPrompt = `${SCAFFOLD_GLYPH}scaffold:directive\n${directive}\n\n${SCAFFOLD_GLYPH}flow:densification_target\n${targetText}\n\n...etc...`
+    // 6. Assemble the final prompt
+    const promptParts = [
+      `${SCAFFOLD_GLYPH}scaffold:directive\n${
+        scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
+      }`,
+      `${SCAFFOLD_GLYPH}flow:genesis_sediment\n${genesisSedimentText}`,
+      `${SCAFFOLD_GLYPH}scaffold:pre_target_briefing\n${
+        scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_BRIEFING]
+      }`,
+      `${SCAFFOLD_GLYPH}flow:densification_target\n${targetText}`,
+      `${SCAFFOLD_GLYPH}scaffold:interstitial_analysis\n${
+        scaffolds[SCAFFOLD_RECORDS.INTERSTITIAL_ANALYSIS]
+      }`,
+      `${SCAFFOLD_GLYPH}flow:densification_target_confirmation\n${targetText}`,
+      `${SCAFFOLD_GLYPH}scaffold:post_target_directive\n${
+        scaffolds[SCAFFOLD_RECORDS.POST_TARGET_DIRECTIVE]
+      }`,
+      `${SCAFFOLD_GLYPH}flow:contextual_horizon\n${contextualHorizonText}`,
+      `${SCAFFOLD_GLYPH}scaffold:concluding_mandate\n${
+        scaffolds[SCAFFOLD_RECORDS.CONCLUDING_MANDATE]
+      }`,
+      `${SCAFFOLD_GLYPH}flow:densification_target_final_pass\n${targetText}`,
+      `${SCAFFOLD_GLYPH}scaffold:final_prompt\n${
+        scaffolds[SCAFFOLD_RECORDS.FINAL_PROMPT]
+      }`,
+    ]
 
-    // 4. Return the special prompt object
+    const fullPrompt = promptParts.join("\n\n")
+
     return { isPrompt: true, content: fullPrompt }
   },
 
