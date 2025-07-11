@@ -58,7 +58,7 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
         `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
       )
       finalParts.push(
-        `${SCAFFOLD_GLYPH}scaffold:calibration\n${calibrationText}`
+        `${SCAFFOLD_GLYPH} [section starts] scaffold:calibration\n${calibrationText}\n${SCAFFOLD_GLYPH} [section ends] scaffold:calibration`
       )
 
       // Reset for the next batch.
@@ -186,7 +186,7 @@ export default {
       `${SCAFFOLD_GLYPH} [section starts] scaffold:directive\n${
         scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
       }\n${SCAFFOLD_GLYPH} [section ends] scaffold:directive`,
-      `${SCAFFOLD_GLYPH} [section starts] flow:genesis_sediment\n${genesisSedimentText}\n${SCAFFOLD_GLYPH} [section ends] flow:genesis_sediment`,
+      genesisSedimentText,
       `${SCAFFOLD_GLYPH} [section starts] scaffold:pre_target_briefing\n${
         scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_BRIEFING]
       }\n${SCAFFOLD_GLYPH} [section ends] scaffold:pre_target_briefing`,
@@ -198,7 +198,7 @@ export default {
       `${SCAFFOLD_GLYPH} [section starts] scaffold:post_target_directive\n${
         scaffolds[SCAFFOLD_RECORDS.POST_TARGET_DIRECTIVE]
       }\n${SCAFFOLD_GLYPH} [section ends] scaffold:post_target_directive`,
-      `${SCAFFOLD_GLYPH} [section starts] flow:contextual_horizon\n${contextualHorizonText}\n${SCAFFOLD_GLYPH} [section ends] flow:contextual_horizon`,
+      contextualHorizonText,
       `${SCAFFOLD_GLYPH} [section starts] scaffold:concluding_mandate\n${
         scaffolds[SCAFFOLD_RECORDS.CONCLUDING_MANDATE]
       }\n${SCAFFOLD_GLYPH} [section ends] scaffold:concluding_mandate`,
