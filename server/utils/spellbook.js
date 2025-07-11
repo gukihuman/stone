@@ -38,7 +38,7 @@ function formatFragments(waves) {
   return formattedLines.join("\n")
 }
 
-const CALIBRATION_TOKEN_THRESHOLD = 10000
+const CALIBRATION_TOKEN_THRESHOLD = 1000
 
 function weaveWithCalibrations(waves, calibrationText, sectionName) {
   if (!waves || !waves.length) return ""
@@ -180,7 +180,6 @@ export default {
       "flow:contextual_horizon"
     )
     const targetText = formatFragments(wavesToDensify)
-    // const targetText = ""
 
     // --- The New, Perfected Prompt Assembly ---
     const promptParts = [
