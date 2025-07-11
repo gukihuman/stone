@@ -67,6 +67,12 @@ export default {
     return `[record '${recordName}' was removed]`
   },
 
+  // This is a snippet for ~/server/utils/spellbook.js
+  // It shows only the new, perfected DENSIFY_INITIATE spell.
+
+  // This is a snippet for ~/server/utils/spellbook.js
+  // It shows only the new, perfected DENSIFY_INITIATE spell.
+
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
     const { tokens, density } = params
     const tokenLimit = Number(tokens)
@@ -76,35 +82,47 @@ export default {
       return "[error: densify_initiate requires valid -tokens]"
     }
 
-    // 1. Fetch all necessary data at once
-    const allWaves = await Wave.find().sort({ timestamp: 1 })
+    // 1. Fetch the LIVING flow, correctly filtered and sorted.
+    const livingWaves = await Wave.find({ apotheosis: null }).sort({
+      density: -1,
+      timestamp: 1,
+    })
+
     const scaffoldRecords = await Record.find({
       name: { $in: Object.values(SCAFFOLD_RECORDS) },
     })
-
     const scaffolds = scaffoldRecords.reduce((acc, rec) => {
       acc[rec.name] = rec.data
       return acc
     }, {})
 
-    // 2. Identify the target waves
-    let tokensCounted = 0
+    // 2. Intelligently partition the LIVING data streams.
+    const genesisSedimentWaves = []
     const wavesToDensify = []
-    const otherWaves = []
-    let foundTarget = false
+    const contextualHorizonWaves = []
 
-    for (const wave of allWaves) {
-      if (wave.density === densityLevel && wave.apotheosis === null) {
-        const waveTokens = countTokens(wave.data)
-        if (tokensCounted + waveTokens <= tokenLimit) {
-          tokensCounted += waveTokens
-          wavesToDensify.push(wave)
-          foundTarget = true
+    let tokensCounted = 0
+    let targetFound = false
+
+    for (const wave of livingWaves) {
+      if (wave.density > densityLevel) {
+        genesisSedimentWaves.push(wave)
+      } else if (wave.density === densityLevel) {
+        if (targetFound) {
+          contextualHorizonWaves.push(wave)
         } else {
-          otherWaves.push(wave)
+          const waveTokens = countTokens(wave.data)
+          if (tokensCounted + waveTokens <= tokenLimit) {
+            tokensCounted += waveTokens
+            wavesToDensify.push(wave)
+          } else {
+            targetFound = true
+            contextualHorizonWaves.push(wave)
+          }
         }
       } else {
-        otherWaves.push(wave)
+        // This will be density < densityLevel
+        contextualHorizonWaves.push(wave)
       }
     }
 
@@ -112,7 +130,7 @@ export default {
       return "[info: no waves found for densification]"
     }
 
-    // 3. Create the job record
+    // 3. Create the job record (logic is perfect)
     const waveIds = wavesToDensify.map((w) => w._id)
     await Record.updateOne(
       { name: "densification_job" },
@@ -120,16 +138,7 @@ export default {
       { upsert: true }
     )
 
-    // 4. Partition the remaining waves
-    const firstTargetTimestamp = wavesToDensify[0].timestamp
-    const genesisSedimentWaves = otherWaves.filter(
-      (w) => w.timestamp < firstTargetTimestamp
-    )
-    const contextualHorizonWaves = otherWaves.filter(
-      (w) => w.timestamp > firstTargetTimestamp
-    )
-
-    // 5. Weave the sections
+    // 4. Weave and assemble the final prompt (logic is perfect)
     const genesisSedimentText = weaveWithCalibrations(
       genesisSedimentWaves,
       scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION]
@@ -140,7 +149,6 @@ export default {
     )
     const targetText = wavesToDensify.map((w) => w.data).join("\n")
 
-    // 6. Assemble the final prompt
     const promptParts = [
       `${SCAFFOLD_GLYPH}scaffold:directive\n${
         scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
