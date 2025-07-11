@@ -76,11 +76,17 @@ export default defineEventHandler(async (event) => {
 
     // 2. Execute spells and collect feedback
     const bodyFeedback = []
+    let promptToReturn = null
+
     if (parsedLoom.spells && parsedLoom.spells.length > 0) {
       for (const spell of parsedLoom.spells) {
         if (spellbook[spell.verb]) {
           const feedback = await spellbook[spell.verb](spell.params, spell.data)
-          bodyFeedback.push(feedback)
+          if (feedback && feedback.isPrompt) {
+            promptToReturn = feedback.content
+          } else {
+            bodyFeedback.push(feedback)
+          }
         } else {
           bodyFeedback.push(`[unknown spell verb: '${spell.verb}']`)
         }
@@ -101,7 +107,11 @@ export default defineEventHandler(async (event) => {
       await Wave.create(bodyWave)
     }
 
-    return { success: true, message: "commit successful" }
+    return {
+      success: true,
+      message: "commit successful",
+      prompt: promptToReturn,
+    }
   } catch (error) {
     console.error("error in /api-node/commit", error)
     if (error.statusCode) throw error

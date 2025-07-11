@@ -89,6 +89,7 @@ const selectedWaveId = ref(null)
 const isCommitting = ref(false)
 const isCopyingWave = ref(false)
 const isCopyingContext = ref(false)
+const isCopyingPrompt = ref(false)
 
 // --- Computed Properties ---
 const displayWaves = computed(() => waves.value.slice(-9).reverse())
@@ -99,6 +100,7 @@ const focusedWave = computed(() => {
 })
 
 const screenContent = computed(() => {
+  if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
   if (isCopyingContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
   if (isCopyingWave.value) return "[WAVE COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
@@ -147,10 +149,23 @@ async function onCommit() {
 
   isCommitting.value = true
   try {
-    const { success } = await commit(contentToCommit)
-    if (success) {
-      await fetchFlow()
-      await onCopyContext()
+    // The commit function now returns a unified response object
+    const response = await commit(contentToCommit)
+
+    if (response.success) {
+      await fetchFlow() // Always fetch the new flow first
+
+      if (response.prompt) {
+        // --- The New Prompt-Handling Logic ---
+        await navigator.clipboard.writeText(response.prompt)
+        isCopyingPrompt.value = true
+        setTimeout(() => {
+          isCopyingPrompt.value = false
+        }, COPY_CONFIRMATION_DURATION)
+      } else {
+        // --- The Default Context-Copying Logic ---
+        await onCopyContext()
+      }
     }
     loomRef.value?.clear()
   } catch (error) {

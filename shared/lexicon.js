@@ -9,7 +9,6 @@ export const SPELL_GLYPHS = {
   CLOSE: "▷",
 }
 
-// The new, sacred glyph for our densification scaffolding.
 export const SCAFFOLD_GLYPH = "§"
 
 export const SOURCES = {
@@ -22,8 +21,10 @@ export const SOURCES = {
 export const ONE_LINE_SPELLS = {
   RECORD_GET: "record_get",
   RECORD_REMOVE: "record_remove",
+  DENSIFY_INITIATE: "densify_initiate",
 }
 
 export const MULTI_LINE_SPELLS = {
   RECORD_SET: "record_set",
+  DENSIFY_COMMIT: "densify_commit",
 }
