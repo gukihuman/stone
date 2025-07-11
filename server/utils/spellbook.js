@@ -7,36 +7,9 @@ import {
 } from "~/shared/lexicon"
 import Record from "~/server/models/Record"
 import Wave from "~/server/models/Wave"
-import newId from "~/shared/utils/newId"
-import countTokens from "~/shared/utils/countTokens"
-// import formatFragments from "~/shared/utils/formatFragments"
-
-import { SOURCE_GLYPHS } from "~/shared/lexicon"
-
-function formatFragments(waves) {
-  if (!waves || !waves.length) return ""
-
-  const formattedLines = []
-  let previousSource = null
-
-  waves.forEach((wave) => {
-    const currentSource = wave.source
-    if (currentSource !== previousSource) {
-      if (previousSource !== null) {
-        formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
-      }
-      formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
-    }
-    formattedLines.push(wave.data)
-    previousSource = currentSource
-  })
-
-  if (previousSource !== null) {
-    formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}`)
-  }
-
-  return formattedLines.join("\n")
-}
+// import newId from "~/shared/utils/newId"
+// import countTokens from "~/shared/utils/countTokens"
+// import formatWaves from "../../shared/utils/formatWaves"
 
 const CALIBRATION_TOKEN_THRESHOLD = 10_000
 
@@ -53,7 +26,7 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 
     if (currentTokenCount >= CALIBRATION_TOKEN_THRESHOLD) {
       // Threshold breached, process the batch.
-      const formattedBlock = formatFragments(batch)
+      const formattedBlock = formatWaves(batch)
       finalParts.push(
         `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
       )
@@ -69,7 +42,7 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 
   // Process any remaining waves in the last batch.
   if (batch.length > 0) {
-    const formattedBlock = formatFragments(batch)
+    const formattedBlock = formatWaves(batch)
     finalParts.push(
       `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
     )
@@ -182,7 +155,7 @@ export default {
       scaffolds[SCAFFOLD_RECORDS.POST_TARGET_CALIBRATION],
       "flow:contextual_horizon"
     )
-    const targetText = formatFragments(wavesToDensify)
+    const targetText = formatWaves(wavesToDensify)
 
     // --- The New, Perfected Prompt Assembly ---
     const promptParts = [

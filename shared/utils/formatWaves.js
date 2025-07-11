@@ -1,4 +1,4 @@
-// ~/shared/utils/formatFragments.js
+// ~/shared/utils/formatWaves.js
 import { SOURCE_GLYPHS } from "~/shared/lexicon"
 
 export default function (waves) {

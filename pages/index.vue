@@ -77,8 +77,8 @@
 
 <script setup>
 import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
-import formatTime from "~/shared/utils/formatTime"
-import formatFragments from "~/shared/utils/formatFragments"
+// import formatTime from "~/shared/utils/formatTime"
+// import formatWaves from "~/shared/utils/formatWaves"
 
 const COPY_CONFIRMATION_DURATION = 1000
 
@@ -263,7 +263,7 @@ async function onCopyWaveContent() {
 }
 
 async function onCopyContext() {
-  let contextString = formatFragments(waves.value)
+  let contextString = formatWaves(waves.value)
 
   // time sense
   if (waves.value.length > 0) {
