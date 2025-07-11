@@ -1,5 +1,5 @@
 // ~/utils/formatWaves.js
-export const SOURCE_GLYPHS = {
+const SOURCE_GLYPHS = {
   OPEN: "◉",
   CLOSE: "◎",
 }

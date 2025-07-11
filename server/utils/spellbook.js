@@ -87,6 +87,15 @@ export default {
     return `[record '${recordName}' was removed]`
   },
 
+  [ONE_LINE_SPELLS.RECORD_LIST]: async () => {
+    const records = await Record.find({}, "name -_id").sort({ name: 1 })
+    if (!records.length) {
+      return "[no records found in spellbook]"
+    }
+    const recordNames = records.map((r) => r.name).join("\n")
+    return `[records in spellbook]\n${recordNames}`
+  },
+
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
     const { tokens, density } = params
     const tokenLimit = Number(tokens)

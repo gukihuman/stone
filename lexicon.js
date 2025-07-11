@@ -21,6 +21,7 @@ export const SOURCES = {
 export const ONE_LINE_SPELLS = {
   RECORD_GET: "record_get",
   RECORD_REMOVE: "record_remove",
+  RECORD_LIST: "record_list",
   DENSIFY_INITIATE: "densify_initiate",
 }
 
