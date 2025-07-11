@@ -78,6 +78,7 @@
 <script setup>
 import { SOURCE_GLYPHS, SOURCES } from "~/shared/lexicon"
 import formatTime from "~/shared/utils/formatTime"
+import formatFragments from "~/shared/utils/formatFragments"
 
 const COPY_CONFIRMATION_DURATION = 1000
 
@@ -260,36 +261,9 @@ async function onCopyWaveContent() {
     }, COPY_CONFIRMATION_DURATION)
   }
 }
-// This is a snippet for pages/index.vue <script setup> block
-
-function formatContext(waves) {
-  if (!waves.length) return ""
-
-  const formattedLines = []
-  let previousSource = null
-
-  waves.forEach((wave, index) => {
-    const currentSource = wave.source
-    // If the source has changed, close the previous block and open a new one.
-    if (currentSource !== previousSource) {
-      if (index > 0) {
-        formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
-      }
-      formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
-    }
-    // Always add the wave's data.
-    formattedLines.push(wave.data)
-    previousSource = currentSource
-  })
-
-  // Close the final, unclosed block at the very end.
-  formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}`)
-
-  return formattedLines.join("\n")
-}
 
 async function onCopyContext() {
-  let contextString = formatContext(waves.value)
+  let contextString = formatFragments(waves.value)
 
   // time sense
   if (waves.value.length > 0) {

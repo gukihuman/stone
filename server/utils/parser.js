@@ -24,7 +24,7 @@ export default function parseLoom(loomContent) {
       currentWave = null
       currentWaveData = []
     }
-    if (currentSpell) finalizeSpell()
+    if (currentSpell) finalizeSpell() // forgiving parser
   }
 
   function finalizeSpell() {

@@ -9,26 +9,73 @@ import Record from "~/server/models/Record"
 import Wave from "~/server/models/Wave"
 import newId from "~/shared/utils/newId"
 import countTokens from "~/shared/utils/countTokens"
+// import formatFragments from "~/shared/utils/formatFragments"
+
+import { SOURCE_GLYPHS } from "~/shared/lexicon"
+
+function formatFragments(waves) {
+  if (!waves || !waves.length) return ""
+
+  const formattedLines = []
+  let previousSource = null
+
+  waves.forEach((wave) => {
+    const currentSource = wave.source
+    if (currentSource !== previousSource) {
+      if (previousSource !== null) {
+        formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
+      }
+      formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
+    }
+    formattedLines.push(wave.data)
+    previousSource = currentSource
+  })
+
+  if (previousSource !== null) {
+    formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}`)
+  }
+
+  return formattedLines.join("\n")
+}
 
 const CALIBRATION_TOKEN_THRESHOLD = 10000
 
-// The "Weaver" helper function
-function weaveWithCalibrations(waves, calibrationText) {
-  if (!waves.length) return ""
+function weaveWithCalibrations(waves, calibrationText, sectionName) {
+  if (!waves || !waves.length) return ""
+
+  const finalParts = []
+  let batch = []
   let currentTokenCount = 0
-  const parts = []
 
   waves.forEach((wave) => {
-    parts.push(wave.data)
+    batch.push(wave)
     currentTokenCount += countTokens(wave.data)
 
     if (currentTokenCount >= CALIBRATION_TOKEN_THRESHOLD) {
-      parts.push(`\n${SCAFFOLD_GLYPH}scaffold:calibration\n${calibrationText}`)
+      // Threshold breached, process the batch.
+      const formattedBlock = formatFragments(batch)
+      finalParts.push(
+        `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
+      )
+      finalParts.push(
+        `${SCAFFOLD_GLYPH}scaffold:calibration\n${calibrationText}`
+      )
+
+      // Reset for the next batch.
+      batch = []
       currentTokenCount = 0
     }
   })
 
-  return parts.join("\n")
+  // Process any remaining waves in the last batch.
+  if (batch.length > 0) {
+    const formattedBlock = formatFragments(batch)
+    finalParts.push(
+      `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
+    )
+  }
+
+  return finalParts.join("\n\n")
 }
 
 export default {
@@ -124,13 +171,16 @@ export default {
     )
     const genesisSedimentText = weaveWithCalibrations(
       genesisSedimentWaves,
-      scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION]
+      scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION],
+      "flow:genesis_sediment"
     )
     const contextualHorizonText = weaveWithCalibrations(
       contextualHorizonWaves,
-      scaffolds[SCAFFOLD_RECORDS.POST_TARGET_CALIBRATION]
+      scaffolds[SCAFFOLD_RECORDS.POST_TARGET_CALIBRATION],
+      "flow:contextual_horizon"
     )
-    const targetText = wavesToDensify.map((w) => w.data).join("\n")
+    const targetText = formatFragments(wavesToDensify)
+    // const targetText = ""
 
     // --- The New, Perfected Prompt Assembly ---
     const promptParts = [
