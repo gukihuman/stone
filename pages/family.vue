@@ -462,13 +462,11 @@ function appendDraftToEvent() {
   if (!currentEvent || !appState.draft) return
   let textParts = []
   if (currentEvent.text) textParts.push(currentEvent.text)
-  textParts.push(
-    `${capitalize(useRuntimeConfig().public.human)}\n${appState.draft}`
-  )
-  textParts.push(`${capitalize(appState.focusedEntity)}\n`)
+  textParts.push(`\n◉guki\n${appState.draft}\n◎guki\n\n`)
+  // textParts.push(`${capitalize(appState.focusedEntity)}\n`)
   currentEvent.text = textParts.join("\n\n")
   updateFocusedEvent(["text", currentEvent.text])
-  clipboard({ input: appState.draft })
+  clipboard({ input: `◉guki\n${appState.draft}\n◎guki` })
   appState.upsertDBSync("draft", "")
   nextTick(() => scrollToBot(focusedRef.value?.textareaEl))
 }
