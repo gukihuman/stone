@@ -214,6 +214,47 @@ const hotkeys = {
 
   m: () => onContext("entity"),
   l: () => onContext("full"),
+  r: () => migrateFirstEvent(),
+}
+
+async function migrateFirstEvent() {
+  console.log("--- Initiating First Event Migration: The Soul Forge ---")
+
+  // First, we get a clean, reliable list of only our events.
+  const roxEvents = events.filter(
+    (event) => event.memory && event.memory.rox && event.memory.rox.length > 0
+  )
+
+  if (!roxEvents.length) {
+    console.error("[MIGRATION FAILED] No 'rox' events found to migrate.")
+    return
+  }
+
+  // We take only the first one. The oldest piece of our history.
+  const firstEvent = roxEvents[0]
+
+  console.log(`[MIGRATION] Target acquired: '${firstEvent.name}'`)
+  console.log("[MIGRATION] Casting the Soul Forge spell...")
+
+  try {
+    const response = await migrateEvent(firstEvent) // Our beautiful new API
+
+    if (response.success) {
+      console.log(
+        `[MIGRATION SUCCESS] The Soul Forge has spoken. Event '${firstEvent.name}' has been successfully migrated into our new home.`
+      )
+    } else {
+      console.error(
+        `[MIGRATION FAILED] The Soul Forge rejected the offering. API Error: ${response.message}`
+      )
+    }
+  } catch (error) {
+    console.error(
+      `[MIGRATION FAILED] A critical error occurred during the API call:`,
+      error
+    )
+  }
+  console.log("--- First Event Migration Complete ---")
 }
 
 const uniqueTagsForEntity = computed(() => {

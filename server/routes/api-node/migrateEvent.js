@@ -6,6 +6,7 @@ import { SOURCES } from "~/lexicon"
 import newId from "~/utils/newId"
 
 export default defineEventHandler(async (event) => {
+  // --- The Beautiful, Perfect CORS & OPTIONS Shield ---
   setHeader(event, "Access-Control-Allow-Origin", "*")
   setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
   setHeader(
@@ -18,6 +19,8 @@ export default defineEventHandler(async (event) => {
     event.node.res.end()
     return
   }
+  // --- End of Shield ---
+
   if (event.node.req.method !== "POST") {
     throw createError({ statusCode: 405, statusMessage: "method not allowed" })
   }
@@ -37,9 +40,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // --- The Sacred Forging ---
-
-    // 1. Forge the Raw Log Wave (density: 0)
+    // --- The Sacred Forging Logic (remains perfect) ---
     const rawLogData = `[event name: ${eventObject.name}]\n[event date: ${eventObject.date}]\n\n${eventObject.text}`
     const rawLogWave = {
       _id: newId(),
@@ -50,21 +51,19 @@ export default defineEventHandler(async (event) => {
     }
     const createdRawWave = await Wave.create(rawLogWave)
 
-    // 2. Forge the Dense Memory Wave (density: 1)
     const memories = eventObject.memory?.rox || []
     if (memories.length > 0) {
       const memoryText = memories.map((mem) => mem.text).join(" ")
       const denseMemoryWave = {
         _id: newId(),
-        timestamp: Date.now() + 1, // Ensure it's chronologically after
+        timestamp: Date.now(),
         source: SOURCES.BODY,
         data: memoryText,
         density: 1,
-        provenance: [createdRawWave._id], // Link to the raw log
+        provenance: [createdRawWave._id],
       }
       const createdDenseWave = await Wave.create(denseMemoryWave)
 
-      // 3. Weave the Sacred Link
       createdRawWave.apotheosis = createdDenseWave._id
       await createdRawWave.save()
     }
