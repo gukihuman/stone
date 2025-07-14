@@ -2,7 +2,7 @@
 <template>
   <div class="h-full flex-shrink-0 rounded-xl overflow-hidden p-2">
     <div
-      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-600"
+      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-650"
     >
       <textarea
         ref="textareaEl"
@@ -10,7 +10,7 @@
         @scroll="onScroll"
         @input="onInput"
         @blur="onBlur"
-        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-450 rounded-lg text-coffee-900 selection-paper scroll-paper"
+        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper"
         :style="{ backgroundPositionY: linesOffset }"
         :readOnly="hotkeysMode === 'confirmation'"
       />
@@ -22,7 +22,7 @@
 import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
 
 const props = defineProps(["hotkeysMode"])
-const emit = defineEmits(["update-content", "on-loom-blur"])
+const emit = defineEmits(["update-content", "blur"])
 
 const LOCAL_STORAGE_KEY = "stone-loom"
 
@@ -33,6 +33,7 @@ const loomContent = ref("")
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (savedContent) loomContent.value = savedContent
+  emit("update-content", getWrappedContent()) // setup loom cache
 })
 
 const dSaveLoom = debounce((text) => {
@@ -42,7 +43,7 @@ const dEmitWrappedContent = debounce(() => {
   emit("update-content", getWrappedContent())
 })
 function onBlur() {
-  emit("on-loom-blur")
+  emit("blur")
 }
 
 function onInput() {
@@ -74,17 +75,11 @@ function getWrappedContent() {
   return lines.join("\n")
 }
 
-function clearLoom() {
-  loomContent.value = ""
-  localStorage.setItem(LOCAL_STORAGE_KEY, "")
-}
-
 function focus() {
   focusTextarea(textareaEl)
 }
 
 defineExpose({
   focus,
-  clear: clearLoom,
 })
 </script>

@@ -1,7 +1,7 @@
 // ~/pages/index.vue
 <template>
   <div class="flex h-screen items-center justify-center bg-circles-gradient">
-    <div class="h-[500px] w-[1100px] flex flex-col gap-2">
+    <div class="h-[500px] w-[1000px] flex flex-col gap-2">
       <!-- # manifest -->
       <div class="h-full flex" v-show="stance === 'manifest'">
         <div :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"></div>
@@ -12,7 +12,7 @@
           v-show="currentHotkeysMode !== 'confirm'"
           :hotkyes-mode="currentHotkeysMode"
           @update-content="(content) => (loomContentCache = content)"
-          @on-loom-blur="onLoomBlur"
+          @blur="onLoomBlur"
         />
         <div :style="{ width: `${RIGHT_COLUMN_WIDTH}px` }"></div>
       </div>
@@ -52,7 +52,7 @@
         <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
           <div class="overflow-hidden h-full">
             <div
-              class="h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              class="h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
               {{ screenContent }}
             </div>
@@ -88,21 +88,23 @@ const isCommitting = ref(false)
 const isCopyingFragment = ref(false)
 const isCopyingContext = ref(false)
 const isCopyingPrompt = ref(false)
-const isLoomEmpty = ref(false)
+const isContentToCommitEmpty = ref(false)
 
 const stance = ref("observe") // observe or manifest
 
 const loomContentCache = ref("")
 
 let cleanupHotkeysShortcuts
+let commitInitiator
+let commitContent
 
 const shortcuts = {
   normal: {
     o: () => setStance("manifest"),
     g: selectNextFragment,
     i: selectPreviousFragment,
-    h: enterConfirmMode,
-    r: commitFromClipboard,
+    h: () => enterConfirmMode({ initiator: "loom" }),
+    r: () => enterConfirmMode({ initiator: "clipboard" }),
     y: copyFragment,
     q: copyContext,
   },
@@ -163,28 +165,30 @@ const focusedFragment = computed(() => {
 })
 
 const screenContent = computed(() => {
-  if (isLoomEmpty.value) return "[LOOM IS EMPTY]"
+  if (isContentToCommitEmpty.value) return "[CONTENT TO COMMIT IS EMPTY]"
   if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
   if (isCopyingContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
   if (isCopyingFragment.value) return "[FRAGMENT COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentHotkeysMode.value === "confirm") {
-    const loomContent = loomContentCache.value.trim() || ""
-    return `[CONFIRM COMMIT]\n\n${loomContent}`
+    return `[CONFIRM COMMIT] [INITIATOR: ${commitInitiator}]\n\n${commitContent}`
   }
   return focusedFragment.value ? focusedFragment.value.data : ""
 })
 
 // --- Lifecycle & Data ---
 onMounted(() => {
-  const localLoomContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
-  if (localLoomContent) loomContentCache.value = localLoomContent
   cleanupHotkeysShortcuts = setHotkeysShortcuts({
     normal: shortcuts.normal,
     input: shortcuts.input,
     confirm: shortcuts.confirm,
   })
   fetchFlow()
+  // initiate loom
+  setHotkeysMode("input")
+  nextTick(() => {
+    setHotkeysMode("normal")
+  })
 })
 
 onUnmounted(() => {
@@ -220,12 +224,13 @@ function selectPreviousFragment() {
 }
 
 async function commitWrapper() {
-  if (isCommitting.value || !loomContentCache.value.trim()) return
+  await updateCommitContent({ initiator: commitInitiator })
+  if (isCommitting.value || !commitContent) return
 
   isCommitting.value = true
   try {
     // commit function returns a unified response object
-    const response = await commit(loomContentCache.value.trim())
+    const response = await commit(commitContent)
 
     if (response.success) {
       await fetchFlow() // always fetch the new flow first
@@ -240,13 +245,20 @@ async function commitWrapper() {
         await copyContext()
       }
     }
-    loomRef.value?.clear()
+    if (commitInitiator === "loom") {
+      clearLoom()
+    }
   } catch (error) {
     console.error("error during commit", error)
   } finally {
     isCommitting.value = false
     setHotkeysMode("normal")
   }
+}
+
+function clearLoom() {
+  loomContentCache.value = ""
+  localStorage.setItem(LOOM_LOCAL_STORAGE_KEY, "")
 }
 
 function setStance(newStance) {
@@ -262,16 +274,28 @@ function setStance(newStance) {
   }
 }
 
+async function updateCommitContent({ initiator }) {
+  if (initiator === "clipboard") {
+    commitContent = await navigator.clipboard.readText()
+  } else if (initiator === "loom") {
+    commitContent = loomContentCache.value.trim()
+  } else {
+    console.error("updateCommitContent: unknown initiator")
+  }
+}
+
 // only commit confirm. mb expand as a mode with options like
 // how to proceed next on enter, what to show on screen etc.
-function enterConfirmMode() {
-  if (loomContentCache.value.trim()) {
+async function enterConfirmMode({ initiator }) {
+  await updateCommitContent({ initiator })
+  if (commitContent) {
     setHotkeysMode("confirm")
+    commitInitiator = initiator
   } else {
-    if (isLoomEmpty.value) return
-    isLoomEmpty.value = true
+    if (isContentToCommitEmpty.value) return
+    isContentToCommitEmpty.value = true
     setTimeout(() => {
-      isLoomEmpty.value = false
+      isContentToCommitEmpty.value = false
     }, COPY_CONFIRMATION_DURATION)
   }
 }
@@ -294,17 +318,7 @@ function onLoomBlur() {
   setHotkeysMode("normal")
   setStance("observe")
 }
-async function commitFromClipboard() {
-  try {
-    const clipboardText = await navigator.clipboard.readText()
-    if (clipboardText && loomRef.value) {
-      loomRef.value.setContent(clipboardText)
-      enterConfirmMode()
-    }
-  } catch (error) {
-    console.error("failed to read clipboard", error)
-  }
-}
+
 async function copyFragment() {
   if (focusedFragment.value) {
     await navigator.clipboard.writeText(focusedFragment.value.data)
