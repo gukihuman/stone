@@ -1,55 +1,50 @@
 // ~/pages/index.vue
 <template>
   <div class="flex h-screen items-center justify-center bg-circles-gradient">
-    <div class="h-[500px] w-[900px] flex flex-col gap-2">
+    <div class="h-[500px] w-[1100px] flex flex-col gap-2">
       <!-- # manifest -->
-      <div v-show="stance === 'manifest'">
+      <div class="h-full flex" v-show="stance === 'manifest'">
+        <div :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"></div>
         <!-- ## loom -->
         <Loom
           ref="loomRef"
+          class="flex-grow"
           v-show="currentHotkeysMode !== 'confirm'"
           :hotkyes-mode="currentHotkeysMode"
           @update-content="(content) => (loomContentCache = content)"
           @on-loom-blur="onLoomBlur"
         />
+        <div :style="{ width: `${RIGHT_COLUMN_WIDTH}px` }"></div>
       </div>
 
       <!-- # observe -->
-      <div class="flex" v-show="stance === 'observe'">
+      <div class="h-full flex" v-show="stance === 'observe'">
         <!-- ## spool -->
         <transition-group
           name="flow-list"
           tag="div"
-          class="flex flex-col gap-2 w-[200px]"
+          class="flex flex-col gap-5 py-6 flex-shrink-0"
+          :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"
         >
           <div
             v-for="fragment in displayFragments"
             :key="fragment._id"
-            class="h-[65px] flex rounded-xl gap-[6px]"
+            class="transition-all duration-[50ms] ease-in-out"
+            :class="{
+              'pl-[36px]': fragment._id !== selectedFragmentId,
+            }"
+            :style="
+              currentHotkeysMode === 'confirm'
+                ? { 'padding-left': `${LEFT_COLUMN_WIDTH - 8}px` }
+                : {}
+            "
           >
-            <div
-              v-if="fragment._id === selectedFragmentId"
-              class="bg-carrot-500 my-1 w-[10px] rounded-md"
-            ></div>
-            <div
-              class="px-4 py-2 w-full rounded-xl cursor-default"
-              :class="{
-                'bg-coffee-500 selection-paper': fragment.source === 'guki',
-                'bg-moss-350 selection-screen': fragment.source === 'roxanne',
-                'bg-coffee-700 selection-paper':
-                  fragment.source !== 'guki' && fragment.source !== 'roxanne',
-              }"
-            >
-              <p
-                class="line-clamp-2"
-                :class="{
-                  'text-coffee-850 text-lg leading-[22px]':
-                    fragment.source === 'guki',
-                  'text-moss-100 font-fira-code': fragment.source !== 'guki',
-                }"
-              >
-                {{ fragment.data }}
-              </p>
+            <div class="rounded-l-xl overflow-hidden ring-[6px] ring-moss-350">
+              <img
+                :src="sourceImgMap[fragment.source]"
+                class="h-auto max-w-none"
+                :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"
+              />
             </div>
           </div>
         </transition-group>
@@ -57,12 +52,16 @@
         <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
           <div class="overflow-hidden h-full">
             <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              class="h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
               {{ screenContent }}
             </div>
           </div>
         </div>
+        <div
+          class="flex-shrink-0"
+          :style="{ width: `${RIGHT_COLUMN_WIDTH}px` }"
+        ></div>
       </div>
     </div>
   </div>
@@ -77,6 +76,8 @@ import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const COPY_CONFIRMATION_DURATION = 1000
+const LEFT_COLUMN_WIDTH = 100
+const RIGHT_COLUMN_WIDTH = 80
 
 const { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts } = useHotkeys()
 
@@ -87,6 +88,7 @@ const isCommitting = ref(false)
 const isCopyingFragment = ref(false)
 const isCopyingContext = ref(false)
 const isCopyingPrompt = ref(false)
+const isLoomEmpty = ref(false)
 
 const stance = ref("observe") // observe or manifest
 
@@ -111,6 +113,13 @@ const shortcuts = {
     Enter: commitWrapper,
     Escape: () => setHotkeysMode("normal"),
   },
+}
+
+const sourceImgMap = {
+  guki: gukiImg,
+  roxanne: roxanneImg,
+  body: bodyImg,
+  external: externalImg,
 }
 
 const displayFragments = computed(() => {
@@ -145,7 +154,7 @@ const displayFragments = computed(() => {
   if (currentFragment) {
     fragments.push(currentFragment)
   }
-  return fragments.slice(-9).reverse()
+  return fragments.slice(-5)
 })
 
 const focusedFragment = computed(() => {
@@ -154,6 +163,7 @@ const focusedFragment = computed(() => {
 })
 
 const screenContent = computed(() => {
+  if (isLoomEmpty.value) return "[LOOM IS EMPTY]"
   if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
   if (isCopyingContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
   if (isCopyingFragment.value) return "[FRAGMENT COPIED TO CLIPBOARD]"
@@ -162,9 +172,7 @@ const screenContent = computed(() => {
     const loomContent = loomContentCache.value.trim() || ""
     return `[CONFIRM COMMIT]\n\n${loomContent}`
   }
-  return focusedFragment.value
-    ? `[${focusedFragment.value.source}]\n\n${focusedFragment.value.data}`
-    : ""
+  return focusedFragment.value ? focusedFragment.value.data : ""
 })
 
 // --- Lifecycle & Data ---
@@ -185,7 +193,6 @@ onUnmounted(() => {
   }
 })
 
-// --- Hotkey & Mode Logic ---
 function selectNextFragment() {
   const currentFragments = displayFragments.value
   if (currentFragments.length === 0) return
@@ -260,6 +267,12 @@ function setStance(newStance) {
 function enterConfirmMode() {
   if (loomContentCache.value.trim()) {
     setHotkeysMode("confirm")
+  } else {
+    if (isLoomEmpty.value) return
+    isLoomEmpty.value = true
+    setTimeout(() => {
+      isLoomEmpty.value = false
+    }, COPY_CONFIRMATION_DURATION)
   }
 }
 
@@ -267,8 +280,10 @@ async function fetchFlow() {
   const { success, waves: fetchedWaves } = await getFlow()
   if (success) {
     waves.value = fetchedWaves
-    if (displayFragments.value.length > 0) {
-      selectedFragmentId.value = displayFragments.value[0]._id
+    const currentFragments = displayFragments.value
+    if (currentFragments.length > 0) {
+      selectedFragmentId.value =
+        currentFragments[currentFragments.length - 1]._id
     }
   } else {
     console.error("failed to fetch flow")
@@ -328,11 +343,11 @@ async function copyContext() {
 }
 .flow-list-leave-to {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(-10px);
 }
 .flow-list-enter-from {
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(10px);
 }
 .flow-list-leave-active {
   position: absolute;

@@ -2,7 +2,7 @@
 <template>
   <div class="h-full flex-shrink-0 rounded-xl overflow-hidden p-2">
     <div
-      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-500 focus-within:ring-coffee-750"
+      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-600"
     >
       <textarea
         ref="textareaEl"
@@ -52,9 +52,8 @@ function onInput() {
 }
 
 function getWrappedContent() {
-  let lines = loomContent.value.trim()
-    ? loomContent.value.trim().split("\n")
-    : []
+  if (!loomContent.value.trim()) return ""
+  let lines = loomContent.value.trim().split("\n")
   // step 1 is prepend opening glyph if missing
   if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
     lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.GUKI}`)
