@@ -9,11 +9,10 @@
         v-model="loomContent"
         @scroll="onScroll"
         @input="onInput"
-        @focus="onFocus"
         @blur="onBlur"
-        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-350 rounded-lg text-coffee-900 selection-paper scroll-paper"
+        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-450 rounded-lg text-coffee-900 selection-paper scroll-paper"
         :style="{ backgroundPositionY: linesOffset }"
-        :readOnly="mode === 'confirmation'"
+        :readOnly="hotkeysMode === 'confirmation'"
       />
     </div>
   </div>
@@ -22,8 +21,8 @@
 <script setup>
 import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
 
-const props = defineProps(["mode"])
-const emit = defineEmits(["set-mode"])
+const props = defineProps(["hotkeysMode"])
+const emit = defineEmits(["update-content", "on-loom-blur"])
 
 const LOCAL_STORAGE_KEY = "stone-loom"
 
@@ -39,16 +38,17 @@ onMounted(() => {
 const dSaveLoom = debounce((text) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, text)
 })
-function onFocus() {
-  emit("set-mode", "input")
-}
+const dEmitWrappedContent = debounce(() => {
+  emit("update-content", getWrappedContent())
+})
 function onBlur() {
-  emit("set-mode", "normal")
+  emit("on-loom-blur")
 }
 
 function onInput() {
   adjustScroll(textareaEl)
   dSaveLoom(loomContent.value)
+  dEmitWrappedContent()
 }
 
 function getWrappedContent() {
@@ -84,16 +84,8 @@ function focus() {
   focusTextarea(textareaEl)
 }
 
-function setContent(text) {
-  loomContent.value = text
-  adjustScroll(textareaEl)
-  dSaveLoom(loomContent.value)
-}
-
 defineExpose({
   focus,
   clear: clearLoom,
-  getWrappedContent,
-  setContent,
 })
 </script>

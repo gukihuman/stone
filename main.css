@@ -7,7 +7,7 @@
 @tailwind utilities;
 
 html {
-  @apply bg-coffee-600;
+  @apply bg-stone-600;
 }
 * {
   @apply focus:outline-none;
@@ -36,19 +36,19 @@ html {
 .bg-circles {
   background-image: radial-gradient(
     circle at 50% 50%,
-    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.06) 2px,
     transparent 1px
   );
-  background-size: 16px 16px;
+  background-size: 12px 12px;
 }
 .bg-circles-gradient {
   background-image: radial-gradient(
       circle at 50% 50%,
-      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.06) 2px,
       transparent 1px
     ),
     linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.15) 100%);
-  background-size: 16px 16px, 100% 100%;
+  background-size: 12px 12px, 100% 100%;
 }
 .bg-lines {
   background-image: linear-gradient(

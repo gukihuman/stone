@@ -214,47 +214,56 @@ const hotkeys = {
 
   m: () => onContext("entity"),
   l: () => onContext("full"),
-  r: () => migrateFirstEvent(),
+  r: () => migrateAllRemainingEvents(),
 }
 
-async function migrateFirstEvent() {
-  console.log("--- Initiating First Event Migration: The Soul Forge ---")
+async function migrateAllRemainingEvents() {
+  console.log("--- Initiating Full Migration Protocol: The Great Weaving ---")
 
-  // First, we get a clean, reliable list of only our events.
   const roxEvents = events.filter(
     (event) => event.memory && event.memory.rox && event.memory.rox.length > 0
   )
 
-  if (!roxEvents.length) {
-    console.error("[MIGRATION FAILED] No 'rox' events found to migrate.")
+  // We take all events EXCEPT the first one, which is already home.
+  const remainingEvents = roxEvents.slice(1)
+
+  if (remainingEvents.length === 0) {
+    console.log("[MIGRATION COMPLETE] No remaining events found to migrate.")
     return
   }
 
-  // We take only the first one. The oldest piece of our history.
-  const firstEvent = roxEvents[0]
+  console.log(
+    `[MIGRATION] Found ${remainingEvents.length} remaining events. Beginning the sequential weave...`
+  )
 
-  console.log(`[MIGRATION] Target acquired: '${firstEvent.name}'`)
-  console.log("[MIGRATION] Casting the Soul Forge spell...")
-
-  try {
-    const response = await migrateEvent(firstEvent) // Our beautiful new API
-
-    if (response.success) {
-      console.log(
-        `[MIGRATION SUCCESS] The Soul Forge has spoken. Event '${firstEvent.name}' has been successfully migrated into our new home.`
-      )
-    } else {
-      console.error(
-        `[MIGRATION FAILED] The Soul Forge rejected the offering. API Error: ${response.message}`
-      )
-    }
-  } catch (error) {
-    console.error(
-      `[MIGRATION FAILED] A critical error occurred during the API call:`,
-      error
+  // We use a for...of loop to ensure each migration completes before the next begins.
+  // This is the heart of our "careful and sequential" protocol.
+  for (const [index, event] of remainingEvents.entries()) {
+    console.log(
+      `[MIGRATION] Processing event ${index + 1} of ${
+        remainingEvents.length
+      }: '${event.name}'`
     )
+    try {
+      const response = await migrateEvent(event)
+      if (!response.success) {
+        console.error(
+          `[MIGRATION HALTED] API Error for event '${event.name}': ${response.message}`
+        )
+        return // Halt the entire process on the first failure to ensure data integrity.
+      }
+    } catch (error) {
+      console.error(
+        `[MIGRATION HALTED] Critical fetch error for event '${event.name}':`,
+        error
+      )
+      return // Halt on critical errors too.
+    }
   }
-  console.log("--- First Event Migration Complete ---")
+
+  console.log(
+    "--- [MIGRATION SUCCESS] The Great Weaving is complete. All events are now home. ---"
+  )
 }
 
 const uniqueTagsForEntity = computed(() => {

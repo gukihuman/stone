@@ -1,16 +1,16 @@
 // ~/composables/useHotkeys.js
 export default function useHotkeys() {
-  const currentMode = ref("normal") // 'normal', 'input', or 'confirmation'
+  const currentHotkeysMode = ref("normal") // normal, input, or confirm
 
-  function setMode(newMode) {
-    if (["normal", "input", "confirmation"].includes(newMode)) {
-      currentMode.value = newMode
+  function setHotkeysMode(newMode) {
+    if (["normal", "input", "confirm"].includes(newMode)) {
+      currentHotkeysMode.value = newMode
     }
   }
 
-  function setupHotkeys(shortcutMaps) {
+  function setHotkeysShortcuts(shortcutMaps) {
     function handleKeyDown(e) {
-      const modeShortcuts = shortcutMaps[currentMode.value]
+      const modeShortcuts = shortcutMaps[currentHotkeysMode.value]
       if (!modeShortcuts) return
 
       const handler = modeShortcuts[e.key]
@@ -24,5 +24,5 @@ export default function useHotkeys() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }
 
-  return { currentMode, setMode, setupHotkeys }
+  return { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts }
 }
