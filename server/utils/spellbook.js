@@ -52,6 +52,38 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 }
 
 export default {
+  [ONE_LINE_SPELLS.MEASURE]: async () => {
+    try {
+      const allWaves = await Wave.find({}, "data density").lean()
+      if (!allWaves.length) return "[measure: no waves found in the flow]"
+
+      // Group all waves by their density level
+      const wavesByDensity = allGasherbrum.reduce((acc, wave) => {
+        const density = wave.density || 0
+        if (!acc[density]) {
+          acc[density] = []
+        }
+        acc[density].push(wave.data)
+        return acc
+      }, {})
+
+      const feedback = ["[measure: token count by density]"]
+      const sortedDensities = Object.keys(wavesByDensity).sort((a, b) => a - b)
+
+      for (const density of sortedDensities) {
+        // Join all data from waves of the same density and count the tokens
+        const totalText = wavesByDensity[density].join(" ")
+        const tokenCount = countTokens(totalText)
+        feedback.push(`[density ${density}: ~${tokenCount} tokens]`)
+      }
+
+      return feedback.join("\n")
+    } catch (error) {
+      console.error("error in MEASURE spell", error)
+      return `[measure: error - ${error.message}]`
+    }
+  },
+
   [MULTI_LINE_SPELLS.RECORD_SET]: async (params, data) => {
     if (!params.name) return "[error: 'record_set' requires a -name parameter]"
     const recordName = params.name

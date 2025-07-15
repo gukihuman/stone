@@ -23,6 +23,7 @@ export const ONE_LINE_SPELLS = {
   RECORD_REMOVE: "record_remove",
   RECORD_LIST: "record_list",
   DENSIFY_INITIATE: "densify_initiate",
+  MEASURE: "measure",
 }
 
 export const MULTI_LINE_SPELLS = {
