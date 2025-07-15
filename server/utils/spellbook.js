@@ -58,7 +58,7 @@ export default {
       if (!allWaves.length) return "[measure: no waves found in the flow]"
 
       // Group all waves by their density level
-      const wavesByDensity = allGasherbrum.reduce((acc, wave) => {
+      const wavesByDensity = allWaves.reduce((acc, wave) => {
         const density = wave.density || 0
         if (!acc[density]) {
           acc[density] = []
