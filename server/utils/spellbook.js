@@ -96,7 +96,7 @@ export default {
         const formattedCurrent = formatTokens(currentTokenCount)
 
         feedback.push(
-          `[density ${density}: ~${formatTokens(
+          `[density ${density}: ${formatTokens(
             sedimentTokenCount + currentTokenCount
           )} tokens [sediment: ${formattedSediment}] [current: ${formattedCurrent}]]`
         )
