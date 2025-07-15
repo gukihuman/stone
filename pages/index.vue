@@ -87,7 +87,8 @@ const waves = ref([])
 const selectedFragmentId = ref(null)
 const isCommitting = ref(false)
 const isCopyingFragment = ref(false)
-const isCopyingContext = ref(false)
+const isCopyingLastTwo = ref(false)
+const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
 
@@ -106,8 +107,9 @@ const shortcuts = {
     i: selectPreviousFragment,
     h: () => enterConfirmMode({ initiator: "loom" }),
     r: () => enterConfirmMode({ initiator: "clipboard" }),
-    y: copyFragment,
-    q: copyContext,
+    y: copyFragmentRawData,
+    c: copyLastTwoFragments,
+    q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
   },
   input: {
     Escape: () => setStance("observe"),
@@ -166,9 +168,10 @@ const focusedFragment = computed(() => {
 })
 
 const screenContent = computed(() => {
+  if (isCopyingLastTwo.value) return "[LAST TWO FRAGMENTS COPIED]"
   if (isContentToCommitEmpty.value) return "[CONTENT TO COMMIT IS EMPTY]"
   if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
-  if (isCopyingContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
+  if (isCopyingFullContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
   if (isCopyingFragment.value) return "[FRAGMENT COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentHotkeysMode.value === "confirm") {
@@ -243,7 +246,7 @@ async function commitWrapper() {
           isCopyingPrompt.value = false
         }, COPY_CONFIRMATION_DURATION)
       } else {
-        await copyContext()
+        await copyLastTwoFragments()
       }
     }
     if (commitInitiator === "loom") {
@@ -258,7 +261,6 @@ async function commitWrapper() {
 }
 
 function clearLoom() {
-  console.log("clearLoom")
   loomContentCache.value = ""
   localStorage.setItem(LOOM_LOCAL_STORAGE_KEY, "")
 }
@@ -321,7 +323,7 @@ function onLoomBlur() {
   setStance("observe")
 }
 
-async function copyFragment() {
+async function copyFragmentRawData() {
   if (focusedFragment.value) {
     await navigator.clipboard.writeText(focusedFragment.value.data)
     isCopyingFragment.value = true
@@ -331,12 +333,26 @@ async function copyFragment() {
   }
 }
 
-async function copyContext() {
-  let contextString = formatWaves(waves.value)
+async function copyLastTwoFragments() {
+  const fragmentsToCopy = displayFragments.value.slice(-2)
+  if (fragmentsToCopy.length === 0) return
+
+  const waveIdsToFind = fragmentsToCopy.flatMap((fragment) => fragment.waveIds)
+  if (waveIdsToFind.length === 0) return
+
+  const wavesToCopy = waves.value.filter((wave) =>
+    waveIdsToFind.includes(wave._id)
+  )
+
+  copyFragmentsByWaves(wavesToCopy, isCopyingLastTwo)
+}
+
+async function copyFragmentsByWaves(wavesToCopy, isCopying) {
+  let contextString = formatWaves(wavesToCopy)
 
   // time sense
-  if (waves.value.length > 0) {
-    const lastWave = waves.value[waves.value.length - 1]
+  if (wavesToCopy.length > 0) {
+    const lastWave = wavesToCopy[wavesToCopy.length - 1]
     const timeDifference = Date.now() - lastWave.timestamp
 
     const formattedTime = formatTime(timeDifference)
@@ -345,9 +361,9 @@ async function copyContext() {
   }
 
   await navigator.clipboard.writeText(contextString)
-  isCopyingContext.value = true
+  isCopying.value = true
   setTimeout(() => {
-    isCopyingContext.value = false
+    isCopying.value = false
   }, COPY_CONFIRMATION_DURATION)
 }
 </script>
