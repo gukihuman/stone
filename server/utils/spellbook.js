@@ -10,6 +10,7 @@ import Wave from "~/server/models/Wave"
 import newId from "~/utils/newId"
 import formatWaves from "~/utils/formatWaves"
 import countTokens from "~/utils/countTokens"
+import formatTokens from "~/utils/formatTokens"
 
 const CALIBRATION_TOKEN_THRESHOLD = 10_000
 
@@ -56,57 +57,52 @@ export default {
 
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
-      // Fetch all waves, but only the fields we need for this operation.
       const allWaves = await Wave.find({}, "data density apotheosis").lean()
       if (!allWaves.length) return "[measure: no waves found in the flow]"
 
-      // Create a separate, filtered array for our "living" flow
-      const livingWaves = allWaves.filter((wave) => wave.apotheosis === null)
+      const currentWaves = allWaves.filter((wave) => wave.apotheosis === null)
+      const sedimentWaves = allWaves.filter((wave) => wave.apotheosis !== null)
 
-      // Group TOTAL waves by density
-      const totalWavesByDensity = allWaves.reduce((acc, wave) => {
+      const currentWavesByDensity = currentWaves.reduce((acc, wave) => {
         const density = wave.density || 0
         if (!acc[density]) acc[density] = []
         acc[density].push(wave.data)
         return acc
       }, {})
 
-      // Group LIVING waves by density
-      const livingWavesByDensity = livingWaves.reduce((acc, wave) => {
+      const sedimentWavesByDensity = sedimentWaves.reduce((acc, wave) => {
         const density = wave.density || 0
         if (!acc[density]) acc[density] = []
         acc[density].push(wave.data)
         return acc
       }, {})
 
-      const feedback = ["[measure: token count by density]"]
-      // Get all unique density levels from both sets to ensure a complete report
-      const allDensityLevels = [
-        ...new Set([
-          ...Object.keys(totalWavesByDensity),
-          ...Object.keys(livingWavesByDensity),
-        ]),
-      ]
-
-      // Sort densities in descending order, as you commanded.
+      const feedback = ["[measure: token count]"]
+      const allDensityLevels = [...new Set(allWaves.map((w) => w.density || 0))]
       const sortedDensities = allDensityLevels.sort((a, b) => b - a)
 
+      let totalCurrentTokens = 0
+
       for (const density of sortedDensities) {
-        const totalText = totalWavesByDensity[density]?.join(" ") || ""
-        const totalTokenCount = countTokens(totalText)
+        const sedimentText = sedimentWavesByDensity[density]?.join(" ") || ""
+        const sedimentTokenCount = countTokens(sedimentText)
 
-        const livingText = livingWavesByDensity[density]?.join(" ") || ""
-        const livingTokenCount = countTokens(livingText)
+        const currentText = currentWavesByDensity[density]?.join(" ") || ""
+        const currentTokenCount = countTokens(currentText)
 
-        let densityLine = `[density ${density}: ~${totalTokenCount} tokens]`
+        totalCurrentTokens += currentTokenCount
 
-        // Only add the "living" part if there are living tokens to report
-        if (livingTokenCount > 0) {
-          densityLine += ` (living: ~${livingTokenCount})`
-        }
+        const formattedSediment = formatTokens(sedimentTokenCount)
+        const formattedCurrent = formatTokens(currentTokenCount)
 
-        feedback.push(densityLine)
+        feedback.push(
+          `[density ${density}: ~${formatTokens(
+            sedimentTokenCount + currentTokenCount
+          )} tokens [sediment: ${formattedSediment}] [current: ${formattedCurrent}]]`
+        )
       }
+
+      feedback.push(`[current flow total: ${formatTokens(totalCurrentTokens)}]`)
 
       return feedback.join("\n")
     } catch (error) {
@@ -169,7 +165,7 @@ export default {
     }
 
     // --- Data Fetching Logic remains the same, it is perfect ---
-    const livingWaves = await Wave.find({ apotheosis: null }).sort({
+    const currentWaves = await Wave.find({ apotheosis: null }).sort({
       density: -1,
       timestamp: 1,
     })
@@ -186,7 +182,7 @@ export default {
     const contextualHorizonWaves = []
     let tokensCounted = 0
     let targetFound = false
-    for (const wave of livingWaves) {
+    for (const wave of currentWaves) {
       if (wave.density > densityLevel) {
         genesisSedimentWaves.push(wave)
       } else if (wave.density === densityLevel) {
