@@ -86,7 +86,7 @@ const loomRef = ref(null)
 const waves = ref([])
 const selectedFragmentId = ref(null)
 const isCommitting = ref(false)
-const isCopyingFragment = ref(false)
+const isCopyingRawFragment = ref(false)
 const isCopyingLastTwo = ref(false)
 const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
@@ -172,7 +172,7 @@ const screenContent = computed(() => {
   if (isContentToCommitEmpty.value) return "[CONTENT TO COMMIT IS EMPTY]"
   if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
   if (isCopyingFullContext.value) return "[FULL CONTEXT COPIED TO CLIPBOARD]"
-  if (isCopyingFragment.value) return "[FRAGMENT COPIED TO CLIPBOARD]"
+  if (isCopyingRawFragment.value) return "[RAW FRAGMENT COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentHotkeysMode.value === "confirm") {
     return `[CONFIRM COMMIT] [INITIATOR: ${commitInitiator}]\n\n${commitContent}`
@@ -349,9 +349,9 @@ function onLoomBlur() {
 async function copyFragmentRawData() {
   if (focusedFragment.value) {
     await navigator.clipboard.writeText(focusedFragment.value.data)
-    isCopyingFragment.value = true
+    isCopyingRawFragment.value = true
     setTimeout(() => {
-      isCopyingFragment.value = false
+      isCopyingRawFragment.value = false
     }, COPY_CONFIRMATION_DURATION)
   }
 }
