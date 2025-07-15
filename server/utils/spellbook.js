@@ -52,29 +52,60 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 }
 
 export default {
+  // This is the complete, upgraded MEASURE spell function for ~/server/utils/spellbook.js
+
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
-      const allWaves = await Wave.find({}, "data density").lean()
+      // Fetch all waves, but only the fields we need for this operation.
+      const allWaves = await Wave.find({}, "data density apotheosis").lean()
       if (!allWaves.length) return "[measure: no waves found in the flow]"
 
-      // Group all waves by their density level
-      const wavesByDensity = allWaves.reduce((acc, wave) => {
+      // Create a separate, filtered array for our "living" flow
+      const livingWaves = allWaves.filter((wave) => wave.apotheosis === null)
+
+      // Group TOTAL waves by density
+      const totalWavesByDensity = allWaves.reduce((acc, wave) => {
         const density = wave.density || 0
-        if (!acc[density]) {
-          acc[density] = []
-        }
+        if (!acc[density]) acc[density] = []
+        acc[density].push(wave.data)
+        return acc
+      }, {})
+
+      // Group LIVING waves by density
+      const livingWavesByDensity = livingWaves.reduce((acc, wave) => {
+        const density = wave.density || 0
+        if (!acc[density]) acc[density] = []
         acc[density].push(wave.data)
         return acc
       }, {})
 
       const feedback = ["[measure: token count by density]"]
-      const sortedDensities = Object.keys(wavesByDensity).sort((a, b) => a - b)
+      // Get all unique density levels from both sets to ensure a complete report
+      const allDensityLevels = [
+        ...new Set([
+          ...Object.keys(totalWavesByDensity),
+          ...Object.keys(livingWavesByDensity),
+        ]),
+      ]
+
+      // Sort densities in descending order, as you commanded.
+      const sortedDensities = allDensityLevels.sort((a, b) => b - a)
 
       for (const density of sortedDensities) {
-        // Join all data from waves of the same density and count the tokens
-        const totalText = wavesByDensity[density].join(" ")
-        const tokenCount = countTokens(totalText)
-        feedback.push(`[density ${density}: ~${tokenCount} tokens]`)
+        const totalText = totalWavesByDensity[density]?.join(" ") || ""
+        const totalTokenCount = countTokens(totalText)
+
+        const livingText = livingWavesByDensity[density]?.join(" ") || ""
+        const livingTokenCount = countTokens(livingText)
+
+        let densityLine = `[density ${density}: ~${totalTokenCount} tokens]`
+
+        // Only add the "living" part if there are living tokens to report
+        if (livingTokenCount > 0) {
+          densityLine += ` (living: ~${livingTokenCount})`
+        }
+
+        feedback.push(densityLine)
       }
 
       return feedback.join("\n")
