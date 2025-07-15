@@ -55,10 +55,12 @@ function onInput() {
 function getWrappedContent() {
   if (!loomContent.value.trim()) return ""
   let lines = loomContent.value.trim().split("\n")
+
   // step 1 is prepend opening glyph if missing
   if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
     lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.GUKI}`)
   }
+
   // step 2 is append closing glyph if missing, using the robust reverse loop
   const lastLine = lines[lines.length - 1]?.trim()
   if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {

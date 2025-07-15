@@ -171,7 +171,7 @@ const screenContent = computed(() => {
   if (isCopyingLastTwo.value) return "[LAST TWO FRAGMENTS COPIED]"
   if (isContentToCommitEmpty.value) return "[CONTENT TO COMMIT IS EMPTY]"
   if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
-  if (isCopyingFullContext.value) return "[CONTEXT COPIED TO CLIPBOARD]"
+  if (isCopyingFullContext.value) return "[FULL CONTEXT COPIED TO CLIPBOARD]"
   if (isCopyingFragment.value) return "[FRAGMENT COPIED TO CLIPBOARD]"
   if (isCommitting.value) return "[COMMITTING...]"
   if (currentHotkeysMode.value === "confirm") {
@@ -280,7 +280,30 @@ function setStance(newStance) {
 
 async function updateCommitContent({ initiator }) {
   if (initiator === "clipboard") {
-    commitContent = await navigator.clipboard.readText()
+    const clipboardContent = await navigator.clipboard.readText()
+    if (!clipboardContent) return ""
+
+    let lines = clipboardContent.split("\n")
+
+    // step 1 is prepend opening glyph if missing
+    if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
+      lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.ROXANNE}`)
+    }
+
+    // step 2 is append closing glyph if missing, using the robust reverse loop
+    const lastLine = lines[lines.length - 1]?.trim()
+    if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {
+      let sourceToClose // guaranteed by step 1
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim()
+        if (line.startsWith(SOURCE_GLYPHS.OPEN)) {
+          sourceToClose = line.substring(1).trim()
+          break // found the last opened source
+        }
+      }
+      lines.push(`${SOURCE_GLYPHS.CLOSE}${sourceToClose}`)
+    }
+    commitContent = lines.join("\n")
   } else if (initiator === "loom") {
     commitContent = loomContentCache.value.trim()
   } else {
