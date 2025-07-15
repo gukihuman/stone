@@ -60,11 +60,11 @@ export default function parseLoom(loomContent) {
       if (Object.values(SOURCES).includes(source)) {
         currentWave = {
           _id: newId(),
-          timestamp: Date.now(),
           source: source,
           density: 0,
           provenance: [],
           apotheosis: null,
+          // timestamp is set on database create, its very important for order
         }
       }
     } else if (trimmedLine.startsWith(SOURCE_GLYPHS.CLOSE)) {

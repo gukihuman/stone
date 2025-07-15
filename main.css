@@ -16,7 +16,7 @@ html {
   @apply w-4;
 }
 .scroll-paper::-webkit-scrollbar-thumb {
-  @apply bg-coffee-600;
+  @apply bg-coffee-650;
 }
 .scroll-paper::-webkit-scrollbar-thumb:hover {
   @apply bg-coffee-800 cursor-grab;

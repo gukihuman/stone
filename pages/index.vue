@@ -1,7 +1,7 @@
 // ~/pages/index.vue
 <template>
   <div class="flex h-screen items-center justify-center bg-circles-gradient">
-    <div class="h-[500px] w-[1000px] flex flex-col gap-2">
+    <div class="h-[500px] w-[950px] flex flex-col gap-2">
       <!-- # manifest -->
       <div class="h-full flex" v-show="stance === 'manifest'">
         <div :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"></div>
@@ -9,7 +9,7 @@
         <Loom
           ref="loomRef"
           class="flex-grow"
-          v-show="currentHotkeysMode !== 'confirm'"
+          v-if="currentHotkeysMode !== 'confirm'"
           :hotkyes-mode="currentHotkeysMode"
           @update-content="(content) => (loomContentCache = content)"
           @blur="onLoomBlur"
@@ -18,7 +18,7 @@
       </div>
 
       <!-- # observe -->
-      <div class="h-full flex" v-show="stance === 'observe'">
+      <div class="h-full flex" v-if="stance === 'observe'">
         <!-- ## spool -->
         <transition-group
           name="flow-list"
@@ -73,6 +73,7 @@ import roxanneImg from "~/assets/roxanne.jpg"
 import bodyImg from "~/assets/body.jpg"
 import externalImg from "~/assets/external.jpg"
 import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
+import Test from "./test.vue"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const COPY_CONFIRMATION_DURATION = 1000
@@ -257,6 +258,7 @@ async function commitWrapper() {
 }
 
 function clearLoom() {
+  console.log("clearLoom")
   loomContentCache.value = ""
   localStorage.setItem(LOOM_LOCAL_STORAGE_KEY, "")
 }
