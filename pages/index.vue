@@ -248,9 +248,10 @@ async function commitWrapper() {
       } else {
         await copyLastTwoFragments()
       }
-    }
-    if (commitInitiator === "loom") {
-      clearLoom()
+
+      if (commitInitiator === "loom") {
+        clearLoom()
+      }
     }
   } catch (error) {
     console.error("error during commit", error)
