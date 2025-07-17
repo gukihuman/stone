@@ -38,15 +38,15 @@ export default function parseLoom(loomContent) {
     const trimmedLine = line.trim()
 
     if (currentSpell) {
+      currentSpellData.push(line)
+
       if (trimmedLine.startsWith(SPELL_GLYPHS.CLOSE)) {
         const closeVerb = trimmedLine.substring(1).trim().replace(/\s+/g, "_")
         if (currentSpell.verb === closeVerb) {
-          finalizeSpell(closeVerb)
+          finalizeSpell()
         }
-      } else {
-        // Any other line, even one with a `⫸`, is just data.
-        currentSpellData.push(line)
       }
+
       // Always add the line to the wave data for historical purity.
       if (currentWave) {
         currentWaveData.push(line)
