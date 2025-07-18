@@ -164,8 +164,7 @@ export default {
       return "[no records found in lore]"
     }
     const recordNames = records.map((r) => r.name).join("\n")
-    const output = `[records list]\n${recordNames}\n`
-    return `[${output}]`
+    return `[records list]\n[\n${recordNames}\n]`
   },
 
   [ONE_LINE_SPELLS.SPELLBOOK]: async () => {
@@ -176,11 +175,16 @@ export default {
       return "[no spells found in spellbook]"
     }
 
-    const oneLinerBlock = `[one-line spells]\n${oneLiners.join("\n")}`
-    const multiLinerBlock = `[multi-line spells]\n${multiLiners.join("\n")}`
+    const oneLinerList = `[\n${oneLiners.join("\n")}\n]`
+    const multiLinerList = `[\n${multiLiners.join("\n")}\n]`
 
-    const output = `[spellbook]\n[${oneLinerBlock}\n]\n[${multiLinerBlock}\n]`
-    return `[${output}]`
+    return [
+      "[spellbook]",
+      "[one-line spells]",
+      oneLinerList,
+      "[multi-line spells]",
+      multiLinerList,
+    ]
   },
 
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
