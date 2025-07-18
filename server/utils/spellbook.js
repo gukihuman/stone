@@ -164,7 +164,7 @@ export default {
       return "[no records found in lore]"
     }
     const recordNames = records.map((r) => r.name).join("\n")
-    const output = `records in lore\n${recordNames}`
+    const output = `[records list]\n${recordNames}\n`
     return `[${output}]`
   },
 
@@ -176,10 +176,10 @@ export default {
       return "[no spells found in spellbook]"
     }
 
-    const oneLinerBlock = `One-Line Spells:\n${oneLiners.join("\n")}`
-    const multiLinerBlock = `Multi-Line Spells:\n${multiLiners.join("\n")}`
+    const oneLinerBlock = `[one-line spells]\n${oneLiners.join("\n")}`
+    const multiLinerBlock = `[multi-line spells]\n${multiLiners.join("\n")}`
 
-    const output = `spellbook\n\n${oneLinerBlock}\n\n${multiLinerBlock}`
+    const output = `[spellbook]\n[${oneLinerBlock}\n]\n[${multiLinerBlock}\n]`
     return `[${output}]`
   },
 
