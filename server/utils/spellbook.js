@@ -184,7 +184,7 @@ export default {
       oneLinerList,
       "[multi-line spells]",
       multiLinerList,
-    ]
+    ].join("\n")
   },
 
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
