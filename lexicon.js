@@ -24,6 +24,7 @@ export const ONE_LINE_SPELLS = {
   RECORD_LIST: "record_list",
   DENSIFY_INITIATE: "densify_initiate",
   MEASURE: "measure",
+  NOW: "now",
 }
 
 export const MULTI_LINE_SPELLS = {
