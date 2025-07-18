@@ -164,7 +164,23 @@ export default {
       return "[no records found in lore]"
     }
     const recordNames = records.map((r) => r.name).join("\n")
-    return `[records in lore]\n${recordNames}`
+    const output = `records in lore\n${recordNames}`
+    return `[${output}]`
+  },
+
+  [ONE_LINE_SPELLS.SPELLBOOK]: async () => {
+    const oneLiners = Object.values(ONE_LINE_SPELLS).sort()
+    const multiLiners = Object.values(MULTI_LINE_SPELLS).sort()
+
+    if (!oneLiners.length && !multiLiners.length) {
+      return "[no spells found in spellbook]"
+    }
+
+    const oneLinerBlock = `One-Line Spells:\n${oneLiners.join("\n")}`
+    const multiLinerBlock = `Multi-Line Spells:\n${multiLiners.join("\n")}`
+
+    const output = `spellbook\n\n${oneLinerBlock}\n\n${multiLinerBlock}`
+    return `[${output}]`
   },
 
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {

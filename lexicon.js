@@ -25,6 +25,7 @@ export const ONE_LINE_SPELLS = {
   DENSIFY_INITIATE: "densify_initiate",
   MEASURE: "measure",
   NOW: "now",
+  SPELLBOOK: "spellbook",
 }
 
 export const MULTI_LINE_SPELLS = {
@@ -32,6 +33,7 @@ export const MULTI_LINE_SPELLS = {
   DENSIFY_COMMIT: "densify_commit",
 }
 
+// densification scaffold
 export const SCAFFOLD_RECORDS = {
   DIRECTIVE: "densify_directive",
   // genesis sediment part 1
