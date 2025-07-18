@@ -63,8 +63,9 @@ export default {
       hour: "2-digit",
       minute: "2-digit",
       timeZoneName: "short",
+      timeZone: "Etc/GMT-5", // UTC+5
     })
-    return `[sense time: ${formattedDateTime}]`
+    return `[${formattedDateTime}]`
   },
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
