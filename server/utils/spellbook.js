@@ -53,8 +53,19 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 }
 
 export default {
-  // This is the complete, upgraded MEASURE spell function for ~/server/utils/spellbook.js
-
+  [ONE_LINE_SPELLS.NOW]: async () => {
+    const now = new Date()
+    const formattedDateTime = now.toLocaleString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    })
+    return `[sense time: ${formattedDateTime}]`
+  },
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
       const allWaves = await Wave.find({}, "data density apotheosis").lean()
