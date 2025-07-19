@@ -179,11 +179,17 @@ export default {
 
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async ({ params }) => {
     const { tokens, density } = params
-    const tokenLimit = Number(tokens)
-    const densityLevel = density ? Number(density) : 0
 
-    if (isNaN(tokenLimit)) {
+    const densityLevel = density ? parseFloat(density) : 0
+
+    let tokenLimit
+
+    if (!tokens) {
       return "〄 error: densify_initiate requires valid -tokens"
+    } else if (tokens.toLowerCase().endsWith("k")) {
+      tokenLimit = parseFloat(tokens.slice(0, -1)) * 1000
+    } else {
+      tokenLimit = parseFloat(tokens)
     }
 
     const currentWaves = await Wave.find({ apotheosis: null }).sort({
