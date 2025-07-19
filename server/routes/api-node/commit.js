@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
 
   try {
-    // initial body logic, only time sense here, for now [humorous amusement]
+    // initial body logic, only time sense here, for now 〥
     const lastWave = await Wave.findOne().sort({ timestamp: -1 })
     if (lastWave) {
       const timeDifference = Date.now() - lastWave.timestamp
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
             bodyFeedback.push(feedback)
           }
         } else {
-          bodyFeedback.push(`[unknown spell verb: '${spell.verb}']`)
+          bodyFeedback.push(`〄 unknown spell verb: '${spell.verb}'`)
         }
       }
     }
@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
         _id: newId(),
         timestamp: Date.now(),
         source: SOURCES.BODY,
-        data: bodyFeedback.join("\n"),
+        data: bodyFeedback.join("\n\n"),
         density: 0,
         provenance: [],
         apotheosis: null,

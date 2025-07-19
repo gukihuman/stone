@@ -17,6 +17,8 @@ export default function (waves) {
         formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
       }
       formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
+    } else {
+      formattedLines.push("")
     }
     formattedLines.push(wave.data)
     previousSource = currentSource

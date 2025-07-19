@@ -171,10 +171,10 @@ export default {
       return "〄 no spells found in spellbook"
     }
 
-    const oneLinerList = `〄▸ ${oneLiners.join("\n▸ ")}`
-    const multiLinerList = `〄▸ ${multiLiners.join("\n▸ ")}`
+    const oneLinerList = `〄▸ ${oneLiners.join("\n〄▸ ")}`
+    const multiLinerList = `〄▸ ${multiLiners.join("\n〄▸ ")}`
 
-    return `〄 spellbook\n\n〄 one-line spells\n${oneLinerList}\n\n〄 multi-line spells\n${multiLinerList}`
+    return `〄 spellbook\n〄 one-line spells\n${oneLinerList}\n〄 multi-line spells\n${multiLinerList}`
   },
 
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async ({ params }) => {
