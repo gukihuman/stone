@@ -281,7 +281,7 @@ export default {
     return { isPrompt: true, content: fullPrompt }
   },
 
-  [MULTI_LINE_SPELLS.DENSIFY_COMMIT]: async (_, data) => {
+  [MULTI_LINE_SPELLS.DENSIFY_COMMIT]: async ({ data }) => {
     const jobRecord = await Record.findOne({ name: "densification_job" })
     if (!jobRecord) {
       return "〄 error: no active densification job found. please initiate one first."
