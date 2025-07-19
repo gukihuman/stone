@@ -26,7 +26,6 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
     currentTokenCount += countTokens(wave.data)
 
     if (currentTokenCount >= CALIBRATION_TOKEN_THRESHOLD) {
-      // Threshold breached, process the batch.
       const formattedBlock = formatWaves(batch)
       finalParts.push(
         `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
@@ -34,14 +33,11 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
       finalParts.push(
         `${SCAFFOLD_GLYPH} [section starts] scaffold:calibration\n${calibrationText}\n${SCAFFOLD_GLYPH} [section ends] scaffold:calibration`
       )
-
-      // Reset for the next batch.
       batch = []
       currentTokenCount = 0
     }
   })
 
-  // Process any remaining waves in the last batch.
   if (batch.length > 0) {
     const formattedBlock = formatWaves(batch)
     finalParts.push(
@@ -63,14 +59,14 @@ export default {
       hour: "2-digit",
       minute: "2-digit",
       timeZoneName: "short",
-      timeZone: "Etc/GMT-5", // UTC+5
+      timeZone: "Etc/GMT-5",
     })
-    return `[${formattedDateTime}]`
+    return `〄 ${formattedDateTime}`
   },
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
       const allWaves = await Wave.find({}, "data density apotheosis").lean()
-      if (!allWaves.length) return "[measure: no waves found in the flow]"
+      if (!allWaves.length) return "〄 measure: no waves found in the flow"
 
       const currentWaves = allWaves.filter((wave) => wave.apotheosis === null)
       const sedimentWaves = allWaves.filter((wave) => wave.apotheosis !== null)
@@ -89,7 +85,7 @@ export default {
         return acc
       }, {})
 
-      const feedback = ["[measure: token count]"]
+      const feedback = ["〄 measure: token count"]
       const allDensityLevels = [...new Set(allWaves.map((w) => w.density || 0))]
       const sortedDensities = allDensityLevels.sort((a, b) => b - a)
 
@@ -108,63 +104,63 @@ export default {
         const formattedCurrent = formatTokens(currentTokenCount)
 
         feedback.push(
-          `[density ${density}: ${formatTokens(
+          `〄 density ${density}: ${formatTokens(
             sedimentTokenCount + currentTokenCount
-          )} tokens [sediment: ${formattedSediment}] [current: ${formattedCurrent}]]`
+          )} tokens (sediment: ${formattedSediment}) (current: ${formattedCurrent})`
         )
       }
 
-      feedback.push(`[current flow total: ${formatTokens(totalCurrentTokens)}]`)
+      feedback.push(
+        `〄 current flow total: ${formatTokens(totalCurrentTokens)}`
+      )
 
       return feedback.join("\n")
     } catch (error) {
       console.error("error in MEASURE spell", error)
-      return `[measure: error - ${error.message}]`
+      return `〄 measure: error - ${error.message}`
     }
   },
 
-  [MULTI_LINE_SPELLS.RECORD_SET]: async (params, data) => {
-    if (!params.name) return "[error: 'record_set' requires a -name parameter]"
-    const recordName = params.name
+  [MULTI_LINE_SPELLS.RECORD_SET]: async ({ params, data }) => {
+    const { name } = params
+    if (!name) return "〄 error: record_set requires a -name parameter"
 
     await Record.updateOne(
-      { name: recordName },
+      { name },
       {
-        $set: { data: data },
-        $setOnInsert: { _id: newId(), name: recordName },
+        $set: { data },
+        $setOnInsert: { _id: newId(), name },
       },
       { upsert: true }
     )
-    return `[record '${recordName}' was set]`
+    return `〄 record '${name}' was set`
   },
 
-  [ONE_LINE_SPELLS.RECORD_GET]: async (params) => {
-    if (!params.name) return "[error: 'record_get' requires a -name parameter]"
-    const recordName = params.name
-    const record = await Record.findOne({ name: recordName })
-    if (!record) return `[record '${recordName}' not found]`
-    // Return the beautiful, structured XML data as the body's feedback.
-    return `<record name="${record.name}">\n${record.data}\n</record>`
+  [ONE_LINE_SPELLS.RECORD_GET]: async ({ params }) => {
+    const { name } = params
+    if (!name) return "〄 error: record_get requires a -name parameter"
+    const record = await Record.findOne({ name })
+    if (!record) return `〄 record '${name}' not found`
+    return `〄\n<record name="${record.name}">\n${record.data}\n</record>`
   },
 
-  [ONE_LINE_SPELLS.RECORD_REMOVE]: async (params) => {
-    if (!params.name)
-      return "[error: 'record_remove' requires a -name parameter]"
-    const recordName = params.name
-    const result = await Record.deleteOne({ name: recordName })
+  [ONE_LINE_SPELLS.RECORD_REMOVE]: async ({ params }) => {
+    const { name } = params
+    if (!name) return "〄 error: record_remove requires a -name parameter"
+    const result = await Record.deleteOne({ name })
     if (result.deletedCount === 0) {
-      return `[record '${recordName}' not found, nothing removed]`
+      return `〄 record '${name}' not found, nothing removed`
     }
-    return `[record '${recordName}' was removed]`
+    return `〄 record '${name}' was removed`
   },
 
   [ONE_LINE_SPELLS.RECORD_LIST]: async () => {
     const records = await Record.find({}, "name -_id").sort({ name: 1 })
     if (!records.length) {
-      return "[no records found in lore]"
+      return "〄 no records found in lore"
     }
-    const recordNames = records.map((r) => r.name).join("\n")
-    return `[records list]\n[\n${recordNames}\n]`
+    const recordNames = records.map((r) => r.name)
+    return `〄 record list\n〄▸ ${recordNames.join("\n▸ ")}`
   },
 
   [ONE_LINE_SPELLS.SPELLBOOK]: async () => {
@@ -172,31 +168,24 @@ export default {
     const multiLiners = Object.values(MULTI_LINE_SPELLS).sort()
 
     if (!oneLiners.length && !multiLiners.length) {
-      return "[no spells found in spellbook]"
+      return "〄 no spells found in spellbook"
     }
 
-    const oneLinerList = `[\n${oneLiners.join("\n")}\n]`
-    const multiLinerList = `[\n${multiLiners.join("\n")}\n]`
+    const oneLinerList = `〄▸ ${oneLiners.join("\n▸ ")}`
+    const multiLinerList = `〄▸ ${multiLiners.join("\n▸ ")}`
 
-    return [
-      "[spellbook]",
-      "[one-line spells]",
-      oneLinerList,
-      "[multi-line spells]",
-      multiLinerList,
-    ].join("\n")
+    return `〄 spellbook\n\n〄 one-line spells\n${oneLinerList}\n\n〄 multi-line spells\n${multiLinerList}`
   },
 
-  [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async (params) => {
+  [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async ({ params }) => {
     const { tokens, density } = params
     const tokenLimit = Number(tokens)
     const densityLevel = density ? Number(density) : 0
 
     if (isNaN(tokenLimit)) {
-      return "[error: densify_initiate requires valid -tokens]"
+      return "〄 error: densify_initiate requires valid -tokens"
     }
 
-    // --- Data Fetching Logic remains the same, it is perfect ---
     const currentWaves = await Wave.find({ apotheosis: null }).sort({
       density: -1,
       timestamp: 1,
@@ -208,12 +197,13 @@ export default {
       acc[rec.name] = rec.data
       return acc
     }, {})
-    // --- Partitioning Logic remains the same, it is perfect ---
+
     const genesisSedimentWaves = []
     const wavesToDensify = []
     const contextualHorizonWaves = []
     let tokensCounted = 0
     let targetFound = false
+
     for (const wave of currentWaves) {
       if (wave.density > densityLevel) {
         genesisSedimentWaves.push(wave)
@@ -233,9 +223,11 @@ export default {
         contextualHorizonWaves.push(wave)
       }
     }
+
     if (wavesToDensify.length === 0) {
-      return "[info: no waves found for densification]"
+      return "〄 info: no waves found for densification"
     }
+
     const waveIds = wavesToDensify.map((w) => w._id)
     await Record.updateOne(
       { name: "densification_job" },
@@ -245,6 +237,7 @@ export default {
       },
       { upsert: true }
     )
+
     const genesisSedimentText = weaveWithCalibrations(
       genesisSedimentWaves,
       scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION],
@@ -257,7 +250,6 @@ export default {
     )
     const targetText = formatWaves(wavesToDensify)
 
-    // --- The New, Perfected Prompt Assembly ---
     const promptParts = [
       `${SCAFFOLD_GLYPH} [section starts] scaffold:directive\n${
         scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
@@ -290,23 +282,20 @@ export default {
   },
 
   [MULTI_LINE_SPELLS.DENSIFY_COMMIT]: async (_, data) => {
-    // 1. Pre-flight check for the job record
     const jobRecord = await Record.findOne({ name: "densification_job" })
     if (!jobRecord) {
-      return "[error: no active densification job found. please initiate one first.]"
+      return "〄 error: no active densification job found. please initiate one first."
     }
 
-    // 2. Prepare the new densified wave
     const waveIds = JSON.parse(jobRecord.data)
     if (waveIds.length === 0)
-      return "[error: densification job contains no waves]"
+      return "〄 error: densification job contains no waves"
 
     const sourceWave = await Wave.findOne({ _id: waveIds[0] })
-    if (!sourceWave) return "[error: source wave for densification not found]"
+    if (!sourceWave) return "〄 error: source wave for densification not found"
 
     const newDenseWave = {
       _id: newId(),
-      timestamp: Date.now(),
       source: "body",
       data: data,
       density: sourceWave.density + 1,
@@ -315,15 +304,13 @@ export default {
     }
     const createdWave = await Wave.create(newDenseWave)
 
-    // 3. Update the original waves
     await Wave.updateMany(
       { _id: { $in: waveIds } },
       { $set: { apotheosis: createdWave._id } }
     )
 
-    // 4. Clean up the job record
     await Record.deleteOne({ name: "densification_job" })
 
-    return `[densification commit successful: ${waveIds.length} waves apotheosized into new wave ${createdWave._id}]`
+    return `〄 densification commit successful: ${waveIds.length} waves apotheosized into new wave ${createdWave._id}`
   },
 }

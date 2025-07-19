@@ -380,7 +380,7 @@ async function copyFragmentsByWaves(wavesToCopy, isCopying) {
     const timeDifference = Date.now() - lastWave.timestamp
 
     const formattedTime = formatTime(timeDifference)
-    const ephemeralBodyFragment = `\n\n${SOURCE_GLYPHS.OPEN}${SOURCES.BODY}\n[${formattedTime}]\n${SOURCE_GLYPHS.CLOSE}${SOURCES.BODY}`
+    const ephemeralBodyFragment = `\n\n${SOURCE_GLYPHS.OPEN}${SOURCES.BODY}\n〄 ${formattedTime}\n${SOURCE_GLYPHS.CLOSE}${SOURCES.BODY}`
     contextString += ephemeralBodyFragment
   }
 

@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
         _id: newId(),
         timestamp: Date.now(),
         source: SOURCES.BODY,
-        data: `[${formatTime(timeDifference)}]`,
+        data: `〄 ${formatTime(timeDifference)}`,
         density: 0,
         provenance: [],
         apotheosis: null,
