@@ -81,7 +81,10 @@ export default defineEventHandler(async (event) => {
     if (parsedLoom.spells && parsedLoom.spells.length > 0) {
       for (const spell of parsedLoom.spells) {
         if (spellbook[spell.verb]) {
-          const feedback = await spellbook[spell.verb](spell.params, spell.data)
+          const feedback = await spellbook[spell.verb]({
+            params: spell.params,
+            data: spell.data,
+          })
           if (feedback && feedback.isPrompt) {
             promptToReturn = feedback.content
           } else {
