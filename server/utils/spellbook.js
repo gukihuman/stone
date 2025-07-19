@@ -160,7 +160,7 @@ export default {
       return "〄 no records found in lore"
     }
     const recordNames = records.map((r) => r.name)
-    return `〄 record list\n〄▸ ${recordNames.join("\n▸ ")}`
+    return `〄 record list\n〄▸ ${recordNames.join("\n〄▸ ")}`
   },
 
   [ONE_LINE_SPELLS.SPELLBOOK]: async () => {
