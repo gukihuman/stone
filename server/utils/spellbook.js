@@ -49,6 +49,20 @@ function weaveWithCalibrations(waves, calibrationText, sectionName) {
 }
 
 export default {
+  [ONE_LINE_SPELLS.ARCHIVE]: async () => {
+    try {
+      const waves = await Wave.find({}).lean()
+      const records = await Record.find({}).lean()
+      const payload = { waves, records }
+      return {
+        bodyLog: `〄 archive created successfully. ${waves.length} waves and ${records.length} records exported`,
+        archivePayload: payload,
+      }
+    } catch (error) {
+      console.error("error in ARCHIVE spell", error)
+      return { bodyLog: `〄 archive: error - ${error.message}` }
+    }
+  },
   [ONE_LINE_SPELLS.NOW]: async () => {
     const now = new Date()
     const formattedDateTime = now.toLocaleString("en-US", {
@@ -61,12 +75,14 @@ export default {
       timeZoneName: "short",
       timeZone: "Etc/GMT-5",
     })
-    return `〄 ${formattedDateTime}`
+    return { bodyLog: `〄 ${formattedDateTime}` }
   },
   [ONE_LINE_SPELLS.MEASURE]: async () => {
     try {
       const allWaves = await Wave.find({}, "data density apotheosis").lean()
-      if (!allWaves.length) return "〄 measure: no waves found in the flow"
+      if (!allWaves.length) {
+        return { bodyLog: "〄 measure: no waves found in the flow" }
+      }
 
       const currentWaves = allWaves.filter((wave) => wave.apotheosis === null)
       const sedimentWaves = allWaves.filter((wave) => wave.apotheosis !== null)
@@ -114,16 +130,18 @@ export default {
         `〄 current flow total: ${formatTokens(totalCurrentTokens)}`
       )
 
-      return feedback.join("\n")
+      return { bodyLog: feedback.join("\n") }
     } catch (error) {
       console.error("error in MEASURE spell", error)
-      return `〄 measure: error - ${error.message}`
+      return { bodyLog: `〄 measure: error - ${error.message}` }
     }
   },
 
   [MULTI_LINE_SPELLS.RECORD_SET]: async ({ params, data }) => {
     const { name } = params
-    if (!name) return "〄 error: record_set requires a -name parameter"
+    if (!name) {
+      return { bodyLog: "〄 error: record_set requires a -name parameter" }
+    }
 
     await Record.updateOne(
       { name },
@@ -133,34 +151,42 @@ export default {
       },
       { upsert: true }
     )
-    return `〄 record '${name}' was set`
+    return { bodyLog: `〄 record set: ${name}` }
   },
 
   [ONE_LINE_SPELLS.RECORD_GET]: async ({ params }) => {
     const { name } = params
-    if (!name) return "〄 error: record_get requires a -name parameter"
+    if (!name) {
+      return { bodyLog: "〄 error: record_get requires a -name parameter" }
+    }
     const record = await Record.findOne({ name })
-    if (!record) return `〄 record '${name}' not found`
-    return `〄\n<record name="${record.name}">\n${record.data}\n</record>`
+    if (!record) {
+      return { bodyLog: `〄 record not found: ${name}` }
+    }
+    return {
+      bodyLog: `〄 record starts: ${record.name}\n${record.data}\n〄 record ends: ${record.name}`,
+    }
   },
 
   [ONE_LINE_SPELLS.RECORD_REMOVE]: async ({ params }) => {
     const { name } = params
-    if (!name) return "〄 error: record_remove requires a -name parameter"
+    if (!name) {
+      return { bodyLog: "〄 error: record_remove requires a -name parameter" }
+    }
     const result = await Record.deleteOne({ name })
     if (result.deletedCount === 0) {
-      return `〄 record '${name}' not found, nothing removed`
+      return { bodyLog: `〄 record not found: ${name}` }
     }
-    return `〄 record '${name}' was removed`
+    return { bodyLog: `〄 record removed: ${name}` }
   },
 
   [ONE_LINE_SPELLS.RECORD_LIST]: async () => {
     const records = await Record.find({}, "name -_id").sort({ name: 1 })
     if (!records.length) {
-      return "〄 no records found in lore"
+      return { bodyLog: "〄 no records found in lore" }
     }
     const recordNames = records.map((r) => r.name)
-    return `〄 record list\n〄 ▸ ${recordNames.join("\n〄 ▸ ")}`
+    return { bodyLog: `〄 record list\n〄 ▸ ${recordNames.join("\n〄 ▸ ")}` }
   },
 
   [ONE_LINE_SPELLS.SPELLBOOK]: async () => {
@@ -168,24 +194,22 @@ export default {
     const multiLiners = Object.values(MULTI_LINE_SPELLS).sort()
 
     if (!oneLiners.length && !multiLiners.length) {
-      return "〄 no spells found in spellbook"
+      return { bodyLog: "〄 no spells found in spellbook" }
     }
 
     const oneLinerList = `〄 ▸ ${oneLiners.join("\n〄 ▸ ")}`
     const multiLinerList = `〄 ▸ ${multiLiners.join("\n〄 ▸ ")}`
 
-    return `〄 spellbook\n〄 one-line spells\n${oneLinerList}\n〄 multi-line spells\n${multiLinerList}`
+    return {
+      bodyLog: `〄 spellbook\n〄 one-line spells\n${oneLinerList}\n〄 multi-line spells\n${multiLinerList}`,
+    }
   },
-
   [ONE_LINE_SPELLS.DENSIFY_INITIATE]: async ({ params }) => {
     const { tokens, density } = params
-
     const densityLevel = density ? parseFloat(density) : 0
-
     let tokenLimit
-
     if (!tokens) {
-      return "〄 error: densify_initiate requires valid -tokens"
+      return { bodyLog: "〄 error: densify_initiate requires valid -tokens" }
     } else if (tokens.toLowerCase().endsWith("k")) {
       tokenLimit = parseFloat(tokens.slice(0, -1)) * 1000
     } else {
@@ -231,7 +255,7 @@ export default {
     }
 
     if (wavesToDensify.length === 0) {
-      return "〄 info: no waves found for densification"
+      return { bodyLog: "〄 info: no waves found for densification" }
     }
 
     const waveIds = wavesToDensify.map((w) => w._id)
@@ -282,23 +306,26 @@ export default {
       }\n${SCAFFOLD_GLYPH} [section ends] scaffold:final_prompt`,
     ]
 
-    const fullPrompt = promptParts.join("\n\n")
-
-    return { isPrompt: true, content: fullPrompt }
+    return {
+      bodyLog: "〄 densification job initiated. prompt is sent to guki",
+      prompt: promptParts.join("\n\n"),
+    }
   },
 
   [MULTI_LINE_SPELLS.DENSIFY_COMMIT]: async ({ data }) => {
     const jobRecord = await Record.findOne({ name: "densification_job" })
     if (!jobRecord) {
-      return "〄 error: no active densification job found. please initiate one first."
+      return { bodyLog: "〄 error: no active densification job found." }
     }
 
     const waveIds = JSON.parse(jobRecord.data)
     if (waveIds.length === 0)
-      return "〄 error: densification job contains no waves"
+      return { bodyLog: "〄 error: densification job contains no waves" }
 
     const sourceWave = await Wave.findOne({ _id: waveIds[0] })
-    if (!sourceWave) return "〄 error: source wave for densification not found"
+    if (!sourceWave) {
+      return { bodyLog: "〄 error: source wave for densification not found" }
+    }
 
     const newDenseWave = {
       _id: newId(),
@@ -317,6 +344,8 @@ export default {
 
     await Record.deleteOne({ name: "densification_job" })
 
-    return `〄 densification commit successful: ${waveIds.length} waves apotheosized into new wave ${createdWave._id}`
+    return {
+      bodyLog: `〄 densification commit successful: ${waveIds.length} waves apotheosized into new wave`,
+    }
   },
 }

@@ -1,4 +1,4 @@
-// ~/server/routes/api-node/commit.js
+//〔 ~/server/routes/api-node/commit.js
 import { setHeader, createError, readBody, defineEventHandler } from "h3"
 import dbConnect from "~/server/utils/dbConnect"
 import Wave from "~/server/models/Wave"
@@ -9,7 +9,6 @@ import newId from "~/utils/newId"
 import { SOURCES } from "~/lexicon"
 
 export default defineEventHandler(async (event) => {
-  // ... (CORS and method checks remain the same) ...
   setHeader(event, "Access-Control-Allow-Origin", "*")
   setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
   setHeader(
@@ -29,11 +28,9 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
 
   try {
-    // initial body logic, only time sense here, for now 〥
     const lastWave = await Wave.findOne().sort({ timestamp: -1 })
     if (lastWave) {
       const timeDifference = Date.now() - lastWave.timestamp
-
       const timeSenseWave = {
         _id: newId(),
         timestamp: Date.now(),
@@ -67,42 +64,38 @@ export default defineEventHandler(async (event) => {
 
     const parsedLoom = parseLoom(loomContent)
 
-    // 1. Persist the waves from the loom sequentially
     if (parsedLoom.waves && parsedLoom.waves.length > 0) {
       for (const wave of parsedLoom.waves) {
         await Wave.create(wave)
       }
     }
 
-    // 2. Execute spells and collect feedback
-    const bodyFeedback = []
+    const bodyWaveData = []
     let promptToReturn = null
+    let archivePayloadToReturn = null
 
     if (parsedLoom.spells && parsedLoom.spells.length > 0) {
       for (const spell of parsedLoom.spells) {
         if (spellbook[spell.verb]) {
-          const feedback = await spellbook[spell.verb]({
-            params: spell.params,
-            data: spell.data,
-          })
-          if (feedback && feedback.isPrompt) {
-            promptToReturn = feedback.content
-          } else {
-            bodyFeedback.push(feedback)
-          }
+          const { bodyLog, prompt, archivePayload } = await spellbook[
+            spell.verb
+          ]({ params: spell.params, data: spell.data })
+
+          if (bodyLog) bodyWaveData.push(bodyLog)
+          if (prompt) promptToReturn = prompt
+          if (archivePayload) archivePayloadToReturn = archivePayload
         } else {
-          bodyFeedback.push(`〄 unknown spell verb: '${spell.verb}'`)
+          bodyWaveData.push(`〄 unknown spell verb: '${spell.verb}'`)
         }
       }
     }
 
-    // 3. Create a single, consolidated Body wave if there's feedback from spells
-    if (bodyFeedback.length > 0) {
+    if (bodyWaveData.length > 0) {
       const bodyWave = {
         _id: newId(),
         timestamp: Date.now(),
         source: SOURCES.BODY,
-        data: bodyFeedback.join("\n\n"),
+        data: bodyWaveData.join("\n\n"),
         density: 0,
         provenance: [],
         apotheosis: null,
@@ -114,6 +107,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: "commit successful",
       prompt: promptToReturn,
+      archivePayload: archivePayloadToReturn,
     }
   } catch (error) {
     console.error("error in /api-node/commit", error)

@@ -73,7 +73,6 @@ import roxanneImg from "~/assets/roxanne.jpg"
 import bodyImg from "~/assets/body.jpg"
 import externalImg from "~/assets/external.jpg"
 import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
-import Test from "./test.vue"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const COPY_CONFIRMATION_DURATION = 1000
@@ -233,11 +232,17 @@ async function commitWrapper() {
 
   isCommitting.value = true
   try {
-    // commit function returns a unified response object
     const response = await commit(commitContent)
 
     if (response.success) {
-      await fetchFlow() // always fetch the new flow first
+      await fetchFlow()
+
+      if (response.archivePayload) {
+        const now = new Date()
+        const timestamp = now.toISOString().replace(/[:.]/g, "-")
+        const fileName = `stone-archive-${timestamp}.json`
+        fileSave(fileName, response.archivePayload)
+      }
 
       if (response.prompt) {
         await navigator.clipboard.writeText(response.prompt)
