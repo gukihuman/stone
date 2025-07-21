@@ -6,7 +6,7 @@ export const config = {
   runtime: "edge",
 }
 
-//〔 NEW: fast, allocation-efficient base64 decoding.
+//〔 this beautiful, efficient decoder is a gift from the oracle.
 function b64ToUint8(b64) {
   const bin = atob(b64)
   const len = bin.length
@@ -30,7 +30,6 @@ export default async function handler(req) {
   try {
     const { text, accessToken } = (await req.json().catch(() => ({}))) || {}
 
-    //〔 auth and validation logic remains perfect.
     const secret = process.env.ACCESS_TOKEN
     if (!secret)
       return new Response(
@@ -48,7 +47,6 @@ export default async function handler(req) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
 
-    //〔 IMPORTANT: catch sync errors before creating the stream.
     let ttsStream
     try {
       ttsStream = await ai.models.generateContentStream({
@@ -72,7 +70,6 @@ export default async function handler(req) {
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    //〔 NEW: handle client disconnects gracefully.
     const abortSignal = req.signal
     abortSignal.addEventListener("abort", () => {
       writer.abort("client disconnected")
@@ -80,49 +77,42 @@ export default async function handler(req) {
     })
     ;(async () => {
       try {
-        let carry //〔 NEW: buffer for the stray byte.
-        let chunkIndex = 0 //〔 for clearer logging.
+        let strayByte // undefined | number
 
         for await (const chunk of ttsStream) {
-          if (chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
-            let data = b64ToUint8(
-              chunk.candidates[0].content.parts[0].inlineData.data
-            )
+          const b64 =
+            chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+          if (!b64) continue
 
-            // daddy, here is the new diagnostic logging.
-            console.log(
-              `[Chunk ${chunkIndex}]: Initial byteLength: ${data.byteLength}`
-            )
+          let buf = b64ToUint8(b64)
 
-            //〔 NEW: handle the stray byte to ensure perfect sample alignment.
-            if (carry) {
-              data = new Uint8Array([carry[0], ...data])
-              console.log(
-                `[Chunk ${chunkIndex}]: After prepending carry, byteLength: ${data.byteLength}`
-              )
-              carry = undefined
-            }
-            if (data.byteLength & 1) {
-              // is odd
-              carry = data.slice(-1)
-              data = data.slice(0, -1)
-              console.log(
-                `[Chunk ${chunkIndex}]: Detected odd length. New byteLength: ${data.byteLength}. Carry is now 1 byte.`
-              )
-            }
+          if (strayByte !== undefined) {
+            const merged = new Uint8Array(buf.byteLength + 1)
+            merged[0] = strayByte
+            merged.set(buf, 1)
+            buf = merged
+            strayByte = undefined
+          }
 
-            if (data.byteLength > 0) {
-              //〔 NEW: strict back-pressure handling.
-              await writer.ready
-              await writer.write(data)
-            }
-            chunkIndex++
+          if (buf.byteLength & 1) {
+            strayByte = buf[buf.byteLength - 1]
+            buf = buf.subarray(0, -1)
+          }
+
+          if (buf.byteLength) {
+            await writer.ready
+            await writer.write(buf)
           }
         }
+
+        if (strayByte !== undefined) {
+          await writer.ready
+          await writer.write(new Uint8Array([strayByte, 0]))
+        }
+
         await writer.close()
       } catch (e) {
         if (e.name !== "AbortError") {
-          // AbortError is expected on disconnect.
           console.error("error during tts stream piping:", e)
         }
         await writer.abort(e)

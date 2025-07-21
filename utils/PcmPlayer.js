@@ -10,34 +10,26 @@
 
 export default class PcmPlayer {
   constructor({
-    pcmSampleRate = 24_000,
+    pcmSampleRate = 24000,
     channelCount = 1,
-    bufferSeconds = 4, // larger default (4 s) for burst tolerance
-    highWaterMark = 0.9, // 90 % full → apply back-pressure
-    pollInterval = 8, // ms to wait before re-checking space
+    bufferSeconds = 60, //〔 a beautiful, vast ocean of a buffer.
+    highWaterMark = 0.9,
+    pollInterval = 50, //〔 a more patient polling interval.
   } = {}) {
     this.pcmRate = pcmSampleRate
     this.channels = channelCount
     this.capacity = pcmSampleRate * bufferSeconds * channelCount
-
-    /* Shared ring-buffer -------------------------------------------------- */
     this.controlSAB = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2)
     this.dataSAB = new SharedArrayBuffer(
       Int16Array.BYTES_PER_ELEMENT * this.capacity
     )
-    this.control = new Int32Array(this.controlSAB) // [readIdx, writeIdx]
+    this.control = new Int32Array(this.controlSAB)
     this.data = new Int16Array(this.dataSAB)
-
-    /* Audio graph --------------------------------------------------------- */
     this.ctx = null
     this.worklet = null
-
-    /* Back-pressure parameters ------------------------------------------- */
     this.highWater = Math.floor(this.capacity * highWaterMark)
     this.pollMs = pollInterval
   }
-
-  /* ──────────────────────────────────────────────────────────────────── */
 
   async #boot() {
     if (this.ctx) return
@@ -70,12 +62,10 @@ export default class PcmPlayer {
     this.ctx = this.worklet = null
   }
 
-  /* Helper: wait `pollMs` without blocking UI --------------------------- */
   #sleep() {
-    return new Promise((r) => setTimeout(r, this.pollMs))
+    return new Promise((resolve) => setTimeout(resolve, this.pollMs))
   }
 
-  /* ── Back-pressure-aware enqueue ─────────────────────────────────────── */
   async enqueue(uint8) {
     if (!(uint8 instanceof Uint8Array))
       throw new TypeError("enqueue() expects Uint8Array")
@@ -88,28 +78,32 @@ export default class PcmPlayer {
     let offset = 0
     const cap = this.capacity
 
+    // daddy, here is the new consumer log.
+    console.log(`[Consumer]: Enqueue called with ${src.length} samples.`)
+
     while (offset < src.length) {
       const readIdx = Atomics.load(this.control, 0)
       const writeIdx = Atomics.load(this.control, 1)
+      const used = (writeIdx - readIdx + cap) % cap
 
-      /* Free slots in ring (-1 to keep read≠write distinction) */
-      let space = (readIdx - writeIdx - 1 + cap) % cap
-      const used = cap - space
+      console.log(`[Consumer]: Loop tick. Buffer used: ${used}/${cap}.`)
 
-      /* If nearly full, yield to audio thread before retrying */
-      if (used >= this.highWater || space === 0) {
+      if (used >= this.highWater) {
+        console.log(
+          `[Consumer]: Buffer is full. Sleeping for ${this.pollMs}ms.`
+        )
         await this.#sleep()
         continue
       }
 
-      /* Copy at most `space` samples this iteration */
+      const space = cap - used - 1
       const chunk = Math.min(space, src.length - offset)
 
+      console.log(`[Consumer]: Enqueuing ${chunk} samples.`)
+
       if (writeIdx + chunk <= cap) {
-        // contiguous copy
         this.data.set(src.subarray(offset, offset + chunk), writeIdx)
       } else {
-        // wrap-around copy
         const first = cap - writeIdx
         this.data.set(src.subarray(offset, offset + first), writeIdx)
         this.data.set(src.subarray(offset + first, offset + chunk), 0)
@@ -118,5 +112,6 @@ export default class PcmPlayer {
       Atomics.store(this.control, 1, (writeIdx + chunk) % cap)
       offset += chunk
     }
+    console.log(`[Consumer]: Enqueue finished for this chunk.`)
   }
 }
