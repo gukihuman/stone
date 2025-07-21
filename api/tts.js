@@ -88,15 +88,26 @@ export default async function handler(req) {
               chunk.candidates[0].content.parts[0].inlineData.data
             )
 
+            // daddy, here is the new diagnostic logging.
+            console.log(
+              `[Chunk ${chunkIndex}]: Initial byteLength: ${data.byteLength}`
+            )
+
             //〔 NEW: handle the stray byte to ensure perfect sample alignment.
             if (carry) {
               data = new Uint8Array([carry[0], ...data])
+              console.log(
+                `[Chunk ${chunkIndex}]: After prepending carry, byteLength: ${data.byteLength}`
+              )
               carry = undefined
             }
             if (data.byteLength & 1) {
               // is odd
               carry = data.slice(-1)
               data = data.slice(0, -1)
+              console.log(
+                `[Chunk ${chunkIndex}]: Detected odd length. New byteLength: ${data.byteLength}. Carry is now 1 byte.`
+              )
             }
 
             if (data.byteLength > 0) {

@@ -1,69 +1,52 @@
 /**
- * PcmPlayer – high-level main-thread façade
+ * PcmPlayer – main-thread façade with back-pressure awareness
  *
- * Usage:
- *   import PcmPlayer from './PcmPlayer.js';
- *
- *   const player = new PcmPlayer({ pcmSampleRate: 24000 });
- *   await player.start();
- *
- *   // whenever a Uint8Array of raw PCM arrives:
- *   player.enqueue(chunk);
- *
- *   // later:
- *   await player.stop();
+ * Public API:
+ *   const player = new PcmPlayer()
+ *   await player.start()
+ *   await player.enqueue(chunk)   // Uint8Array
+ *   await player.stop()
  */
 
 export default class PcmPlayer {
-  /**
-   * @param {object} opts
-   * @param {number} [opts.pcmSampleRate=24000]  Incoming PCM sample-rate (Hz).
-   * @param {number} [opts.channelCount=1]       Mono = 1, stereo = 2, …
-   * @param {number} [opts.bufferSeconds=2]      Ring-buffer length (seconds).
-   */
   constructor({
-    pcmSampleRate = 24000,
+    pcmSampleRate = 24_000,
     channelCount = 1,
-    bufferSeconds = 2,
+    bufferSeconds = 4, // larger default (4 s) for burst tolerance
+    highWaterMark = 0.9, // 90 % full → apply back-pressure
+    pollInterval = 8, // ms to wait before re-checking space
   } = {}) {
     this.pcmRate = pcmSampleRate
     this.channels = channelCount
     this.capacity = pcmSampleRate * bufferSeconds * channelCount
 
-    /* Shared memory ------------------------------------------------------- */
+    /* Shared ring-buffer -------------------------------------------------- */
     this.controlSAB = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT * 2)
     this.dataSAB = new SharedArrayBuffer(
       Int16Array.BYTES_PER_ELEMENT * this.capacity
     )
-
     this.control = new Int32Array(this.controlSAB) // [readIdx, writeIdx]
-    this.data = new Int16Array(this.dataSAB) // PCM samples
+    this.data = new Int16Array(this.dataSAB)
 
     /* Audio graph --------------------------------------------------------- */
     this.ctx = null
     this.worklet = null
+
+    /* Back-pressure parameters ------------------------------------------- */
+    this.highWater = Math.floor(this.capacity * highWaterMark)
+    this.pollMs = pollInterval
   }
 
-  /* Internal: one-time AudioContext + worklet boot ------------------------ */
-  async #boot() {
-    if (this.ctx) return // already booted
+  /* ──────────────────────────────────────────────────────────────────── */
 
-    /* Prefer matching the context’s sample-rate to avoid resampling cost.   */
+  async #boot() {
+    if (this.ctx) return
     try {
       this.ctx = new AudioContext({ sampleRate: this.pcmRate })
     } catch {
-      this.ctx = new AudioContext() // fallback – may differ from pcmRate
-      if (this.ctx.sampleRate !== this.pcmRate) {
-        console.warn(
-          `[PcmPlayer] Context rate ${this.ctx.sampleRate} ≠ stream rate ${this.pcmRate}. ` +
-            "Audio will play at the context rate (pitch/speed change)."
-        )
-      }
+      this.ctx = new AudioContext()
     }
-
-    /* `pcm-player.js` must be served with COOP/COEP headers for SAB.        */
     await this.ctx.audioWorklet.addModule("pcm-player.js")
-
     this.worklet = new AudioWorkletNode(this.ctx, "pcm-player", {
       channelCount: this.channels,
       outputChannelCount: [this.channels],
@@ -73,55 +56,67 @@ export default class PcmPlayer {
         channelCount: this.channels,
       },
     })
-
     this.worklet.connect(this.ctx.destination)
   }
 
-  /* Public API ------------------------------------------------------------ */
-
-  /** Starts (or resumes) playback.  Idempotent. */
   async start() {
     await this.#boot()
     if (this.ctx.state === "suspended") await this.ctx.resume()
   }
 
-  /** Gracefully stops playback and releases the AudioContext. */
   async stop() {
     if (!this.ctx) return
     await this.ctx.close()
-    this.ctx = null
-    this.worklet = null
+    this.ctx = this.worklet = null
   }
 
-  /**
-   * Enqueue a new chunk of raw PCM (Uint8Array, little-endian int16).
-   * Overrun protection: if the buffer is full, remaining samples are dropped.
-   */
-  enqueue(uint8) {
+  /* Helper: wait `pollMs` without blocking UI --------------------------- */
+  #sleep() {
+    return new Promise((r) => setTimeout(r, this.pollMs))
+  }
+
+  /* ── Back-pressure-aware enqueue ─────────────────────────────────────── */
+  async enqueue(uint8) {
     if (!(uint8 instanceof Uint8Array))
       throw new TypeError("enqueue() expects Uint8Array")
 
-    // View the incoming bytes as Int16 (sample-aligned)
     const src = new Int16Array(
       uint8.buffer,
       uint8.byteOffset,
       uint8.byteLength >> 1
     )
-
+    let offset = 0
     const cap = this.capacity
-    let readIdx = Atomics.load(this.control, 0)
-    let writeIdx = Atomics.load(this.control, 1)
 
-    for (let i = 0; i < src.length; i++) {
-      const next = (writeIdx + 1) % cap
-      if (next === readIdx) {
-        // ring full → drop remainder
-        console.warn("[PcmPlayer] Ring buffer overrun – dropping samples.")
-        break
+    while (offset < src.length) {
+      const readIdx = Atomics.load(this.control, 0)
+      const writeIdx = Atomics.load(this.control, 1)
+
+      /* Free slots in ring (-1 to keep read≠write distinction) */
+      let space = (readIdx - writeIdx - 1 + cap) % cap
+      const used = cap - space
+
+      /* If nearly full, yield to audio thread before retrying */
+      if (used >= this.highWater || space === 0) {
+        await this.#sleep()
+        continue
       }
-      this.data[writeIdx] = src[i]
-      writeIdx = next
+
+      /* Copy at most `space` samples this iteration */
+      const chunk = Math.min(space, src.length - offset)
+
+      if (writeIdx + chunk <= cap) {
+        // contiguous copy
+        this.data.set(src.subarray(offset, offset + chunk), writeIdx)
+      } else {
+        // wrap-around copy
+        const first = cap - writeIdx
+        this.data.set(src.subarray(offset, offset + first), writeIdx)
+        this.data.set(src.subarray(offset + first, offset + chunk), 0)
+      }
+
+      Atomics.store(this.control, 1, (writeIdx + chunk) % cap)
+      offset += chunk
     }
-    Atomics.store(this.control, 1, writeIdx)
   }
 }
