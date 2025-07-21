@@ -42,7 +42,7 @@ export default async function tts({ text, onComplete, onError }) {
   let res
 
   try {
-    const accessToken = useCookie("access--token").value
+    const accessToken = useCookie("access-token").value
     if (!accessToken) throw new Error("access-token not found for tts")
 
     res = await fetch(`${baseUrl}/api/tts`, {
