@@ -22,7 +22,6 @@ export default async function tts({ text, provider, onComplete, onError }) {
 
     const player = await usePcmPlayer()
 
-    console.log(provider)
     const res = await fetch(`${baseUrl}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

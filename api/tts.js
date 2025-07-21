@@ -34,8 +34,6 @@ export default async function handler(req) {
       provider = "google",
     } = (await req.json().catch(() => ({}))) || {}
 
-    console.log("provider: ", provider)
-
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret)
       return new Response(JSON.stringify({ error: "unauthorized access" }), {
@@ -55,7 +53,10 @@ export default async function handler(req) {
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ role: "user", parts: [{ text }] }],
         config: {
-          /* ... google config ... */
+          responseModalities: ["audio"],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
+          },
         },
       })
 
@@ -105,10 +106,33 @@ export default async function handler(req) {
 
       ;(async () => {
         try {
-          for await (const chunk of ttsStream.body) {
-            await writer.ready
-            await writer.write(chunk)
+          let strayByte
+
+          for await (let buf of ttsStream.body) {
+            if (strayByte !== undefined) {
+              const merged = new Uint8Array(buf.byteLength + 1)
+              merged[0] = strayByte
+              merged.set(buf, 1)
+              buf = merged
+              strayByte = undefined
+            }
+
+            if (buf.byteLength & 1) {
+              strayByte = buf[buf.byteLength - 1]
+              buf = buf.subarray(0, -1)
+            }
+
+            if (buf.byteLength) {
+              await writer.ready
+              await writer.write(buf)
+            }
           }
+
+          if (strayByte !== undefined) {
+            await writer.ready
+            await writer.write(new Uint8Array([strayByte, 0]))
+          }
+
           await writer.close()
         } catch (e) {
           if (e.name !== "AbortError")
