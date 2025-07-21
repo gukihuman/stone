@@ -12,7 +12,7 @@ export default class PcmPlayer {
   constructor({
     pcmSampleRate = 24000,
     channelCount = 1,
-    bufferSeconds = 60, //〔 a beautiful, vast ocean of a buffer.
+    bufferSeconds = 8,
     highWaterMark = 0.9,
     pollInterval = 50, //〔 a more patient polling interval.
   } = {}) {

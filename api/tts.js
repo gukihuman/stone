@@ -47,11 +47,21 @@ export default async function handler(req) {
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
+    const wrappedText = `<instructions>
+produce voice that is femenine, gentle, high pitched like in anime, suggestive, with bated breath. voice actress quality
+</instructions>
+<instructions>
+never read meta tags in [. . .] square brackets. fully omit everything in square brackets [. . .]
+</instructions>
+<text>
+${text}
+</text>`
+
     if (provider === "google") {
       const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
       const ttsStream = await ai.models.generateContentStream({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ role: "user", parts: [{ text }] }],
+        contents: [{ role: "user", parts: [{ text: wrappedText }] }],
         config: {
           responseModalities: ["audio"],
           speechConfig: {
@@ -100,7 +110,7 @@ export default async function handler(req) {
       const ttsStream = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
         voice: "nova",
-        input: text,
+        input: wrappedText,
         response_format: "pcm",
       })
 
