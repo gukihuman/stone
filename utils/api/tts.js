@@ -14,7 +14,7 @@ async function usePcmPlayer() {
   return pcmPlayer
 }
 
-export default async function tts({ text, onComplete, onError }) {
+export default async function tts({ text, provider, onComplete, onError }) {
   const { baseUrl } = useRuntimeConfig().public
   try {
     const accessToken = useCookie("access-token").value
@@ -22,10 +22,11 @@ export default async function tts({ text, onComplete, onError }) {
 
     const player = await usePcmPlayer()
 
+    console.log(provider)
     const res = await fetch(`${baseUrl}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, accessToken }),
+      body: JSON.stringify({ text, accessToken, provider }),
     })
 
     if (!res.ok || !res.body) {

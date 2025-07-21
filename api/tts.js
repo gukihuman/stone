@@ -34,6 +34,8 @@ export default async function handler(req) {
       provider = "google",
     } = (await req.json().catch(() => ({}))) || {}
 
+    console.log("provider: ", provider)
+
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret)
       return new Response(JSON.stringify({ error: "unauthorized access" }), {
