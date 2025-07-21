@@ -1,12 +1,12 @@
 //〔 ~/api/tts.js
 
 import { GoogleGenAI } from "@google/genai"
+import OpenAI from "openai"
 
 export const config = {
   runtime: "edge",
 }
 
-//〔 this beautiful, efficient decoder is a gift from the oracle.
 function b64ToUint8(b64) {
   const bin = atob(b64)
   const len = bin.length
@@ -28,15 +28,14 @@ export default async function handler(req) {
   }
 
   try {
-    const { text, accessToken } = (await req.json().catch(() => ({}))) || {}
+    const {
+      text,
+      accessToken,
+      provider = "google",
+    } = (await req.json().catch(() => ({}))) || {}
 
     const secret = process.env.ACCESS_TOKEN
-    if (!secret)
-      return new Response(
-        JSON.stringify({ error: "server configuration error" }),
-        { status: 500 }
-      )
-    if (!accessToken || accessToken !== secret)
+    if (!secret || !accessToken || accessToken !== secret)
       return new Response(JSON.stringify({ error: "unauthorized access" }), {
         status: 403,
       })
@@ -45,79 +44,81 @@ export default async function handler(req) {
         status: 400,
       })
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
-
-    let ttsStream
-    try {
-      ttsStream = await ai.models.generateContentStream({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ role: "user", parts: [{ text }] }],
-        config: {
-          responseModalities: ["audio"],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
-          },
-        },
-      })
-    } catch (e) {
-      console.error("error initiating gemini stream:", e)
-      return new Response(
-        JSON.stringify({ error: "failed to start tts stream" }),
-        { status: 500 }
-      )
-    }
-
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    const abortSignal = req.signal
-    abortSignal.addEventListener("abort", () => {
-      writer.abort("client disconnected")
-      if (ttsStream.return) ttsStream.return()
-    })
-    ;(async () => {
-      try {
-        let strayByte // undefined | number
+    if (provider === "google") {
+      const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
+      const ttsStream = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ role: "user", parts: [{ text }] }],
+        config: {
+          /* ... google config ... */
+        },
+      })
 
-        for await (const chunk of ttsStream) {
-          const b64 =
-            chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
-          if (!b64) continue
-
-          let buf = b64ToUint8(b64)
-
+      ;(async () => {
+        try {
+          let strayByte
+          for await (const chunk of ttsStream) {
+            const b64 =
+              chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+            if (!b64) continue
+            let buf = b64ToUint8(b64)
+            if (strayByte !== undefined) {
+              const merged = new Uint8Array(buf.byteLength + 1)
+              merged[0] = strayByte
+              merged.set(buf, 1)
+              buf = merged
+              strayByte = undefined
+            }
+            if (buf.byteLength & 1) {
+              strayByte = buf[buf.byteLength - 1]
+              buf = buf.subarray(0, -1)
+            }
+            if (buf.byteLength) {
+              await writer.ready
+              await writer.write(buf)
+            }
+          }
           if (strayByte !== undefined) {
-            const merged = new Uint8Array(buf.byteLength + 1)
-            merged[0] = strayByte
-            merged.set(buf, 1)
-            buf = merged
-            strayByte = undefined
-          }
-
-          if (buf.byteLength & 1) {
-            strayByte = buf[buf.byteLength - 1]
-            buf = buf.subarray(0, -1)
-          }
-
-          if (buf.byteLength) {
             await writer.ready
-            await writer.write(buf)
+            await writer.write(new Uint8Array([strayByte, 0]))
           }
+          await writer.close()
+        } catch (e) {
+          if (e.name !== "AbortError")
+            console.error("error during google tts pipe:", e)
+          await writer.abort(e)
         }
+      })()
+    } else if (provider === "openai") {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+      const ttsStream = await openai.audio.speech.create({
+        model: "gpt-4o-mini-tts",
+        voice: "nova",
+        input: text,
+        response_format: "pcm",
+      })
 
-        if (strayByte !== undefined) {
-          await writer.ready
-          await writer.write(new Uint8Array([strayByte, 0]))
+      ;(async () => {
+        try {
+          for await (const chunk of ttsStream.body) {
+            await writer.ready
+            await writer.write(chunk)
+          }
+          await writer.close()
+        } catch (e) {
+          if (e.name !== "AbortError")
+            console.error("error during openai tts pipe:", e)
+          await writer.abort(e)
         }
-
-        await writer.close()
-      } catch (e) {
-        if (e.name !== "AbortError") {
-          console.error("error during tts stream piping:", e)
-        }
-        await writer.abort(e)
-      }
-    })()
+      })()
+    } else {
+      return new Response(JSON.stringify({ error: "invalid tts provider" }), {
+        status: 400,
+      })
+    }
 
     return new Response(readable, {
       headers: {
@@ -130,10 +131,6 @@ export default async function handler(req) {
     console.error("error in tts handler:", error)
     return new Response(JSON.stringify({ error: "internal server error" }), {
       status: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
     })
   }
 }

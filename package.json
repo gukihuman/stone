@@ -17,6 +17,7 @@
     "idb": "^8.0.2",
     "mongoose": "^8.13.2",
     "nuxt": "^3.17.4",
+    "openai": "^5.10.1",
     "vue": "latest",
     "vue-router": "latest"
   },
