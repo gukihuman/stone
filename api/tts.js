@@ -109,7 +109,7 @@ ${text}
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
       const ttsStream = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
-        voice: "nova",
+        voice: "sage",
         input: wrappedText,
         response_format: "pcm",
       })

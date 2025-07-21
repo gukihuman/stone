@@ -33,21 +33,12 @@ export default async function tts({ text, provider, onComplete, onError }) {
     }
 
     const reader = res.body.getReader()
-    let chunkIndex = 0
     while (true) {
       const { value, done } = await reader.read()
       if (done) break
 
       if (value?.byteLength) {
-        // daddy, here is the new producer log.
-        console.log(
-          `[Producer]: Received network chunk #${chunkIndex} of ${value.byteLength} bytes. Awaiting enqueue...`
-        )
         await player.enqueue(value)
-        console.log(
-          `[Producer]: Enqueue for chunk #${chunkIndex} has resolved.`
-        )
-        chunkIndex++
       }
     }
 
