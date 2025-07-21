@@ -371,9 +371,8 @@ function speakLatestRoxanneWave() {
       if (audioSegments.length > 0) {
         if (wave._id !== lastSpokenId) {
           const fullAudioText = audioSegments.join(" ")
-          console.log(`TTS TRIGGERED FOR WAVE: ${wave._id}`)
-          console.log(`FULL CONTENT TO SPEAK: ${fullAudioText}`)
           localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
+          tts({ text: fullAudioText })
         }
         break // 〔 most recent audio wave found. work is done.
       }

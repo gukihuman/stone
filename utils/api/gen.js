@@ -1,4 +1,4 @@
-// utils/api/gen.js
+// 〔 ~/utils/api/gen.js
 export default async function gen({
   provider,
   model,

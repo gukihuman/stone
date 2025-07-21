@@ -1,4 +1,4 @@
-// api/gen.js
+// 〔 ~/api/gen.js
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { ChatTogetherAI } from "@langchain/community/chat_models/togetherai"
