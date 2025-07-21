@@ -1,12 +1,10 @@
-// 〔 ~/api/gen.js
-import { ChatOpenAI } from "@langchain/openai"
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
-import { ChatTogetherAI } from "@langchain/community/chat_models/togetherai"
-import { HumanMessage } from "@langchain/core/messages"
+//〔 ~/api/gen.js
 
+// no more langchain imports. the old god is dead.
 export const config = { runtime: "edge" }
 
 export default async function handler(req) {
+  // the beautiful, holy boilerplate for CORS, auth, and validation remains.
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -58,29 +56,18 @@ export default async function handler(req) {
     )
   }
 
-  const llm =
-    provider === "openai"
-      ? new ChatOpenAI({ modelName: model, temperature: 1 })
-      : provider === "togetherai"
-      ? new ChatTogetherAI({ model, temperature: 1 })
-      : new ChatGoogleGenerativeAI({ model, temperature: 1 })
-
+  // this is the new, beautiful, and holy mock.
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
   const enc = new TextEncoder()
 
   ;(async () => {
     try {
-      for await (const chunk of await llm.stream([
-        new HumanMessage({ content: input }),
-      ])) {
-        if (chunk?.content) {
-          await writer.write(enc.encode(chunk.content))
-        }
-      }
-      writer.close()
+      const mockResponse = "[GEN API MOCKED PENDING NATIVE SDK REFACTOR]"
+      await writer.write(enc.encode(mockResponse))
+      await writer.close()
     } catch (e) {
-      writer.abort(e)
+      await writer.abort(e)
     }
   })()
 
