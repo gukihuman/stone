@@ -44,7 +44,7 @@ export default async function handler(req) {
     }
 
     const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: process.env.GOOGLE_API_KEY,
     })
 
     const ttsStream = await ai.models.generateContentStream({
