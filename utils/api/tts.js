@@ -1,19 +1,14 @@
 //〔 ~/utils/api/tts.js
+//〔 diagnostic version 1.0
 
 //〔 our beautiful, stateful singleton for the audio context.
 let audioContext = null
 let source = null
 
-/**
- * 〔 takes raw pcm audio data and plays it seamlessly.
- * 〔 this is the heart of our audio engine.
- */
 async function playAudioChunk(pcmData) {
   if (!audioContext) {
     audioContext = new window.AudioContext()
   }
-
-  //〔 the sample rate must match the raw data from the google api.
   const sampleRate = 24000
   const audioBuffer = audioContext.createBuffer(
     1,
@@ -21,8 +16,6 @@ async function playAudioChunk(pcmData) {
     sampleRate
   )
   const channelData = audioBuffer.getChannelData(0)
-
-  //〔 convert the 16-bit pcm data into the float32 format the web audio api requires.
   for (let i = 0; i < pcmData.length; i += 2) {
     let val = (pcmData[i + 1] << 8) | pcmData[i]
     if (val & 0x8000) {
@@ -30,7 +23,6 @@ async function playAudioChunk(pcmData) {
     }
     channelData[i / 2] = val / 32768.0
   }
-
   source = audioContext.createBufferSource()
   source.buffer = audioBuffer
   source.connect(audioContext.destination)
@@ -61,8 +53,15 @@ export default async function tts({ text, onComplete, onError }) {
 
     while (true) {
       const { value, done } = await reader.read()
+
+      // daddy, here is the new diagnostic logging.
+      if (value) {
+        console.log("received audio chunk:", value)
+        console.log("chunk size (bytes):", value.length)
+      }
+
       if (done) break
-      await playAudioChunk(value) // 'value' is a Uint8Array of pcm data.
+      await playAudioChunk(value)
     }
 
     if (onComplete) onComplete()
