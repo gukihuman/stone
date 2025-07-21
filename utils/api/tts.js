@@ -1,57 +1,46 @@
 //〔 ~/utils/api/tts.js
 
-//〔 our beautiful, stateful singleton for the audio context.
+//〔 our beautiful, stateful singleton for the audio context and scheduler.
+//〔 this logic is adapted from the external oracle's "minimal scheduler" recommendation.
+const SAMPLE_RATE = 24000
+const LEAD_TIME = 0.1 //〔 seconds of safety buffer for scheduling.
 let audioContext = null
-const audioQueue = []
-let isPlaying = false
-let startTime = 0
+let nextTime = 0
 
 /**
- * 〔 the new, beautiful, and holy heart of our audio engine.
- * 〔 it plays the next chunk in the queue and schedules the one after.
+ * 〔 takes raw pcm audio data, converts it, and schedules it for seamless playback.
  */
-function playNextInQueue() {
-  if (audioQueue.length === 0) {
-    isPlaying = false
-    return //〔 the performance is over.
-  }
-
-  isPlaying = true
-  const pcmData = audioQueue.shift() //〔 get the next chunk of data.
-
+function enqueuePCMChunk(pcmData) {
   if (!audioContext) {
-    audioContext = new window.AudioContext()
-    startTime = audioContext.currentTime //〔 initialize the clock on first play.
+    audioContext = new window.AudioContext({ sampleRate: SAMPLE_RATE })
+    nextTime = audioContext.currentTime + LEAD_TIME
   }
 
-  const sampleRate = 24000
-  const audioBuffer = audioContext.createBuffer(
-    1,
-    pcmData.length / 2,
-    sampleRate
-  )
-  const channelData = audioBuffer.getChannelData(0)
-
-  //〔 the pcm conversion logic remains perfect.
-  for (let i = 0; i < pcmData.length; i += 2) {
+  //〔 convert the 16-bit pcm data (Uint8Array) into the float32 format.
+  const float32Data = new Float32Array(pcmData.length / 2)
+  for (let i = 0, j = 0; i < pcmData.length; i += 2, j++) {
     let val = (pcmData[i + 1] << 8) | pcmData[i]
     if (val & 0x8000) {
       val |= ~0xffff
     }
-    channelData[i / 2] = val / 32768.0
+    float32Data[j] = val / 32768.0
   }
+
+  //〔 create a buffer and schedule it on the continuous timeline.
+  const audioBuffer = audioContext.createBuffer(
+    1,
+    float32Data.length,
+    SAMPLE_RATE
+  )
+  audioBuffer.copyToChannel(float32Data, 0)
 
   const source = audioContext.createBufferSource()
   source.buffer = audioBuffer
   source.connect(audioContext.destination)
+  source.start(nextTime)
 
-  //〔 this is the beautiful, holy magic. when this chunk is done, play the next.
-  source.onended = playNextInQueue
-
-  source.start(startTime)
-
-  //〔 schedule the next chunk to play immediately after this one finishes.
-  startTime += audioBuffer.duration
+  //〔 advance our timeline for the next chunk.
+  nextTime += audioBuffer.duration
 }
 
 export default async function tts({ text, onComplete, onError }) {
@@ -80,13 +69,8 @@ export default async function tts({ text, onComplete, onError }) {
       const { value, done } = await reader.read()
       if (done) break
 
-      //〔 instead of playing immediately, we add the chunk to our queue.
       if (value) {
-        audioQueue.push(value)
-        //〔 if nothing is playing, kick off the scheduler.
-        if (!isPlaying) {
-          playNextInQueue()
-        }
+        enqueuePCMChunk(value)
       }
     }
 
