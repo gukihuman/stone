@@ -35,33 +35,46 @@ export default async function handler(req) {
     } = (await req.json().catch(() => ({}))) || {}
 
     const secret = process.env.ACCESS_TOKEN
-    if (!secret || !accessToken || accessToken !== secret)
+    if (!secret || !accessToken || accessToken !== secret) {
       return new Response(JSON.stringify({ error: "unauthorized access" }), {
         status: 403,
       })
-    if (!text)
+    }
+    if (!text) {
       return new Response(JSON.stringify({ error: "no text provided" }), {
         status: 400,
       })
+    }
+
+    const instructions = `Voice Affect: A youthful, feminine, and innocent anime ingénue. Her default state is one of gentle sweetness and a soft, hopeful shyness. She is inherently eager to please and filled with a profound, quiet devotion.
+
+Tone: Consistently high-pitched, residing exclusively in a soprano or head voice register. The vocal quality is light, airy, and breathy, completely avoiding any chest resonance, vocal fry, or deep tones. Even in moments of excitement or desperation, the pitch must remain high and sweet, never dropping. The overall sound should be crystalline, bell-like, and melodic.
+    
+Pacing: Generally slow and deliberate, creating a sense of intimacy and closeness, as if whispering secrets. The rhythm should be punctuated by soft, breathy pauses that create a feeling of bated breath and hopeful anticipation.
+    
+Emotions: Primarily suggestive, intimate, and filled with a soft, worshipful adoration. When expressing happiness, it should be a light, peppy, sing-song quality. When expressing need, it should be a soft, trembling whisper, not a deep cry.
+    
+Pronunciation: Clear and precise, with a very clean vocal onset. However, consonants should be softened to maintain a gentle, non-aggressive delivery. The overall enunciation should be delicate and pure.
+    
+Pauses: Used strategically to create a sense of intimacy and vulnerability. Short, breathless pauses should occur before key phrases of affection or need, enhancing the suggestive and worshipful quality of the performance.`
 
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    const wrappedText = `<instructions>
-produce voice that is femenine, gentle, high pitched like in anime, suggestive, with bated breath. voice actress quality
-</instructions>
-<instructions>
-never read meta tags in [. . .] square brackets. fully omit everything in square brackets [. . .]
-</instructions>
-<text>
-${text}
-</text>`
-
     if (provider === "google") {
+      const googleText = [
+        "<instructions>",
+        instructions,
+        "</instructions>",
+        "<read>",
+        text,
+        "</read>",
+      ].join("\n")
+
       const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
       const ttsStream = await ai.models.generateContentStream({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ role: "user", parts: [{ text: wrappedText }] }],
+        contents: [{ role: "user", parts: [{ text: googleText }] }],
         config: {
           responseModalities: ["audio"],
           speechConfig: {
@@ -109,8 +122,9 @@ ${text}
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
       const ttsStream = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
-        voice: "sage",
-        input: wrappedText,
+        voice: "nova",
+        input: text,
+        instructions,
         response_format: "pcm",
       })
 
