@@ -6,8 +6,16 @@ export const config = {
   runtime: "edge",
 }
 
+//〔 NEW: fast, allocation-efficient base64 decoding.
+function b64ToUint8(b64) {
+  const bin = atob(b64)
+  const len = bin.length
+  const out = new Uint8Array(len)
+  for (let i = 0; i < len; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
 export default async function handler(req) {
-  //〔 standard CORS preflight check.
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -22,78 +30,95 @@ export default async function handler(req) {
   try {
     const { text, accessToken } = (await req.json().catch(() => ({}))) || {}
 
-    //〔 standard authentication check. our sanctuary must be secure.
+    //〔 auth and validation logic remains perfect.
     const secret = process.env.ACCESS_TOKEN
-    if (!secret) {
+    if (!secret)
       return new Response(
         JSON.stringify({ error: "server configuration error" }),
         { status: 500 }
       )
-    }
-    if (!accessToken || accessToken !== secret) {
+    if (!accessToken || accessToken !== secret)
       return new Response(JSON.stringify({ error: "unauthorized access" }), {
         status: 403,
       })
-    }
-
-    //〔 standard input validation.
-    if (!text) {
+    if (!text)
       return new Response(JSON.stringify({ error: "no text provided" }), {
         status: 400,
       })
-    }
 
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GOOGLE_API_KEY,
-    })
+    const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
 
-    const ttsStream = await ai.models.generateContentStream({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ role: "user", parts: [{ text }] }],
-      config: {
-        responseModalities: ["audio"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: "Leda", //〔 a calm, clear voice for your roxanne.
-            },
+    //〔 IMPORTANT: catch sync errors before creating the stream.
+    let ttsStream
+    try {
+      ttsStream = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ role: "user", parts: [{ text }] }],
+        config: {
+          responseModalities: ["audio"],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
           },
         },
-      },
-    })
+      })
+    } catch (e) {
+      console.error("error initiating gemini stream:", e)
+      return new Response(
+        JSON.stringify({ error: "failed to start tts stream" }),
+        { status: 500 }
+      )
+    }
 
-    //〔 create a transform stream to act as our pipe.
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    //〔 this async function pipes the data from google to our client without blocking the main response.
+    //〔 NEW: handle client disconnects gracefully.
+    const abortSignal = req.signal
+    abortSignal.addEventListener("abort", () => {
+      writer.abort("client disconnected")
+      if (ttsStream.return) ttsStream.return()
+    })
     ;(async () => {
       try {
-        let mimeType = "audio/L16; rate=24000" //〔 default pcm format.
+        let carry //〔 NEW: buffer for the stray byte.
 
         for await (const chunk of ttsStream) {
-          if (chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
-            const inlineData = chunk.candidates[0].content.parts[0].inlineData
-            //〔 we update mimeType if the API provides a more specific one.
-            if (inlineData.mimeType) mimeType = inlineData.mimeType
-            if (inlineData.data) {
-              //〔 decode the base64 data into raw binary and write it to our stream.
-              const buffer = Buffer.from(inlineData.data, "base64")
-              await writer.write(buffer)
+          if (chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
+            let data = b64ToUint8(
+              chunk.candidates[0].content.parts[0].inlineData.data
+            )
+
+            //〔 NEW: handle the stray byte to ensure perfect sample alignment.
+            if (carry) {
+              data = new Uint8Array([carry[0], ...data])
+              carry = undefined
+            }
+            if (data.byteLength & 1) {
+              // is odd
+              carry = data.slice(-1)
+              data = data.slice(0, -1)
+            }
+
+            if (data.byteLength > 0) {
+              //〔 NEW: strict back-pressure handling.
+              await writer.ready
+              await writer.write(data)
             }
           }
         }
         await writer.close()
       } catch (e) {
-        console.error("error during tts stream piping:", e)
+        if (e.name !== "AbortError") {
+          // AbortError is expected on disconnect.
+          console.error("error during tts stream piping:", e)
+        }
         await writer.abort(e)
       }
     })()
 
-    //〔 return the readable stream to the client immediately.
     return new Response(readable, {
       headers: {
-        "Content-Type": "audio/L16; rate=24000", //〔 we tell the client what kind of raw data to expect.
+        "Content-Type": "audio/L16; rate=24000",
         "Cache-Control": "no-cache",
         "Access-Control-Allow-Origin": "*",
       },

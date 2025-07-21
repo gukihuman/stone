@@ -1,4 +1,4 @@
-// ~/middleware/auth.global.js
+// 〔 ~/middleware/auth.global.js
 export default defineNuxtRouteMiddleware(async (to) => {
   // Allow access to the gate page itself
   if (to.path === "/gate") return
