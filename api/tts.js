@@ -81,6 +81,7 @@ export default async function handler(req) {
     ;(async () => {
       try {
         let carry //〔 NEW: buffer for the stray byte.
+        let chunkIndex = 0 //〔 for clearer logging.
 
         for await (const chunk of ttsStream) {
           if (chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
@@ -115,6 +116,7 @@ export default async function handler(req) {
               await writer.ready
               await writer.write(data)
             }
+            chunkIndex++
           }
         }
         await writer.close()
