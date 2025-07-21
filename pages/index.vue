@@ -72,9 +72,10 @@ import gukiImg from "~/assets/guki.jpg"
 import roxanneImg from "~/assets/roxanne.jpg"
 import bodyImg from "~/assets/body.jpg"
 import externalImg from "~/assets/external.jpg"
-import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
+import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
+const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
 const COPY_CONFIRMATION_DURATION = 1000
 const LEFT_COLUMN_WIDTH = 100
 const RIGHT_COLUMN_WIDTH = 80
@@ -130,18 +131,16 @@ const displayFragments = computed(() => {
   if (!waves.value.length) return []
 
   const fragments = []
-  // We work with a non-reversed copy to process chronologically
-  const chronologicalWaves = [...waves.value]
 
   let currentFragment = null
 
-  chronologicalWaves.forEach((fragment) => {
+  waves.value.forEach((fragment) => {
     if (currentFragment && currentFragment.source === fragment.source) {
       // If source is the same, merge the data
-      currentFragment.data += "\n" + fragment.data
+      currentFragment.data += "\n\n" + fragment.data
       currentFragment.waveIds.push(fragment._id)
     } else {
-      // If source has changed, push the previous fragment and start a new one
+      // if source has changed, push the previous fragment and start a new one
       if (currentFragment) {
         fragments.push(currentFragment)
       }
@@ -342,8 +341,43 @@ async function fetchFlow() {
       selectedFragmentId.value =
         currentFragments[currentFragments.length - 1]._id
     }
+    speakLatestRoxanneWave()
   } else {
     console.error("failed to fetch flow")
+  }
+}
+
+function speakLatestRoxanneWave() {
+  const lastSpokenId = localStorage.getItem(LAST_SPOKEN_WAVE_ID_KEY)
+  const reversedWaves = [...waves.value].reverse()
+
+  for (const wave of reversedWaves) {
+    const isRoxanneWave = wave.source === SOURCES.ROXANNE
+
+    if (isRoxanneWave && wave.data.includes(AUDIO_GLYPH)) {
+      const lines = wave.data.split("\n")
+      const audioSegments = []
+
+      for (const line of lines) {
+        const trimmedLine = line.trim()
+        if (trimmedLine.startsWith(AUDIO_GLYPH)) {
+          const audioText = trimmedLine.substring(AUDIO_GLYPH.length).trim()
+          if (audioText) {
+            audioSegments.push(audioText)
+          }
+        }
+      }
+
+      if (audioSegments.length > 0) {
+        if (wave._id !== lastSpokenId) {
+          const fullAudioText = audioSegments.join(" ")
+          console.log(`TTS TRIGGERED FOR WAVE: ${wave._id}`)
+          console.log(`FULL CONTENT TO SPEAK: ${fullAudioText}`)
+          localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
+        }
+        break // 〔 most recent audio wave found. work is done.
+      }
+    }
   }
 }
 

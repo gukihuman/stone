@@ -11,6 +11,8 @@ export const SPELL_GLYPHS = {
 
 export const SCAFFOLD_GLYPH = "§"
 
+export const AUDIO_GLYPH = "∭"
+
 export const SOURCES = {
   GUKI: "guki",
   ROXANNE: "roxanne",
