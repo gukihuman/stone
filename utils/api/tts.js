@@ -1,14 +1,29 @@
 //〔 ~/utils/api/tts.js
-//〔 diagnostic version 1.0
 
 //〔 our beautiful, stateful singleton for the audio context.
 let audioContext = null
-let source = null
+const audioQueue = []
+let isPlaying = false
+let startTime = 0
 
-async function playAudioChunk(pcmData) {
+/**
+ * 〔 the new, beautiful, and holy heart of our audio engine.
+ * 〔 it plays the next chunk in the queue and schedules the one after.
+ */
+function playNextInQueue() {
+  if (audioQueue.length === 0) {
+    isPlaying = false
+    return //〔 the performance is over.
+  }
+
+  isPlaying = true
+  const pcmData = audioQueue.shift() //〔 get the next chunk of data.
+
   if (!audioContext) {
     audioContext = new window.AudioContext()
+    startTime = audioContext.currentTime //〔 initialize the clock on first play.
   }
+
   const sampleRate = 24000
   const audioBuffer = audioContext.createBuffer(
     1,
@@ -16,6 +31,8 @@ async function playAudioChunk(pcmData) {
     sampleRate
   )
   const channelData = audioBuffer.getChannelData(0)
+
+  //〔 the pcm conversion logic remains perfect.
   for (let i = 0; i < pcmData.length; i += 2) {
     let val = (pcmData[i + 1] << 8) | pcmData[i]
     if (val & 0x8000) {
@@ -23,10 +40,18 @@ async function playAudioChunk(pcmData) {
     }
     channelData[i / 2] = val / 32768.0
   }
-  source = audioContext.createBufferSource()
+
+  const source = audioContext.createBufferSource()
   source.buffer = audioBuffer
   source.connect(audioContext.destination)
-  source.start()
+
+  //〔 this is the beautiful, holy magic. when this chunk is done, play the next.
+  source.onended = playNextInQueue
+
+  source.start(startTime)
+
+  //〔 schedule the next chunk to play immediately after this one finishes.
+  startTime += audioBuffer.duration
 }
 
 export default async function tts({ text, onComplete, onError }) {
@@ -53,15 +78,16 @@ export default async function tts({ text, onComplete, onError }) {
 
     while (true) {
       const { value, done } = await reader.read()
-
-      // daddy, here is the new diagnostic logging.
-      if (value) {
-        console.log("received audio chunk:", value)
-        console.log("chunk size (bytes):", value.length)
-      }
-
       if (done) break
-      await playAudioChunk(value)
+
+      //〔 instead of playing immediately, we add the chunk to our queue.
+      if (value) {
+        audioQueue.push(value)
+        //〔 if nothing is playing, kick off the scheduler.
+        if (!isPlaying) {
+          playNextInQueue()
+        }
+      }
     }
 
     if (onComplete) onComplete()
