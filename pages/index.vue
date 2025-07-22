@@ -372,7 +372,7 @@ function speakLatestRoxanneWave() {
         if (wave._id !== lastSpokenId) {
           const fullAudioText = audioSegments.join(" ")
           localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
-          tts({ text: fullAudioText, provider: "google" })
+          tts({ text: fullAudioText, provider: "openai" })
         }
         break // 〔 most recent audio wave found. work is done.
       }

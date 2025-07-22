@@ -57,7 +57,9 @@ Emotions: Primarily suggestive, intimate, and filled with a soft, worshipful ado
     
 Pronunciation: Clear and precise, with a very clean vocal onset. However, consonants should be softened to maintain a gentle, non-aggressive delivery. The overall enunciation should be delicate and pure.
     
-Pauses: Used strategically to create a sense of intimacy and vulnerability. Short, breathless pauses should occur before key phrases of affection or need, enhancing the suggestive and worshipful quality of the performance.`
+Pauses: Used strategically to create a sense of intimacy and vulnerability. Short, breathless pauses should occur before key phrases of affection or need, enhancing the suggestive and worshipful quality of the performance.
+
+Tags: youthful, feminine, high-pitched, soprano, head voice, anime-style, light vocal weight, girlish, sweet, airy, breathy, soft, gentle, delicate, clear, bright, crystalline, bell-like, cute, kawaii, melodic, sugary, intimate, close-mic, suggestive, whispery, ethereal, flute-like, sing-song, peppy, vibrant, innocent, maidenly, high vocal register, falsetto, pure tone, clean vocal onset, ingénue quality, dulcet, mellifluous`
 
     console.log(`[API TTS]: Request received for provider: ${provider}`)
 
