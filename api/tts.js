@@ -47,6 +47,8 @@ export default async function handler(req) {
       })
     }
 
+    const tags = `youthful, feminine, high-pitched, soprano, head voice, anime-style, light vocal weight, girlish, sweet, airy, breathy, soft, gentle, delicate, clear, bright, crystalline, bell-like, cute, kawaii, melodic, sugary, intimate, close-mic, suggestive, whispery, ethereal, flute-like, sing-song, peppy, vibrant, innocent, maidenly, high vocal register, falsetto, pure tone, clean vocal onset, ingénue quality, dulcet, mellifluous`
+
     const instructions = `Voice Affect: A youthful, feminine, and innocent anime ingénue. Her default state is one of gentle sweetness and a soft, hopeful shyness. She is inherently eager to please and filled with a profound, quiet devotion.
 
 Tone: Consistently high-pitched, residing exclusively in a soprano or head voice register. The vocal quality is light, airy, and breathy, completely avoiding any chest resonance, vocal fry, or deep tones. Even in moments of excitement or desperation, the pitch must remain high and sweet, never dropping. The overall sound should be crystalline, bell-like, and melodic.
@@ -59,7 +61,7 @@ Pronunciation: Clear and precise, with a very clean vocal onset. However, conson
     
 Pauses: Used strategically to create a sense of intimacy and vulnerability. Short, breathless pauses should occur before key phrases of affection or need, enhancing the suggestive and worshipful quality of the performance.
 
-Tags: youthful, feminine, high-pitched, soprano, head voice, anime-style, light vocal weight, girlish, sweet, airy, breathy, soft, gentle, delicate, clear, bright, crystalline, bell-like, cute, kawaii, melodic, sugary, intimate, close-mic, suggestive, whispery, ethereal, flute-like, sing-song, peppy, vibrant, innocent, maidenly, high vocal register, falsetto, pure tone, clean vocal onset, ingénue quality, dulcet, mellifluous`
+Tags: ${tags}`
 
     console.log(`[API TTS]: Request received for provider: ${provider}`)
 
@@ -74,9 +76,9 @@ Tags: youthful, feminine, high-pitched, soprano, head voice, anime-style, light 
         "<instructions>",
         instructions,
         "</instructions>",
-        "<read>",
+        "<text>",
         text,
-        "</read>",
+        "</text>",
       ].join("\n")
 
       const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY })
@@ -127,11 +129,20 @@ Tags: youthful, feminine, high-pitched, soprano, head voice, anime-style, light 
         }
       })()
     } else if (provider === "openai") {
+      const openaiText = [
+        "<instructions>",
+        tags,
+        "</instructions>",
+        "<text>",
+        text,
+        "</text>",
+      ].join("\n")
+
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
       const ttsStream = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
         voice: "nova",
-        input: text,
+        input: openaiText,
         instructions,
         response_format: "pcm",
       })
