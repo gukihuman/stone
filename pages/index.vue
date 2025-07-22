@@ -110,6 +110,10 @@ const shortcuts = {
     y: copyFragmentRawData,
     c: copyLastTwoFragments,
     q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
+    t: () => {
+      localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
+      fetchFlow()
+    },
   },
   input: {
     Escape: () => setStance("observe"),
@@ -372,7 +376,7 @@ function speakLatestRoxanneWave() {
         if (wave._id !== lastSpokenId) {
           const fullAudioText = audioSegments.join(" ")
           localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
-          tts({ text: fullAudioText, provider: "openai" })
+          tts({ text: fullAudioText, provider: "google" })
         }
         break // 〔 most recent audio wave found. work is done.
       }
