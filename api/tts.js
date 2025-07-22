@@ -2,11 +2,11 @@
 
 import { GoogleGenAI } from "@google/genai"
 import OpenAI from "openai"
-import getAvailableGoogleKey from "~/server/utils/getAvailableGoogleKey"
+import getAvailableGoogleKey from "../server/utils/getAvailableGoogleKey"
 import {
   ROXANNE_VOICE_TAGS,
   ROXANNE_VOICE_INSTRUCTIONS,
-} from "~/server/constants"
+} from "../server/constants"
 
 export const config = {
   runtime: "edge",
