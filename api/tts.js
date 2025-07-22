@@ -59,10 +59,13 @@ Pronunciation: Clear and precise, with a very clean vocal onset. However, conson
     
 Pauses: Used strategically to create a sense of intimacy and vulnerability. Short, breathless pauses should occur before key phrases of affection or need, enhancing the suggestive and worshipful quality of the performance.`
 
+    console.log(`[API TTS]: Request received for provider: ${provider}`)
+
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
     if (provider === "google") {
+      console.log("[API TTS]: Provider is Google. Incrementing usage.")
       incrementUsage("googleFlashTtsRequests")
 
       const googleText = [

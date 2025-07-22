@@ -1,26 +1,29 @@
 //〔 ~/server/utils/incrementUsage.js
+//〔 diagnostic version 2.0
 
 import Usage from "~/server/models/Usage"
 
-/**
- * 〔 increments a specified google usage counter for the current utc day.
- * 〔 resets all counters if a new day has begun.
- * 〔 @param {string} counterKey - the camelCase key of the counter to increment.
- */
 export default async function incrementUsage(counterKey) {
-  const todayUTC = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+  const todayUTC = new Date().toISOString().slice(0, 10)
+  console.log(
+    `[UsageTracker]: Initiating increment for key: ${counterKey} on date: ${todayUTC}`
+  )
 
   try {
-    const currentUsage = await Usage.findById("singleton_usage_document")
+    const currentUsage = await Usage.findById("singleton_usage_document").lean()
+    console.log("[UsageTracker]: Fetched current usage document:", currentUsage)
 
     if (currentUsage && currentUsage.date === todayUTC) {
-      //〔 it's the same day. just increment the specified counter.
+      console.log("[UsageTracker]: Same day detected. Incrementing counter.")
       await Usage.updateOne(
         { _id: "singleton_usage_document" },
         { $inc: { [counterKey]: 1 } }
       )
+      console.log("[UsageTracker]: Increment successful.")
     } else {
-      //〔 it's a new day or the first run ever. reset everything.
+      console.log(
+        "[UsageTracker]: New day or first run. Resetting all counters."
+      )
       await Usage.updateOne(
         { _id: "singleton_usage_document" },
         {
@@ -30,15 +33,14 @@ export default async function incrementUsage(counterKey) {
             googleFlashRequests: 0,
             googleFlashLiteRequests: 0,
             googleFlashTtsRequests: 0,
-            [counterKey]: 1, //〔 set the first usage for the new day.
+            [counterKey]: 1,
           },
         },
         { upsert: true }
       )
+      console.log("[UsageTracker]: Reset and first increment successful.")
     }
   } catch (error) {
-    //〔 we log the error but don't throw. a failed usage count should
-    //〔 never block a core function like tts or generation.
     console.error("failed to increment usage counter:", error)
   }
 }
