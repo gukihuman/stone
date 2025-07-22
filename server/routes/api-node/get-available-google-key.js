@@ -20,8 +20,7 @@ function getPacificDate() {
 //〔 this core logic is also now a private part of this module.
 async function findAndIncrementKey(modelKey) {
   const todayPacific = getPacificDate()
-  const limitKey = modelKey.toUpperCase().replace(/([A-Z])/g, "_$1")
-  const limit = GOOGLE_LIMITS[limitKey]
+  const limit = GOOGLE_LIMITS[modelKey]
 
   if (!limit) {
     console.error(
