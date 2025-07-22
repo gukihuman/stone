@@ -2,6 +2,7 @@
 
 import { GoogleGenAI } from "@google/genai"
 import OpenAI from "openai"
+import incrementUsage from "~/server/utils/incrementUsage"
 
 export const config = {
   runtime: "edge",
@@ -62,6 +63,8 @@ Pauses: Used strategically to create a sense of intimacy and vulnerability. Shor
     const writer = writable.getWriter()
 
     if (provider === "google") {
+      incrementUsage("googleFlashTtsRequests")
+
       const googleText = [
         "<instructions>",
         instructions,
