@@ -113,20 +113,11 @@ export default async function handler(req) {
     } else if (provider === "openai") {
       ;(async () => {
         try {
-          const prompt = [
-            "<instructions>",
-            ROXANNE_VOICE_TAGS,
-            "</instructions>",
-            "<text>",
-            text,
-            "</text>",
-          ].join("\n")
-
           const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
           const ttsStream = await openai.audio.speech.create({
             model: "gpt-4o-mini-tts",
             voice: "nova",
-            input: prompt,
+            input: text,
             instructions: ROXANNE_VOICE_INSTRUCTIONS,
             response_format: "pcm",
           })
