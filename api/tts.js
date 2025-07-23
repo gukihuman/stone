@@ -97,8 +97,12 @@ export default async function handler(req) {
             },
           })
           for await (const chunk of ttsStream) {
-            await writer.ready
-            await writer.write(b64ToUint8(b64))
+            const b64 =
+              chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+            if (b64) {
+              await writer.ready
+              await writer.write(b64ToUint8(b64))
+            }
           }
           await writer.close()
         } catch (e) {
