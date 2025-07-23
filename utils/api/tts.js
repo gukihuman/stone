@@ -14,6 +14,43 @@ async function usePcmPlayer() {
   return pcmPlayer
 }
 
+/**
+ * 〔 a private async generator to handle the purification of any raw pcm stream.
+ * 〔 it yields only even-lengthed, pure chunks.
+ */
+async function* purifyStream(reader) {
+  let carryByte
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+    if (!value || !value.byteLength) continue
+
+    let buf = value
+
+    if (carryByte !== undefined) {
+      const merged = new Uint8Array(buf.byteLength + 1)
+      merged[0] = carryByte
+      merged.set(buf, 1)
+      buf = merged
+      carryByte = undefined
+    }
+
+    if (buf.byteLength & 1) {
+      carryByte = buf[buf.byteLength - 1]
+      buf = buf.subarray(0, buf.byteLength - 1)
+    }
+
+    if (buf.byteLength) {
+      yield buf
+    }
+  }
+
+  if (carryByte !== undefined) {
+    yield Uint8Array.of(carryByte, 0)
+  }
+}
+
 export default async function tts({ text, provider, onComplete, onError }) {
   const { baseUrl } = useRuntimeConfig().public
   try {
@@ -32,50 +69,10 @@ export default async function tts({ text, provider, onComplete, onError }) {
       throw new Error(`TTS request failed: ${res.status} ${res.statusText}`)
     }
 
+    //〔 we now feed the raw reader to our purifier.
     const reader = res.body.getReader()
-    let chunkIndex = 0
-    let carryByte // undefined | number (0‑255) persists across network chunks
-
-    while (true) {
-      const { value, done } = await reader.read()
-      if (done) break
-      if (!value || !value.byteLength) continue
-
-      console.log(
-        `[Producer]: Received network chunk #${chunkIndex} of ${value.byteLength} bytes. Awaiting enqueue...`
-      )
-
-      let buf = value
-
-      /* prepend stray byte from previous chunk (if any) */
-      if (carryByte !== undefined) {
-        const merged = new Uint8Array(buf.byteLength + 1)
-        merged[0] = carryByte
-        merged.set(buf, 1)
-        buf = merged
-        carryByte = undefined
-      }
-
-      /* split off new stray byte (if odd length) */
-      if (buf.byteLength & 1) {
-        carryByte = buf[buf.byteLength - 1]
-        buf = buf.subarray(0, buf.byteLength - 1)
-      }
-
-      /* enqueue only even‑length payload */
-      if (buf.byteLength) {
-        console.log(
-          `[Producer]: Enqueueing ${buf.byteLength} bytes (even length).`
-        )
-        await player.enqueue(buf)
-      }
-
-      chunkIndex++
-    }
-
-    /* flush final carry, if any */
-    if (carryByte !== undefined) {
-      await player.enqueue(Uint8Array.of(carryByte, 0))
+    for await (const cleanChunk of purifyStream(reader)) {
+      await player.enqueue(cleanChunk)
     }
 
     if (onComplete) onComplete()

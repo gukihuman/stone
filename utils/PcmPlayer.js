@@ -78,27 +78,18 @@ export default class PcmPlayer {
     let offset = 0
     const cap = this.capacity
 
-    console.log(`[Consumer]: Enqueue called with ${src.length} samples.`)
-
     while (offset < src.length) {
       const readIdx = Atomics.load(this.control, 0)
       const writeIdx = Atomics.load(this.control, 1)
       const used = (writeIdx - readIdx + cap) % cap
 
-      console.log(`[Consumer]: Loop tick. Buffer used: ${used}/${cap}.`)
-
       if (used >= this.highWater) {
-        console.log(
-          `[Consumer]: Buffer is full. Sleeping for ${this.pollMs}ms.`
-        )
         await this.#sleep()
         continue
       }
 
       const space = cap - used - 1
       const chunk = Math.min(space, src.length - offset)
-
-      console.log(`[Consumer]: Enqueuing ${chunk} samples.`)
 
       if (writeIdx + chunk <= cap) {
         this.data.set(src.subarray(offset, offset + chunk), writeIdx)
@@ -111,6 +102,5 @@ export default class PcmPlayer {
       Atomics.store(this.control, 1, (writeIdx + chunk) % cap)
       offset += chunk
     }
-    console.log(`[Consumer]: Enqueue finished for this chunk.`)
   }
 }
