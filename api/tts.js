@@ -78,7 +78,7 @@ export default async function handler(req) {
 
           const prompt = [
             "<instructions>",
-            ROXANNE_VOICE_INSTRUCTIONS,
+            ROXANNE_VOICE_TAGS,
             "</instructions>",
             "<text>",
             text,
