@@ -105,7 +105,9 @@ export default async function handler(req) {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
           },
         },
-      })(async () => {
+      })
+
+      ;(async () => {
         try {
           let carry = null // 0‑or‑1‑byte Uint8Array
 
