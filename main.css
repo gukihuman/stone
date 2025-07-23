@@ -13,7 +13,7 @@ html {
   @apply focus:outline-none;
 }
 *::-webkit-scrollbar {
-  @apply w-4;
+  @apply w-10;
 }
 .scroll-paper::-webkit-scrollbar-thumb {
   @apply bg-coffee-650;

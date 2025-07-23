@@ -50,7 +50,7 @@
         </transition-group>
         <!-- ## screen -->
         <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
-          <div class="overflow-hidden h-full">
+          <div class="overflow-hidden rounded-lg h-full">
             <div
               class="h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
