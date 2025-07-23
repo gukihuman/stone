@@ -109,38 +109,31 @@ export default async function handler(req) {
 
       ;(async () => {
         try {
-          let carry = null // 0‑or‑1‑byte Uint8Array
+          let strayByte
 
-          for await (const chunk of ttsStream) {
-            const b64 =
-              chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
-            if (!b64) continue
-
-            // decode current block
-            let buf = b64ToUint8(b64)
-
-            // prepend carry from the previous iteration (if any)
-            if (carry) {
-              const merged = new Uint8Array(carry.byteLength + buf.byteLength)
-              merged.set(carry, 0)
-              merged.set(buf, carry.byteLength)
-              buf = merged // merged is a *fresh* buffer
-              carry = null
+          for await (let buf of ttsStream.body) {
+            if (strayByte !== undefined) {
+              const merged = new Uint8Array(buf.byteLength + 1)
+              merged[0] = strayByte
+              merged.set(buf, 1)
+              buf = merged
+              strayByte = undefined
             }
 
-            // split buf into an even‑length payload and an optional 1‑byte carry
-            const evenLen = buf.byteLength & ~1 // mask off lowest bit
-            if (evenLen) {
-              await writer.write(buf.subarray(0, evenLen)) // safe: new backing store
-            }
             if (buf.byteLength & 1) {
-              carry = buf.subarray(buf.byteLength - 1) // 1‑byte view
+              strayByte = buf[buf.byteLength - 1]
+              buf = buf.subarray(0, -1)
+            }
+
+            if (buf.byteLength) {
+              await writer.ready
+              await writer.write(buf)
             }
           }
 
-          // flush any remaining lone byte
-          if (carry) {
-            await writer.write(Uint8Array.of(carry[0], 0)) // pad with 0 → even
+          if (strayByte !== undefined) {
+            await writer.ready
+            await writer.write(new Uint8Array([strayByte, 0]))
           }
 
           await writer.close()
