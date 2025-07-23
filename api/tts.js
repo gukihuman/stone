@@ -76,7 +76,7 @@ export default async function handler(req) {
           const { success, apiKey } = await oracleRes.json()
           if (!success) throw new Error("oracle failed")
 
-          const text = [
+          const prompt = [
             "<instructions>",
             ROXANNE_VOICE_INSTRUCTIONS,
             "</instructions>",
@@ -88,7 +88,7 @@ export default async function handler(req) {
           const ai = new GoogleGenAI({ apiKey })
           const ttsStream = await ai.models.generateContentStream({
             model: "gemini-2.5-flash-preview-tts",
-            contents: [{ role: "user", parts: [{ text }] }],
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
             config: {
               responseModalities: ["audio"],
               speechConfig: {
@@ -113,7 +113,7 @@ export default async function handler(req) {
     } else if (provider === "openai") {
       ;(async () => {
         try {
-          const input = [
+          const prompt = [
             "<instructions>",
             ROXANNE_VOICE_TAGS,
             "</instructions>",
@@ -126,7 +126,7 @@ export default async function handler(req) {
           const ttsStream = await openai.audio.speech.create({
             model: "gpt-4o-mini-tts",
             voice: "nova",
-            input,
+            input: prompt,
             instructions: ROXANNE_VOICE_INSTRUCTIONS,
             response_format: "pcm",
           })
