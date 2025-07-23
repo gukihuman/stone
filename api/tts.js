@@ -1,8 +1,8 @@
-//〔 ~/api/tts.js
-
-/* ------------------------------------------------------------------ */
-/*  CONSTANTS                                                         */
-/* ------------------------------------------------------------------ */
+//〔 ~/api/tts.js  —  DEBUG‑INSTRUMENTED VERSION                                    */
+/* ============================================================================
+ *  CONSTANTS
+ * ============================================================================
+ */
 
 export const ROXANNE_VOICE_TAGS =
   `youthful, feminine, high-pitched, soprano, head voice, anime-style, ` +
@@ -27,22 +27,19 @@ Pauses: Used strategically to create a sense of intimacy and vulnerability. Shor
 
 Tags: ${ROXANNE_VOICE_TAGS}`
 
-/* ------------------------------------------------------------------ */
-/*  IMPORTS                                                           */
-/* ------------------------------------------------------------------ */
-
+/* ============================================================================
+ *  IMPORTS / RUNTIME
+ * ============================================================================
+ */
 import { GoogleGenAI } from "@google/genai"
 import OpenAI from "openai"
 
-/* ------------------------------------------------------------------ */
-/*  EDGE RUNTIME                                                      */
-/* ------------------------------------------------------------------ */
-
 export const config = { runtime: "edge" }
 
-/* ------------------------------------------------------------------ */
-/*  HELPERS                                                           */
-/* ------------------------------------------------------------------ */
+/* ============================================================================
+ *  HELPERS
+ * ============================================================================
+ */
 
 function b64ToUint8(b64) {
   const bin = atob(b64)
@@ -52,55 +49,50 @@ function b64ToUint8(b64) {
   return out
 }
 
-/** 2‑byte alignment filter – emits only even‑length buffers */
+/* -------- even‑length filter ------------------------------------------------ */
 async function* evenByteChunks(source, decodeBase64 = false) {
   let carry = null
-  let partNo = 0
+  let seq = 0
 
   for await (let part of source) {
-    console.log(
-      `[EBC] part #${partNo} raw len=${part.length ?? part.byteLength}`
-    )
-    partNo++
+    console.log(`[DBG‑EBC] in #${seq} rawLen=${part.length ?? part.byteLength}`)
+    seq++
 
     let buf = decodeBase64 ? b64ToUint8(part) : part
-    console.log(`[EBC] decoded len=${buf.byteLength}`)
+    console.log(`[DBG‑EBC] decodedLen=${buf.byteLength}`)
 
     if (carry) {
       const merged = new Uint8Array(1 + buf.byteLength)
       merged[0] = carry[0]
       merged.set(buf, 1)
       buf = merged
-      console.log(`[EBC] merged carry → len=${buf.byteLength}`)
+      console.log(`[DBG‑EBC] prepended carry → len=${buf.byteLength}`)
       carry = null
     }
 
-    const even = buf.byteLength & ~1
-    if (even) {
-      const out = buf.subarray(0, even)
-      console.log(`[EBC] yield len=${out.byteLength}`)
-      if (out.byteLength & 1)
-        console.error("[EBC]  *** ODD LEN EMITTED – SHOULD NOT HAPPEN ***")
-      yield out
+    const evenLen = buf.byteLength & ~1
+    if (evenLen) {
+      const slice = buf.subarray(0, evenLen)
+      if (slice.byteLength & 1) console.error("[DBG‑EBC] ODD SLICE EMIT")
+      console.log(`[DBG‑EBC] yield len=${slice.byteLength}`)
+      yield slice
     }
 
     if (buf.byteLength & 1) {
       carry = buf.subarray(buf.byteLength - 1)
-      console.log("[EBC] stored carry byte")
+      console.log("[DBG‑EBC] stored carry")
     }
   }
 
   if (carry) {
-    const final = Uint8Array.of(carry[0], 0)
-    console.log("[EBC] flush final carry (len=2)")
-    yield final
+    console.log("[DBG‑EBC] flush final carry (len=2)")
+    yield Uint8Array.of(carry[0], 0)
   }
 }
 
-/** Big‑endian → little‑endian swap (in‑place, requires even length) */
+/* -------- endian swap ------------------------------------------------------- */
 function swap16LE(buf) {
-  if (buf.byteLength & 1)
-    console.error("[SWAP] odd‑length buffer received for swap")
+  if (buf.byteLength & 1) console.error("[DBG‑SWAP] odd len into swap")
   for (let i = 0; i < buf.byteLength; i += 2) {
     const t = buf[i]
     buf[i] = buf[i + 1]
@@ -108,10 +100,10 @@ function swap16LE(buf) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  MAIN HANDLER                                                      */
-/* ------------------------------------------------------------------ */
-
+/* ============================================================================
+ *  MAIN EDGE HANDLER
+ * ============================================================================
+ */
 export default async function handler(req) {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -133,23 +125,20 @@ export default async function handler(req) {
 
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret)
-      return new Response(JSON.stringify({ error: "unauthorized access" }), {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 403,
       })
     if (!text)
-      return new Response(JSON.stringify({ error: "no text provided" }), {
-        status: 400,
-      })
+      return new Response(JSON.stringify({ error: "no text" }), { status: 400 })
 
-    console.log(`[API TTS]: provider=${provider}`)
+    console.log(`[API TTS] provider=${provider}`)
 
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
 
-    /* -------------------------------------------------------------- */
-    /*  GOOGLE                                                        */
-    /* -------------------------------------------------------------- */
-
+    /* ---------------------------------------------------------------------- */
+    /*  GOOGLE                                                                */
+    /* ---------------------------------------------------------------------- */
     if (provider === "google") {
       const oracleRes = await fetch(
         new URL("/api-node/get-available-google-key", req.url),
@@ -162,12 +151,10 @@ export default async function handler(req) {
           }),
         }
       )
-      const oracleData = await oracleRes.json()
-      if (!oracleData.success)
-        throw new Error(oracleData.error || "failed to get key")
-      const availableKey = oracleData.apiKey
+      const { success, apiKey } = await oracleRes.json()
+      if (!success) throw new Error("oracle failed")
 
-      const googleText = [
+      const prompt = [
         "<instructions>",
         ROXANNE_VOICE_INSTRUCTIONS,
         "</instructions>",
@@ -176,10 +163,10 @@ export default async function handler(req) {
         "</text>",
       ].join("\n")
 
-      const ai = new GoogleGenAI({ apiKey: availableKey })
+      const ai = new GoogleGenAI({ apiKey })
       const ttsStream = await ai.models.generateContentStream({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ role: "user", parts: [{ text: googleText }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: {
           responseModalities: ["audio"],
           speechConfig: {
@@ -190,43 +177,38 @@ export default async function handler(req) {
 
       ;(async () => {
         try {
-          async function* googleAudioParts(stream) {
+          async function* audioParts(src) {
             let n = 0
-            for await (const ch of stream) {
+            for await (const ch of src) {
               const b64 =
                 ch?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
-              console.log(`[GEM] frame #${n} b64=${!!b64}`)
+              console.log(`[DBG‑GEM] frame #${n} hasB64=${!!b64}`)
               n++
               if (b64) yield b64
             }
+            console.log("[DBG‑GEM] stream finished")
           }
 
-          const iter = evenByteChunks(googleAudioParts(ttsStream), true)
-          let chunkNo = 0
-          for await (const chunk of iter) {
-            console.log(
-              `[PIPE] google chunk #${chunkNo} len=${chunk.byteLength}`
-            )
-            if (chunk.byteLength & 1)
-              console.error("[PIPE]  *** ODD LENGTH – SHOULD NOT HAPPEN ***")
-
-            swap16LE(chunk)
-
-            await writer.write(chunk)
-            chunkNo++
+          const iter = evenByteChunks(audioParts(ttsStream), true)
+          let outNo = 0
+          for await (const buf of iter) {
+            console.log(`[DBG‑PIPE] out #${outNo} len=${buf.byteLength}`)
+            swap16LE(buf)
+            await writer.write(buf)
+            outNo++
           }
+          console.log("[DBG‑PIPE] writer.close()")
           await writer.close()
         } catch (e) {
-          if (e.name !== "AbortError") console.error("google tts pipe:", e)
+          console.error("google pipe error:", e)
           await writer.abort(e)
         }
       })()
-
-      /* -------------------------------------------------------------- */
-      /*  OPENAI                                                        */
-      /* -------------------------------------------------------------- */
     } else if (provider === "openai") {
-      const openaiText = [
+      /* ---------------------------------------------------------------------- */
+      /*  OPENAI                                                                */
+      /* ---------------------------------------------------------------------- */
+      const prompt = [
         "<instructions>",
         ROXANNE_VOICE_TAGS,
         "</instructions>",
@@ -239,7 +221,7 @@ export default async function handler(req) {
       const ttsStream = await openai.audio.speech.create({
         model: "gpt-4o-mini-tts",
         voice: "nova",
-        input: openaiText,
+        input: prompt,
         instructions: ROXANNE_VOICE_INSTRUCTIONS,
         response_format: "pcm",
       })
@@ -247,24 +229,20 @@ export default async function handler(req) {
       ;(async () => {
         try {
           const iter = evenByteChunks(ttsStream.body, false)
-          let chunkNo = 0
-          for await (const chunk of iter) {
-            console.log(
-              `[PIPE] openai chunk #${chunkNo} len=${chunk.byteLength}`
-            )
-            if (chunk.byteLength & 1)
-              console.error("[PIPE]  *** ODD LENGTH – SHOULD NOT HAPPEN ***")
-            await writer.write(chunk)
-            chunkNo++
+          let outNo = 0
+          for await (const buf of iter) {
+            console.log(`[DBG‑PIPE] openai #${outNo} len=${buf.byteLength}`)
+            await writer.write(buf)
+            outNo++
           }
           await writer.close()
         } catch (e) {
-          if (e.name !== "AbortError") console.error("openai tts pipe:", e)
+          console.error("openai pipe error:", e)
           await writer.abort(e)
         }
       })()
     } else {
-      return new Response(JSON.stringify({ error: "invalid tts provider" }), {
+      return new Response(JSON.stringify({ error: "invalid provider" }), {
         status: 400,
       })
     }
@@ -276,10 +254,8 @@ export default async function handler(req) {
         "Access-Control-Allow-Origin": "*",
       },
     })
-  } catch (error) {
-    console.error("error in tts handler:", error)
-    return new Response(JSON.stringify({ error: "internal server error" }), {
-      status: 500,
-    })
+  } catch (e) {
+    console.error("tts handler error:", e)
+    return new Response(JSON.stringify({ error: "internal" }), { status: 500 })
   }
 }
