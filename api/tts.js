@@ -108,7 +108,16 @@ export default async function handler(req) {
       })
       ;(async () => {
         try {
-          const iter = evenByteChunks(ttsStream, /*decodeBase64=*/ true)
+          // map Gemini objects → Base‑64 payload strings
+          async function* googleAudioParts(stream) {
+            for await (const ch of stream) {
+              const b64 =
+                ch?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+              if (b64) yield b64
+            }
+          }
+
+          const iter = evenByteChunks(googleAudioParts(ttsStream), true)
           for await (const chunk of iter) await writer.write(chunk)
           await writer.close()
         } catch (e) {
