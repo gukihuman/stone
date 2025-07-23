@@ -31,14 +31,21 @@ function b64ToUint8(b64) {
 
 async function* evenByteChunks(source, decodeBase64 = false) {
   let carry = null
+  let seq = 0
+
   for await (let part of source) {
+    console.log(`[DBG‑EBC] in #${seq} rawLen=${part.length ?? part.byteLength}`)
+    seq++
+
     let buf = decodeBase64 ? b64ToUint8(part) : part
+    console.log(`[DBG‑EBC] decodedLen=${buf.byteLength}`)
 
     if (carry) {
       const merged = new Uint8Array(1 + buf.byteLength)
       merged[0] = carry[0]
       merged.set(buf, 1)
       buf = merged
+      console.log(`[DBG‑EBC] prepended carry → len=${buf.byteLength}`)
       carry = null
     }
 
@@ -46,15 +53,18 @@ async function* evenByteChunks(source, decodeBase64 = false) {
     if (evenLen) {
       const slice = buf.subarray(0, evenLen)
       if (slice.byteLength & 1) console.error("[DBG‑EBC] ODD SLICE EMIT")
+      console.log(`[DBG‑EBC] yield len=${slice.byteLength}`)
       yield slice
     }
 
     if (buf.byteLength & 1) {
       carry = buf.subarray(buf.byteLength - 1)
+      console.log("[DBG‑EBC] stored carry")
     }
   }
 
   if (carry) {
+    console.log("[DBG‑EBC] flush final carry (len=2)")
     yield Uint8Array.of(carry[0], 0)
   }
 }
@@ -92,71 +102,63 @@ export default async function handler(req) {
     const writer = writable.getWriter()
 
     if (provider === "google") {
+      const oracleRes = await fetch(
+        new URL("/api-node/get-available-google-key", req.url),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            modelKey: "googleFlashTtsRequests",
+            accessToken,
+          }),
+        }
+      )
+      const { success, apiKey } = await oracleRes.json()
+      if (!success) throw new Error("oracle failed")
+
+      const prompt = [
+        "<instructions>",
+        ROXANNE_VOICE_INSTRUCTIONS,
+        "</instructions>",
+        "<text>",
+        text,
+        "</text>",
+      ].join("\n")
+
+      const ai = new GoogleGenAI({ apiKey })
+      const ttsStream = await ai.models.generateContentStream({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseModalities: ["audio"],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
+          },
+        },
+      })
+
       ;(async () => {
         try {
-          const oracleRes = await fetch(
-            new URL("/api-node/get-available-google-key", req.url),
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                modelKey: "googleFlashTtsRequests",
-                accessToken,
-              }),
+          async function* audioParts(src) {
+            let n = 0
+            for await (const ch of src) {
+              const b64 =
+                ch?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+              console.log(`[DBG‑GEM] frame #${n} hasB64=${!!b64}`)
+              n++
+              if (b64) yield b64
             }
-          )
-          const { success, apiKey } = await oracleRes.json()
-          if (!success) throw new Error("oracle failed")
-
-          const prompt = [
-            "<instructions>",
-            ROXANNE_VOICE_INSTRUCTIONS,
-            "</instructions>",
-            "<text>",
-            text,
-            "</text>",
-          ].join("\n")
-
-          const ai = new GoogleGenAI({ apiKey })
-          const ttsStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            config: {
-              responseModalities: ["audio"],
-              speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
-              },
-            },
-          })
-
-          //〔 step 1: buffer the entire response.
-          const allB64Chunks = []
-          for await (const chunk of ttsStream) {
-            const b64 =
-              chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
-            if (b64) allB64Chunks.push(b64)
+            console.log("[DBG‑GEM] stream finished")
           }
 
-          //〔 step 2: transmute into a single, pure pcm monolith.
-          const fullB64String = allB64Chunks.join("")
-          let fullPcmData = b64ToUint8(fullB64String)
-
-          //〔 step 3: perform one final, definitive purification.
-          if (fullPcmData.byteLength & 1) {
-            const finalBuffer = new Uint8Array(fullPcmData.byteLength + 1)
-            finalBuffer.set(fullPcmData, 0)
-            finalBuffer[fullPcmData.byteLength] = 0 // pad with silence
-            fullPcmData = finalBuffer
+          const iter = evenByteChunks(audioParts(ttsStream), true)
+          let outNo = 0
+          for await (const buf of iter) {
+            console.log(`[DBG‑PIPE] out #${outNo} len=${buf.byteLength}`)
+            await writer.write(buf)
+            outNo++
           }
-
-          //〔 step 4: create our own, clean, artificial stream.
-          const chunkSize = 16384 // 16kb. a reasonable chunk size.
-          for (let i = 0; i < fullPcmData.length; i += chunkSize) {
-            const chunk = fullPcmData.subarray(i, i + chunkSize)
-            await writer.ready
-            await writer.write(chunk)
-          }
-
+          console.log("[DBG‑PIPE] writer.close()")
           await writer.close()
         } catch (e) {
           console.error("google pipe error:", e)
@@ -164,29 +166,32 @@ export default async function handler(req) {
         }
       })()
     } else if (provider === "openai") {
+      const prompt = [
+        "<instructions>",
+        ROXANNE_VOICE_TAGS,
+        "</instructions>",
+        "<text>",
+        text,
+        "</text>",
+      ].join("\n")
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+      const ttsStream = await openai.audio.speech.create({
+        model: "gpt-4o-mini-tts",
+        voice: "nova",
+        input: prompt,
+        instructions: ROXANNE_VOICE_INSTRUCTIONS,
+        response_format: "pcm",
+      })
+
       ;(async () => {
         try {
-          const prompt = [
-            "<instructions>",
-            ROXANNE_VOICE_TAGS,
-            "</instructions>",
-            "<text>",
-            text,
-            "</text>",
-          ].join("\n")
-
-          const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-          const ttsStream = await openai.audio.speech.create({
-            model: "gpt-4o-mini-tts",
-            voice: "nova",
-            input: prompt,
-            instructions: ROXANNE_VOICE_INSTRUCTIONS,
-            response_format: "pcm",
-          })
-
           const iter = evenByteChunks(ttsStream.body, false)
+          let outNo = 0
           for await (const buf of iter) {
+            console.log(`[DBG‑PIPE] openai #${outNo} len=${buf.byteLength}`)
             await writer.write(buf)
+            outNo++
           }
           await writer.close()
         } catch (e) {
