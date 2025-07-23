@@ -118,7 +118,10 @@ export default async function handler(req) {
           }
 
           const iter = evenByteChunks(googleAudioParts(ttsStream), true)
-          for await (const chunk of iter) await writer.write(chunk)
+          for await (const chunk of iter) {
+            swap16LE(chunk)
+            await writer.write(chunk)
+          }
           await writer.close()
         } catch (e) {
           if (e.name !== "AbortError") console.error("google tts pipe:", e)
@@ -161,7 +164,7 @@ export default async function handler(req) {
 
     return new Response(readable, {
       headers: {
-        "Content-Type": "audio/L16; rate=24000",
+        "Content-Type": "audio/L16; rate=24000; endian=little",
         "Cache-Control": "no-cache",
         "Access-Control-Allow-Origin": "*",
       },
@@ -202,4 +205,13 @@ async function* evenByteChunks(source, decodeBase64 = false) {
 
   // flush final carry (pad with 0)
   if (carry) yield Uint8Array.of(carry[0], 0)
+}
+
+/** In‑place 16‑bit endian swap (big → little). Length must be even. */
+function swap16LE(buf) {
+  for (let i = 0; i < buf.byteLength; i += 2) {
+    const t = buf[i]
+    buf[i] = buf[i + 1]
+    buf[i + 1] = t
+  }
 }
