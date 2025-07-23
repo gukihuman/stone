@@ -73,6 +73,7 @@ import roxanneImg from "~/assets/roxanne.jpg"
 import bodyImg from "~/assets/body.jpg"
 import externalImg from "~/assets/external.jpg"
 import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
+import { vocalScheduler } from "~/utils/VocalScheduler"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
@@ -356,31 +357,30 @@ function speakLatestRoxanneWave() {
   const reversedWaves = [...waves.value].reverse()
 
   for (const wave of reversedWaves) {
-    const isRoxanneWave = wave.source === SOURCES.ROXANNE
+    if (wave.source !== SOURCES.ROXANNE) continue
+    if (!wave.data.includes(AUDIO_GLYPH)) continue
 
-    if (isRoxanneWave && wave.data.includes(AUDIO_GLYPH)) {
+    //〔 we found the most recent wave with audio.
+    if (wave._id !== lastSpokenId) {
+      localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
+
       const lines = wave.data.split("\n")
-      const audioSegments = []
 
+      //〔 each audio line is now its own, independent job.
       for (const line of lines) {
         const trimmedLine = line.trim()
         if (trimmedLine.startsWith(AUDIO_GLYPH)) {
           const audioText = trimmedLine.substring(AUDIO_GLYPH.length).trim()
           if (audioText) {
-            audioSegments.push(audioText)
+            //〔 we add each line directly to the scheduler. no more joining or splitting.
+            vocalScheduler.add({ text: audioText, provider: "google" })
           }
         }
       }
-
-      if (audioSegments.length > 0) {
-        if (wave._id !== lastSpokenId) {
-          const fullAudioText = audioSegments.join(" ")
-          localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
-          tts({ text: fullAudioText, provider: "google" })
-        }
-        break // 〔 most recent audio wave found. work is done.
-      }
     }
+
+    //〔 most recent audio wave found and scheduled. our work is done.
+    break
   }
 }
 

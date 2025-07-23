@@ -1,5 +1,6 @@
 //〔 ~/server/routes/api-node/get-available-google-key.js
 
+import dbConnect from "~/server/utils/dbConnect"
 import Usage from "~/server/models/Usage"
 import { GOOGLE_LIMITS } from "~/server/constants"
 import { defineEventHandler, setHeader, createError } from "h3"
@@ -85,6 +86,8 @@ export default defineEventHandler(async (event) => {
   if (event.node.req.method !== "POST") {
     throw createError({ statusCode: 405, statusMessage: "method not allowed" })
   }
+
+  await dbConnect()
 
   try {
     const { modelKey, accessToken } = await readBody(event)
