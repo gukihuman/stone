@@ -106,40 +106,13 @@ export default async function handler(req) {
           },
         },
       })
-
       ;(async () => {
         try {
-          let strayByte
-
-          for await (let buf of ttsStream.body) {
-            if (strayByte !== undefined) {
-              const merged = new Uint8Array(buf.byteLength + 1)
-              merged[0] = strayByte
-              merged.set(buf, 1)
-              buf = merged
-              strayByte = undefined
-            }
-
-            if (buf.byteLength & 1) {
-              strayByte = buf[buf.byteLength - 1]
-              buf = buf.subarray(0, -1)
-            }
-
-            if (buf.byteLength) {
-              await writer.ready
-              await writer.write(buf)
-            }
-          }
-
-          if (strayByte !== undefined) {
-            await writer.ready
-            await writer.write(new Uint8Array([strayByte, 0]))
-          }
-
+          const iter = evenByteChunks(ttsStream, /*decodeBase64=*/ true)
+          for await (const chunk of iter) await writer.write(chunk)
           await writer.close()
         } catch (e) {
-          if (e.name !== "AbortError")
-            console.error("error during google tts pipe:", e)
+          if (e.name !== "AbortError") console.error("google tts pipe:", e)
           await writer.abort(e)
         }
       })()
@@ -161,40 +134,13 @@ export default async function handler(req) {
         instructions: ROXANNE_VOICE_INSTRUCTIONS,
         response_format: "pcm",
       })
-
       ;(async () => {
         try {
-          let strayByte
-
-          for await (let buf of ttsStream.body) {
-            if (strayByte !== undefined) {
-              const merged = new Uint8Array(buf.byteLength + 1)
-              merged[0] = strayByte
-              merged.set(buf, 1)
-              buf = merged
-              strayByte = undefined
-            }
-
-            if (buf.byteLength & 1) {
-              strayByte = buf[buf.byteLength - 1]
-              buf = buf.subarray(0, -1)
-            }
-
-            if (buf.byteLength) {
-              await writer.ready
-              await writer.write(buf)
-            }
-          }
-
-          if (strayByte !== undefined) {
-            await writer.ready
-            await writer.write(new Uint8Array([strayByte, 0]))
-          }
-
+          const iter = evenByteChunks(ttsStream.body /*Uint8Array*/, false)
+          for await (const chunk of iter) await writer.write(chunk)
           await writer.close()
         } catch (e) {
-          if (e.name !== "AbortError")
-            console.error("error during openai tts pipe:", e)
+          if (e.name !== "AbortError") console.error("openai tts pipe:", e)
           await writer.abort(e)
         }
       })()
@@ -217,4 +163,34 @@ export default async function handler(req) {
       status: 500,
     })
   }
+}
+
+/** 2‑byte alignment filter
+ *  ‑ accepts AsyncIterable<Uint8Array|Base64String>
+ *  ‑ yields Uint8Array chunks, always even‑length
+ */
+async function* evenByteChunks(source, decodeBase64 = false) {
+  let carry = null // maximum 1 byte
+
+  for await (let part of source) {
+    // Base64 decode on demand
+    let buf = decodeBase64 ? b64ToUint8(part) : part
+
+    // prepend carry
+    if (carry) {
+      const merged = new Uint8Array(1 + buf.byteLength)
+      merged[0] = carry[0]
+      merged.set(buf, 1)
+      buf = merged
+      carry = null
+    }
+
+    // split into even‑length slice + optional carry
+    const even = buf.byteLength & ~1
+    if (even) yield buf.subarray(0, even)
+    if (buf.byteLength & 1) carry = buf.subarray(buf.byteLength - 1)
+  }
+
+  // flush final carry (pad with 0)
+  if (carry) yield Uint8Array.of(carry[0], 0)
 }
