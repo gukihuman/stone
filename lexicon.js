@@ -9,6 +9,12 @@ export const SPELL_GLYPHS = {
   CLOSE: "▷",
 }
 
+export const CADENCE_GLYPHS = {
+  SPARK: "〔",
+  THOUGHT: "✎",
+  VERSE: "▰",
+}
+
 export const SCAFFOLD_GLYPH = "§"
 
 export const AUDIO_GLYPH = "∭"

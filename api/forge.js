@@ -99,7 +99,7 @@ export default async function handler(req) {
         }
 
         // step 2: generate the content.
-        await sendStatus("pantheon accepts. thinking...")
+        await sendStatus("thinking...")
         const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
         const responseStream = await ai.models.generateContentStream({
           model: "gemini-2.5-pro",
