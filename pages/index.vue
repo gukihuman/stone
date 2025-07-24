@@ -7,15 +7,16 @@
       <!-- # manifest -->
       <div class="h-full flex" v-show="stance === 'manifest'">
         <div :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"></div>
-        <!-- ## loom -->
         <div
           class="h-full flex-shrink-0 rounded-xl overflow-hidden bg-coffee-650 p-2 flex-grow flex flex-col"
         >
+          <!-- ## status -->
           <div
             class="flex flex-shrink-0 h-[50px] font-pacifico text-coffee-400 px-8 text-3xl cursor-default"
           >
             {{ screen.status || "" }}
           </div>
+          <!-- ## loom -->
           <Loom
             ref="loomRef"
             v-if="currentHotkeysMode !== 'confirm'"
@@ -55,15 +56,16 @@
             </div>
           </div>
         </transition-group>
-        <!-- ## screen -->
         <div
           class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden flex flex-col"
         >
+          <!-- ## status -->
           <div
             class="flex h-[50px] font-pacifico text-moss-200 px-8 text-3xl cursor-default flex-shrink-0"
           >
             {{ screen.status || "" }}
           </div>
+          <!-- ## screen -->
           <div class="overflow-hidden rounded-lg h-full">
             <div
               class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
@@ -101,11 +103,14 @@ const loomRef = ref(null)
 const waves = ref([])
 const selectedFragmentId = ref(null)
 const isCommitting = ref(false)
+const isFetchingFlow = ref(false)
 const isCopyingRawFragment = ref(false)
 const isCopyingLastTwo = ref(false)
 const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
+const isForging = ref(false)
+const forgeStatus = ref("")
 
 const stance = ref("observe") // observe or manifest
 
@@ -115,13 +120,19 @@ let cleanupHotkeysShortcuts
 let commitInitiator
 let commitContent
 
+let currentConfirmJob = "commit" // commit, forge
+const confirmJob = {
+  commit: commitWrapper,
+  forge: onForge,
+}
+
 const shortcuts = {
   normal: {
     o: () => setStance("manifest"),
     g: selectNextFragment,
     i: selectPreviousFragment,
-    h: () => enterConfirmMode({ initiator: "loom" }),
-    r: () => enterConfirmMode({ initiator: "clipboard" }),
+    h: () => enterConfirmCommitMode({ initiator: "loom" }),
+    r: () => enterConfirmCommitMode({ initiator: "clipboard" }),
     y: copyFragmentRawData,
     c: copyLastTwoFragments,
     q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
@@ -129,12 +140,13 @@ const shortcuts = {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
+    l: enterConfirmForgeMode,
   },
   input: {
     Escape: () => setStance("observe"),
   },
   confirm: {
-    Enter: commitWrapper,
+    Enter: confirmJob[currentConfirmJob],
     Escape: () => setHotkeysMode("normal"),
   },
 }
@@ -187,7 +199,9 @@ const focusedFragment = computed(() => {
 const screen = computed(() => {
   let status
   let content
-  if (currentHotkeysMode.value === "input") {
+  if (isForging.value) {
+    status = forgeStatus.value
+  } else if (currentHotkeysMode.value === "input") {
     status = "loom"
   } else if (currentHotkeysMode.value === "confirm") {
     status = `commit ${commitInitiator}`
@@ -202,6 +216,7 @@ const screen = computed(() => {
   if (isCopyingFullContext.value) status = "full context copied to clipboard"
   if (isCopyingRawFragment.value) status = "raw fragment copied to clipboard"
   if (isCommitting.value) status = "committing..."
+  if (isFetchingFlow.value) status = "fetching flow..."
 
   return { status, content }
 })
@@ -254,6 +269,7 @@ function selectPreviousFragment() {
 }
 
 async function commitWrapper() {
+  currentConfirmJob = "commit"
   await updateCommitContent({ initiator: commitInitiator })
   if (isCommitting.value || !commitContent) return
 
@@ -262,6 +278,7 @@ async function commitWrapper() {
     const response = await commit(commitContent)
 
     if (response.success) {
+      isCommitting.value = false
       await fetchFlow()
 
       if (response.archivePayload) {
@@ -346,7 +363,7 @@ async function updateCommitContent({ initiator }) {
 
 // only commit confirm. mb expand as a mode with options like
 // how to proceed next on enter, what to show on screen etc.
-async function enterConfirmMode({ initiator }) {
+async function enterConfirmCommitMode({ initiator }) {
   await updateCommitContent({ initiator })
   if (commitContent) {
     setHotkeysMode("confirm")
@@ -359,8 +376,13 @@ async function enterConfirmMode({ initiator }) {
     }, COPY_CONFIRMATION_DURATION)
   }
 }
+async function enterConfirmForgeMode() {
+  currentConfirmJob = "commit"
+  setHotkeysMode("confirm")
+}
 
 async function fetchFlow() {
+  isFetchingFlow.value = true
   const { success, waves: fetchedWaves } = await getFlow()
   if (success) {
     waves.value = fetchedWaves
@@ -373,6 +395,7 @@ async function fetchFlow() {
   } else {
     console.error("failed to fetch flow")
   }
+  isFetchingFlow.value = false
 }
 
 function speakLatestRoxanneWave() {
@@ -434,6 +457,47 @@ async function copyLastTwoFragments() {
   )
 
   copyFragmentsByWaves(wavesToCopy, isCopyingLastTwo)
+}
+
+async function onForge() {
+  if (isForging.value) return
+
+  isForging.value = true
+  systemStatus.value = "preparing context..."
+
+  try {
+    const prompt = formatContextForForge()
+    await forge({
+      prompt,
+      onStatus: (status) => {
+        systemStatus.value = status
+      },
+    })
+
+    //〔 on successful completion, fetch the new flow.
+    await fetchFlow()
+  } catch (error) {
+    console.error("error during forge", error)
+    systemStatus.value = `error: ${error.message}`
+    //〔 we don't clear the status on error, so you can see it.
+  } finally {
+    isForging.value = false
+    //〔 we clear the status on success, after a short delay.
+    setTimeout(() => {
+      if (!isForging.value) systemStatus.value = ""
+    }, 1000)
+  }
+}
+
+// this also uses time sense, mb refactor time sense somehow
+function formatContextForForge() {
+  let contextString = formatWaves(waves.value)
+  const lastWave = waves.value[waves.value.length - 1]
+  const timeDifference = Date.now() - lastWave.timestamp
+  const formattedTime = formatTime(timeDifference)
+  const ephemeralBodyFragment = `\n\n${SOURCE_GLYPHS.OPEN}${SOURCES.BODY}\n〄 ${formattedTime}\n${SOURCE_GLYPHS.CLOSE}${SOURCES.BODY}`
+  contextString += ephemeralBodyFragment
+  return contextString
 }
 
 async function copyFragmentsByWaves(wavesToCopy, isCopying) {
