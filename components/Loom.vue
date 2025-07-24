@@ -1,20 +1,16 @@
-// ~/components/Loom.vue
+//〔 ~/components/Loom.vue
 <template>
-  <div class="h-full flex-shrink-0 rounded-xl overflow-hidden p-2">
-    <div
-      class="relative overflow-hidden rounded-lg h-full ring-[8px] ring-coffee-650"
-    >
-      <textarea
-        ref="textareaEl"
-        v-model="loomContent"
-        @scroll="onScroll"
-        @input="onInput"
-        @blur="onBlur"
-        class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper"
-        :style="{ backgroundPositionY: linesOffset }"
-        :readOnly="hotkeysMode === 'confirmation'"
-      />
-    </div>
+  <div class="relative overflow-hidden rounded-lg h-full">
+    <textarea
+      ref="textareaEl"
+      v-model="loomContent"
+      @scroll="onScroll"
+      @input="onInput"
+      @blur="onBlur"
+      class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper"
+      :style="{ backgroundPositionY: linesOffset }"
+      :readOnly="hotkeysMode === 'confirmation'"
+    />
   </div>
 </template>
 

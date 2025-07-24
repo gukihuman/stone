@@ -47,6 +47,7 @@ export default {
         },
         moss: {
           100: "#dadcd5",
+          150: "#cdd3c3",
           200: "#b4b9ac",
           300: "#82816F",
           350: "#6B685B",

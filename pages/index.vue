@@ -1,19 +1,29 @@
 // ~/pages/index.vue
 <template>
-  <div class="flex h-screen items-center justify-center bg-circles-gradient">
+  <div
+    class="flex h-screen items-center justify-center pb-20 bg-circles-gradient"
+  >
     <div class="h-[500px] w-[950px] flex flex-col gap-2">
       <!-- # manifest -->
       <div class="h-full flex" v-show="stance === 'manifest'">
         <div :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"></div>
         <!-- ## loom -->
-        <Loom
-          ref="loomRef"
-          class="flex-grow"
-          v-if="currentHotkeysMode !== 'confirm'"
-          :hotkyes-mode="currentHotkeysMode"
-          @update-content="(content) => (loomContentCache = content)"
-          @blur="onLoomBlur"
-        />
+        <div
+          class="h-full flex-shrink-0 rounded-xl overflow-hidden bg-coffee-650 p-2 flex-grow flex flex-col"
+        >
+          <div
+            class="flex flex-shrink-0 h-[50px] font-pacifico text-coffee-400 px-8 text-3xl cursor-default"
+          >
+            {{ screen.status || "" }}
+          </div>
+          <Loom
+            ref="loomRef"
+            v-if="currentHotkeysMode !== 'confirm'"
+            :hotkyes-mode="currentHotkeysMode"
+            @update-content="(content) => (loomContentCache = content)"
+            @blur="onLoomBlur"
+          />
+        </div>
         <div :style="{ width: `${RIGHT_COLUMN_WIDTH}px` }"></div>
       </div>
 
@@ -31,13 +41,10 @@
             :key="fragment._id"
             class="transition-all duration-[50ms] ease-in-out"
             :class="{
-              'pl-[36px]': fragment._id !== selectedFragmentId,
+              'pl-[42px]':
+                currentHotkeysMode === 'confirm' ||
+                fragment._id !== selectedFragmentId,
             }"
-            :style="
-              currentHotkeysMode === 'confirm'
-                ? { 'padding-left': `${LEFT_COLUMN_WIDTH - 8}px` }
-                : {}
-            "
           >
             <div class="rounded-l-xl overflow-hidden ring-[6px] ring-moss-350">
               <img
@@ -49,12 +56,19 @@
           </div>
         </transition-group>
         <!-- ## screen -->
-        <div class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden">
+        <div
+          class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden flex flex-col"
+        >
+          <div
+            class="flex h-[50px] font-pacifico text-moss-200 px-8 text-3xl cursor-default flex-shrink-0"
+          >
+            {{ screen.status || "" }}
+          </div>
           <div class="overflow-hidden rounded-lg h-full">
             <div
-              class="h-full bg-moss-400 text-stone-300 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
-              {{ screenContent }}
+              {{ screen.content || "" }}
             </div>
           </div>
         </div>
@@ -170,17 +184,26 @@ const focusedFragment = computed(() => {
   return displayFragments.value.find((w) => w._id === selectedFragmentId.value)
 })
 
-const screenContent = computed(() => {
-  if (isCopyingLastTwo.value) return "[LAST TWO FRAGMENTS COPIED]"
-  if (isContentToCommitEmpty.value) return "[CONTENT TO COMMIT IS EMPTY]"
-  if (isCopyingPrompt.value) return "[PROMPT COPIED TO CLIPBOARD]"
-  if (isCopyingFullContext.value) return "[FULL CONTEXT COPIED TO CLIPBOARD]"
-  if (isCopyingRawFragment.value) return "[RAW FRAGMENT COPIED TO CLIPBOARD]"
-  if (isCommitting.value) return "[COMMITTING...]"
-  if (currentHotkeysMode.value === "confirm") {
-    return `[CONFIRM COMMIT] [INITIATOR: ${commitInitiator}]\n\n${commitContent}`
+const screen = computed(() => {
+  let status
+  let content
+  if (currentHotkeysMode.value === "input") {
+    status = "loom"
+  } else if (currentHotkeysMode.value === "confirm") {
+    status = `commit ${commitInitiator}`
+    content = commitContent
+  } else if (focusedFragment.value) {
+    status = "fragment"
+    content = focusedFragment.value.data
   }
-  return focusedFragment.value ? focusedFragment.value.data : ""
+  if (isCopyingLastTwo.value) status = "last two fragments copied"
+  if (isContentToCommitEmpty.value) status = "content to commit is empty"
+  if (isCopyingPrompt.value) status = "prompt copied to clipboard"
+  if (isCopyingFullContext.value) status = "full context copied to clipboard"
+  if (isCopyingRawFragment.value) status = "raw fragment copied to clipboard"
+  if (isCommitting.value) status = "committing..."
+
+  return { status, content }
 })
 
 // --- Lifecycle & Data ---
