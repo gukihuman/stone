@@ -116,20 +116,26 @@ const stance = ref("observe") // observe or manifest
 const loomContentCache = ref("")
 
 let cleanupHotkeysShortcuts
-let commitInitiator
+const commitInitiator = ref("")
 const commitContent = ref("")
 
 const forgeStatus = ref("forge")
-const commitStatus = computed(() => `commit ${commitInitiator}`)
+const commitStatus = computed(() => `commit ${commitInitiator.value}`)
 const currentConfirmJob = ref("commit") // commit, forge
 const confirmJob = {
   commit: {
-    enter: commitWrapper,
+    enter: async () => {
+      await commitWrapper()
+      setHotkeysMode("normal")
+    },
     status: commitStatus,
     screen: commitContent,
   },
   forge: {
-    enter: onForge,
+    enter: async () => {
+      await onForge()
+      setHotkeysMode("normal")
+    },
     status: forgeStatus,
   },
 }
@@ -154,7 +160,7 @@ const shortcuts = {
     Escape: () => setStance("observe"),
   },
   confirm: {
-    Enter: confirmJob[currentConfirmJob.value].enter,
+    Enter: () => confirmJob[currentConfirmJob.value].enter(),
     Escape: () => setHotkeysMode("normal"),
   },
 }
@@ -275,7 +281,7 @@ function selectPreviousFragment() {
 }
 
 async function commitWrapper() {
-  await updateCommitContent({ initiator: commitInitiator })
+  await updateCommitContent({ initiator: commitInitiator.value })
   if (isCommitting.value || !commitContent.value) return
 
   isCommitting.value = true
@@ -303,7 +309,7 @@ async function commitWrapper() {
         await copyLastTwoFragments()
       }
 
-      if (commitInitiator === "loom") {
+      if (commitInitiator.value === "loom") {
         clearLoom()
       }
     }
@@ -373,7 +379,7 @@ async function enterConfirmCommitMode({ initiator }) {
   await updateCommitContent({ initiator })
   if (commitContent.value) {
     setHotkeysMode("confirm")
-    commitInitiator = initiator
+    commitInitiator.value = initiator
   } else {
     if (isContentToCommitEmpty.value) return
     isContentToCommitEmpty.value = true
