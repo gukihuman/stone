@@ -67,10 +67,20 @@
           </div>
           <!-- ## screen -->
           <div class="overflow-hidden rounded-lg h-full">
-            <div
-              class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
-            >
-              {{ screen.content || "" }}
+            <div class="overflow-hidden rounded-lg h-full">
+              <!-- ### scribe mode -->
+              <div
+                v-if="screenMode === 'scribe'"
+                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+                v-html="parsedScreenContent"
+              ></div>
+              <!-- ### plain mode -->
+              <div
+                v-else
+                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              >
+                {{ screen.content || "" }}
+              </div>
             </div>
           </div>
         </div>
@@ -90,6 +100,7 @@ import bodyImg from "~/assets/body.jpg"
 import externalImg from "~/assets/external.jpg"
 import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
 import { vocalScheduler } from "~/utils/VocalScheduler"
+import scribe from "~/utils/scribe"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
@@ -120,6 +131,8 @@ const commitInitiator = ref("")
 const commitContent = ref("")
 const commitWithForge = ref(false)
 
+const screenMode = ref("scribe") // scribe, plain
+
 const forgeStatus = ref("forge")
 const commitStatus = computed(() => {
   let status = `commit ${commitInitiator.value}`
@@ -147,18 +160,22 @@ const confirmJob = {
 
 const shortcuts = {
   normal: {
+    // left
     o: () => setStance("manifest"),
+    e: toggleScreenMode,
+    y: copyFragmentRawData,
+    c: copyLastTwoFragments,
+    q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
     g: selectNextFragment,
     i: selectPreviousFragment,
+
+    // right hand
     r: () => {
       enterConfirmCommitMode({ initiator: "clipboard", withForge: false })
     },
     h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
     m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
     l: enterConfirmForgeMode,
-    y: copyFragmentRawData,
-    c: copyLastTwoFragments,
-    q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
     t: () => {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
@@ -239,6 +256,11 @@ const screen = computed(() => {
   if (isCommitting.value) status = "committing..."
 
   return { status, content }
+})
+
+const parsedScreenContent = computed(() => {
+  if (!screen.value.content) return ""
+  return scribe(screen.value.content)
 })
 
 // --- Lifecycle & Data ---
@@ -540,6 +562,14 @@ async function copyFragmentsByWaves(wavesToCopy, isCopying) {
   setTimeout(() => {
     isCopying.value = false
   }, COPY_CONFIRMATION_DURATION)
+}
+
+function toggleScreenMode() {
+  if (screenMode.value === "scribe") {
+    screenMode.value = "plain"
+  } else {
+    screenMode.value = "scribe"
+  }
 }
 </script>
 <style scoped>
