@@ -118,9 +118,14 @@ const loomContentCache = ref("")
 let cleanupHotkeysShortcuts
 const commitInitiator = ref("")
 const commitContent = ref("")
+const commitWithForge = ref(false)
 
 const forgeStatus = ref("forge")
-const commitStatus = computed(() => `commit ${commitInitiator.value}`)
+const commitStatus = computed(() => {
+  let status = `commit ${commitInitiator.value}`
+  if (commitWithForge.value) status += " with forge"
+  return status
+})
 const currentConfirmJob = ref("commit") // commit, forge
 const confirmJob = {
   commit: {
@@ -145,8 +150,12 @@ const shortcuts = {
     o: () => setStance("manifest"),
     g: selectNextFragment,
     i: selectPreviousFragment,
-    h: () => enterConfirmCommitMode({ initiator: "loom" }),
-    r: () => enterConfirmCommitMode({ initiator: "clipboard" }),
+    r: () => {
+      enterConfirmCommitMode({ initiator: "clipboard", withForge: false })
+    },
+    h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
+    m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
+    l: enterConfirmForgeMode,
     y: copyFragmentRawData,
     c: copyLastTwoFragments,
     q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
@@ -154,7 +163,6 @@ const shortcuts = {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
-    l: enterConfirmForgeMode,
   },
   input: {
     Escape: () => setStance("observe"),
@@ -227,8 +235,8 @@ const screen = computed(() => {
   if (isCopyingPrompt.value) status = "prompt copied to clipboard"
   if (isCopyingFullContext.value) status = "full context copied to clipboard"
   if (isCopyingRawFragment.value) status = "raw fragment copied to clipboard"
-  if (isCommitting.value) status = "committing..."
   if (isFetchingFlow.value) status = "fetching flow..."
+  if (isCommitting.value) status = "committing..."
 
   return { status, content }
 })
@@ -290,7 +298,13 @@ async function commitWrapper() {
 
     if (response.success) {
       isCommitting.value = false
-      await fetchFlow()
+      if (commitWithForge.value) {
+        await fetchFlow()
+        currentConfirmJob.value = "forge"
+        await onForge()
+      } else {
+        await fetchFlow()
+      }
 
       if (response.archivePayload) {
         const now = new Date()
@@ -299,13 +313,14 @@ async function commitWrapper() {
         fileSave(fileName, response.archivePayload)
       }
 
+      // 〔 clipboard hanlding
       if (response.prompt) {
         await navigator.clipboard.writeText(response.prompt)
         isCopyingPrompt.value = true
         setTimeout(() => {
           isCopyingPrompt.value = false
         }, COPY_CONFIRMATION_DURATION)
-      } else {
+      } else if (!commitWithForge.value) {
         await copyLastTwoFragments()
       }
 
@@ -317,7 +332,6 @@ async function commitWrapper() {
     console.error("error during commit", error)
   } finally {
     isCommitting.value = false
-    setHotkeysMode("normal")
   }
 }
 
@@ -374,12 +388,13 @@ async function updateCommitContent({ initiator }) {
 
 // only commit confirm. mb expand as a mode with options like
 // how to proceed next on enter, what to show on screen etc.
-async function enterConfirmCommitMode({ initiator }) {
+async function enterConfirmCommitMode({ initiator, withForge }) {
   currentConfirmJob.value = "commit"
   await updateCommitContent({ initiator })
   if (commitContent.value) {
     setHotkeysMode("confirm")
     commitInitiator.value = initiator
+    commitWithForge.value = withForge
   } else {
     if (isContentToCommitEmpty.value) return
     isContentToCommitEmpty.value = true
