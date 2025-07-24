@@ -99,7 +99,7 @@ export default async function handler(req) {
         }
 
         // step 2: generate the content.
-        await sendStatus("pantheon accepts")
+        await sendStatus("pantheon accepts. thinking...")
         const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
         const responseStream = await ai.models.generateContentStream({
           model: "gemini-2.5-pro",
@@ -117,7 +117,7 @@ export default async function handler(req) {
         let generatedText = ""
         for await (const chunk of responseStream) {
           // send a heartbeat status for the first chunk to show progress.
-          if (generatedText === "") await sendStatus("first token received")
+          if (generatedText === "") await sendStatus("first token received...")
           generatedText += chunk.text
         }
         if (generatedText.trim() === "")
