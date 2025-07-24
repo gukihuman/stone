@@ -34,7 +34,7 @@
         <transition-group
           name="flow-list"
           tag="div"
-          class="flex flex-col gap-5 py-6 flex-shrink-0"
+          class="flex flex-col gap-5 py-6 flex-shrink-0 -z-10"
           :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"
         >
           <div
@@ -110,7 +110,6 @@ const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
 const isForging = ref(false)
-const forgeStatus = ref("")
 
 const stance = ref("observe") // observe or manifest
 
@@ -118,12 +117,21 @@ const loomContentCache = ref("")
 
 let cleanupHotkeysShortcuts
 let commitInitiator
-let commitContent
+const commitContent = ref("")
 
-let currentConfirmJob = "commit" // commit, forge
+const forgeStatus = ref("forge")
+const commitStatus = computed(() => `commit ${commitInitiator}`)
+const currentConfirmJob = ref("commit") // commit, forge
 const confirmJob = {
-  commit: commitWrapper,
-  forge: onForge,
+  commit: {
+    enter: commitWrapper,
+    status: commitStatus,
+    screen: commitContent,
+  },
+  forge: {
+    enter: onForge,
+    status: forgeStatus,
+  },
 }
 
 const shortcuts = {
@@ -146,7 +154,7 @@ const shortcuts = {
     Escape: () => setStance("observe"),
   },
   confirm: {
-    Enter: confirmJob[currentConfirmJob],
+    Enter: confirmJob[currentConfirmJob.value].enter,
     Escape: () => setHotkeysMode("normal"),
   },
 }
@@ -199,13 +207,11 @@ const focusedFragment = computed(() => {
 const screen = computed(() => {
   let status
   let content
-  if (isForging.value) {
-    status = forgeStatus.value
-  } else if (currentHotkeysMode.value === "input") {
+  if (currentHotkeysMode.value === "input") {
     status = "loom"
   } else if (currentHotkeysMode.value === "confirm") {
-    status = `commit ${commitInitiator}`
-    content = commitContent
+    status = confirmJob[currentConfirmJob.value].status?.value || ""
+    content = confirmJob[currentConfirmJob.value].screen?.value || ""
   } else if (focusedFragment.value) {
     status = "fragment"
     content = focusedFragment.value.data
@@ -269,13 +275,12 @@ function selectPreviousFragment() {
 }
 
 async function commitWrapper() {
-  currentConfirmJob = "commit"
   await updateCommitContent({ initiator: commitInitiator })
-  if (isCommitting.value || !commitContent) return
+  if (isCommitting.value || !commitContent.value) return
 
   isCommitting.value = true
   try {
-    const response = await commit(commitContent)
+    const response = await commit(commitContent.value)
 
     if (response.success) {
       isCommitting.value = false
@@ -353,9 +358,9 @@ async function updateCommitContent({ initiator }) {
       }
       lines.push(`${SOURCE_GLYPHS.CLOSE}${sourceToClose}`)
     }
-    commitContent = lines.join("\n")
+    commitContent.value = lines.join("\n")
   } else if (initiator === "loom") {
-    commitContent = loomContentCache.value.trim()
+    commitContent.value = loomContentCache.value.trim()
   } else {
     console.error("updateCommitContent: unknown initiator")
   }
@@ -364,8 +369,9 @@ async function updateCommitContent({ initiator }) {
 // only commit confirm. mb expand as a mode with options like
 // how to proceed next on enter, what to show on screen etc.
 async function enterConfirmCommitMode({ initiator }) {
+  currentConfirmJob.value = "commit"
   await updateCommitContent({ initiator })
-  if (commitContent) {
+  if (commitContent.value) {
     setHotkeysMode("confirm")
     commitInitiator = initiator
   } else {
@@ -377,7 +383,7 @@ async function enterConfirmCommitMode({ initiator }) {
   }
 }
 async function enterConfirmForgeMode() {
-  currentConfirmJob = "commit"
+  currentConfirmJob.value = "forge"
   setHotkeysMode("confirm")
 }
 
@@ -463,14 +469,14 @@ async function onForge() {
   if (isForging.value) return
 
   isForging.value = true
-  systemStatus.value = "preparing context..."
+  forgeStatus.value = "preparing context..."
 
   try {
     const prompt = formatContextForForge()
     await forge({
       prompt,
       onStatus: (status) => {
-        systemStatus.value = status
+        forgeStatus.value = status
       },
     })
 
@@ -478,14 +484,9 @@ async function onForge() {
     await fetchFlow()
   } catch (error) {
     console.error("error during forge", error)
-    systemStatus.value = `error: ${error.message}`
-    //〔 we don't clear the status on error, so you can see it.
   } finally {
     isForging.value = false
-    //〔 we clear the status on success, after a short delay.
-    setTimeout(() => {
-      if (!isForging.value) systemStatus.value = ""
-    }, 1000)
+    forgeStatus.value = "forge"
   }
 }
 
