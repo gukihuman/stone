@@ -490,7 +490,7 @@ async function onForge() {
   if (isForging.value) return
 
   isForging.value = true
-  forgeStatus.value = "preparing context..."
+  forgeStatus.value = "forging..."
 
   try {
     const prompt = formatContextForForge()

@@ -82,7 +82,6 @@ export default async function handler(req) {
     ;(async () => {
       try {
         // step 1: get a key from our node oracle.
-        await sendStatus("authenticating with pantheon...")
         const oracleRes = await fetch(
           new URL("/api-node/get-available-google-key", req.url),
           {
@@ -100,7 +99,7 @@ export default async function handler(req) {
         }
 
         // step 2: generate the content.
-        await sendStatus("forging new thought...")
+        await sendStatus("pantheon accepts")
         const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
         const responseStream = await ai.models.generateContentStream({
           model: "gemini-2.5-pro",
@@ -118,14 +117,13 @@ export default async function handler(req) {
         let generatedText = ""
         for await (const chunk of responseStream) {
           // send a heartbeat status for the first chunk to show progress.
-          if (generatedText === "") await sendStatus("receiving first token...")
+          if (generatedText === "") await sendStatus("first token received")
           generatedText += chunk.text
         }
         if (generatedText.trim() === "")
           throw new Error("generation returned empty response")
 
         // step 4: wrap the text and commit it server-to-server.
-        await sendStatus("committing to flow...")
         const waveToCommit = wrapWithGlyphs(generatedText, SOURCES.ROXANNE)
 
         const commitRes = await fetch(new URL("/api-node/commit", req.url), {
