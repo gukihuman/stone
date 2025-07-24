@@ -102,11 +102,16 @@ export default async function handler(req) {
         // step 2: generate the content.
         await sendStatus("forging new thought...")
         const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
-        const model = "gemini-2.5-pro"
         const responseStream = await ai.models.generateContentStream({
-          model,
+          model: "gemini-2.5-pro",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          config: { stopSequences: [`◎${SOURCES.ROXANNE}`] },
+          config: {
+            thinkingConfig: { thinkingBudget: -1 },
+            stopSequences: [`◎${SOURCES.ROXANNE}`],
+            mediaResolution: "MEDIA_RESOLUTION_MEDIUM",
+            tools: [{ urlContext: {} }, { googleSearch: {} }],
+            responseMimeType: "text/plain",
+          },
         })
 
         // step 3: buffer the entire response stream.
