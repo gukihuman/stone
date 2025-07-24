@@ -1,4 +1,4 @@
-// ~/pages/index.vue
+// 〔 ~/pages/index.vue
 <template>
   <div
     class="flex h-screen items-center justify-center pb-20 bg-circles-gradient"
@@ -66,13 +66,13 @@
             {{ screen.status || "" }}
           </div>
           <!-- ## screen -->
-          <div class="overflow-hidden rounded-lg h-full">
+          <div class="overflow-hidden rounded-lg h-full" @click="onScreenClick">
             <div class="overflow-hidden rounded-lg h-full">
               <!-- ### scribe mode -->
               <div
                 v-if="screenMode === 'scribe'"
                 class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira-code overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
-                v-html="parsedScreenContent"
+                v-html="parsedScreen.html"
               ></div>
               <!-- ### plain mode -->
               <div
@@ -106,7 +106,7 @@ const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
 const COPY_CONFIRMATION_DURATION = 1000
 const LEFT_COLUMN_WIDTH = 100
-const RIGHT_COLUMN_WIDTH = 80
+const RIGHT_COLUMN_WIDTH = 70
 
 const { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts } = useHotkeys()
 
@@ -121,6 +121,9 @@ const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
 const isForging = ref(false)
+
+const isCopyingCode = ref(false)
+const rawCodeBlocks = ref([])
 
 const stance = ref("observe") // observe or manifest
 
@@ -247,6 +250,7 @@ const screen = computed(() => {
     status = "fragment"
     content = focusedFragment.value.data
   }
+  if (isCopyingCode.value) status = "code copied to clipboard"
   if (isCopyingLastTwo.value) status = "last two fragments copied"
   if (isContentToCommitEmpty.value) status = "content to commit is empty"
   if (isCopyingPrompt.value) status = "prompt copied to clipboard"
@@ -258,9 +262,11 @@ const screen = computed(() => {
   return { status, content }
 })
 
-const parsedScreenContent = computed(() => {
-  if (!screen.value.content) return ""
-  return scribe(screen.value.content)
+const parsedScreen = computed(() => {
+  if (!screen.value.content) return { html: "", rawCodeBlocks: [] }
+  const result = scribe(screen.value.content)
+  rawCodeBlocks.value = result.rawCodeBlocks
+  return result
 })
 
 // --- Lifecycle & Data ---
@@ -569,6 +575,22 @@ function toggleScreenMode() {
     screenMode.value = "plain"
   } else {
     screenMode.value = "scribe"
+  }
+}
+async function onScreenClick(event) {
+  if (event.target.classList.contains("scribe-copy-button")) {
+    const codeBlockEl = event.target.closest(".scribe-code-block")
+    if (codeBlockEl) {
+      const blockId = codeBlockEl.dataset.codeBlockId
+      const codeToCopy = rawCodeBlocks.value[blockId]
+      if (codeToCopy) {
+        await navigator.clipboard.writeText(codeToCopy)
+        isCopyingCode.value = true
+        setTimeout(() => {
+          isCopyingCode.value = false
+        }, COPY_CONFIRMATION_DURATION)
+      }
+    }
   }
 }
 </script>

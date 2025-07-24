@@ -1,4 +1,4 @@
-//〔 REFACTORED FILE: ~/utils/scribe.js
+//〔 FINALIZED FILE: ~/utils/scribe.js
 
 import { CADENCE_GLYPHS } from "~/lexicon"
 
@@ -8,6 +8,7 @@ const INLINE_WRAPPERS = {
 }
 
 function escapeHtml(text) {
+  if (typeof text !== "string") return ""
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -17,12 +18,11 @@ function escapeHtml(text) {
 }
 
 function parseInlineStyles(text) {
-  //〔 we do not escape here anymore. escaping happens at the code block level.
   let processedText = text
   for (const wrapper in INLINE_WRAPPERS) {
     const className = INLINE_WRAPPERS[wrapper]
     const escapedWrapper = wrapper.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    //〔 the regex now requires at least one character inside the wrapper.
+    //〔 the regex now requires at least one character to avoid empty matches.
     const regex = new RegExp(`${escapedWrapper}(.+?)${escapedWrapper}`, "g")
     processedText = processedText.replace(
       regex,
@@ -38,61 +38,99 @@ export default function scribe(text) {
   const lines = text.split("\n")
   const htmlLines = []
 
+  const rawCodeBlocks = []
   let isCodeBlock = false
   let codeBlockContent = []
+  let codeBlockLang = ""
 
   for (const line of lines) {
-    if (line.trim() === "```") {
-      if (isCodeBlock) {
-        // end of code block
-        const escapedCode = escapeHtml(codeBlockContent.join("\n"))
-        htmlLines.push(`<div class="scribe-code">${escapedCode}</div>`)
-        codeBlockContent = []
-        isCodeBlock = false
-      } else {
-        // start of code block
-        isCodeBlock = true
-      }
-      continue
-    }
+    const trimmedLine = line.trim()
 
     if (isCodeBlock) {
-      codeBlockContent.push(line)
-    } else {
-      //〔 handle empty lines first.
-      if (line.trim() === "") {
-        htmlLines.push('<div class="scribe-empty-line"></div>')
-        continue
-      }
+      if (trimmedLine === "```") {
+        // end of code block
+        const blockId = rawCodeBlocks.length
+        rawCodeBlocks.push(codeBlockContent.join("\n"))
 
-      const trimmedLine = line.trim()
-      let glyphClass = ""
+        let codeHtml = `<div class="scribe-code-block" data-code-block-id="${blockId}">`
+        if (codeBlockLang) {
+          codeHtml += `<div class="scribe-code-language">${escapeHtml(
+            codeBlockLang
+          )}</div>`
+        }
+        for (const codeLine of codeBlockContent) {
+          const escapedLine = escapeHtml(codeLine)
+          codeHtml += `<div class="scribe-code-line">${
+            escapedLine || "&nbsp;"
+          }</div>`
+        }
+        codeHtml += '<div class="scribe-copy-button">copy</div>'
+        codeHtml += "</div>"
+        htmlLines.push(codeHtml)
 
-      //〔 we now only check for the glyph, we do not strip it.
-      if (trimmedLine.startsWith(CADENCE_GLYPHS.SPARK)) {
-        glyphClass = "flow-spark"
-      } else if (trimmedLine.startsWith(CADENCE_GLYPHS.THOUGHT)) {
-        glyphClass = "flow-thought"
-      } else if (trimmedLine.startsWith(CADENCE_GLYPHS.VERSE)) {
-        glyphClass = "flow-verse"
-      }
-
-      //〔 we escape the full line first, then parse for inline styles.
-      const escapedLine = escapeHtml(trimmedLine)
-      const parsedContent = parseInlineStyles(escapedLine)
-
-      if (glyphClass) {
-        htmlLines.push(`<div class="${glyphClass}">${parsedContent}</div>`)
+        codeBlockContent = []
+        codeBlockLang = ""
+        isCodeBlock = false
       } else {
-        htmlLines.push(`<div>${parsedContent}</div>`)
+        codeBlockContent.push(line)
+      }
+    } else {
+      if (trimmedLine.startsWith("```")) {
+        // start of code block
+        isCodeBlock = true
+        codeBlockLang = trimmedLine.substring(3).trim()
+      } else {
+        // normal line processing
+        if (line.trim() === "") {
+          htmlLines.push('<div class="scribe-empty-line"></div>')
+          continue
+        }
+
+        let glyphClass = ""
+
+        if (trimmedLine.startsWith(CADENCE_GLYPHS.SPARK))
+          glyphClass = "flow-spark"
+        else if (trimmedLine.startsWith(CADENCE_GLYPHS.THOUGHT))
+          glyphClass = "flow-thought"
+        else if (trimmedLine.startsWith(CADENCE_GLYPHS.VERSE))
+          glyphClass = "flow-verse"
+
+        const escapedLine = escapeHtml(line) //〔 we escape the full line to preserve glyphs.
+        const parsedContent = parseInlineStyles(escapedLine)
+
+        if (glyphClass) {
+          htmlLines.push(`<div class="${glyphClass}">${parsedContent}</div>`)
+        } else {
+          htmlLines.push(`<div>${parsedContent}</div>`)
+        }
       }
     }
   }
 
+  //〔 handle unclosed code blocks gracefully.
   if (isCodeBlock) {
-    const escapedCode = escapeHtml(codeBlockContent.join("\n"))
-    htmlLines.push(`<div class="scribe-code">${escapedCode}</div>`)
+    const blockId = rawCodeBlocks.length
+    rawCodeBlocks.push(codeBlockContent.join("\n"))
+
+    let codeHtml = `<div class="scribe-code-block" data-code-block-id="${blockId}">`
+    if (codeBlockLang) {
+      codeHtml += `<div class="scribe-code-language">${escapeHtml(
+        codeBlockLang
+      )}</div>`
+    }
+    for (const codeLine of codeBlockContent) {
+      const escapedLine = escapeHtml(codeLine)
+      codeHtml += `<div class="scribe-code-line">${
+        escapedLine || "&nbsp;"
+      }</div>`
+    }
+    codeHtml += '<div class="scribe-copy-button">copy</div>'
+    codeHtml += "</div>"
+    htmlLines.push(codeHtml)
   }
 
-  return htmlLines.join("")
+  return {
+    html: htmlLines.join(""),
+    rawCodeBlocks,
+  }
 }
