@@ -108,7 +108,7 @@ export default async function handler(req) {
             thinkingConfig: { thinkingBudget: -1 },
             stopSequences: [`◎${SOURCES.ROXANNE}`],
             mediaResolution: "MEDIA_RESOLUTION_MEDIUM",
-            tools: [{ urlContext: {} }, { googleSearch: {} }],
+            // tools: [{ urlContext: {} }, { googleSearch: {} }],
             responseMimeType: "text/plain",
           },
         })
