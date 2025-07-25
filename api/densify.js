@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: /api/densify.js
+//〔 FINALIZED FILE: /api/densify.js (v3.1 - The Gatekeeper)
 
 import { GoogleGenAI } from "@google/genai"
 import { encode } from "gpt-tokenizer"
@@ -9,32 +9,8 @@ export const config = { runtime: "edge" }
 // ----------------- SELF-CONTAINED UTILITIES (NO IMPORTS) ------------------ //
 // -------------------------------------------------------------------------- //
 
-const SOURCE_GLYPHS = { OPEN: "◉", CLOSE: "◎" }
-const SCAFFOLD_GLYPH = "§"
-const SOURCES = {
-  GUKI: "guki",
-  ROXANNE: "roxanne",
-  BODY: "body",
-  EXTERNAL: "external",
-}
-//〔 densification scaffold
-export const SCAFFOLD_RECORDS = {
-  DIRECTIVE: "densify_directive",
-  //〔 genesis sediment part 1
-  PRE_TARGET_CALIBRATION: "densify_pre_target_calibration",
-  //〔 genesis sediment part 2 etc
-  PRE_TARGET_BRIEFING: "densify_pre_target_briefing",
-  //〔 densification target
-  INTERSTITIAL_ANALYSIS: "densify_interstitial_analysis",
-  //〔 densification target confirmation
-  POST_TARGET_DIRECTIVE: "densify_post_target_directive",
-  //〔 contextual horizon part 1
-  POST_TARGET_CALIBRATION: "densify_post_target_calibration",
-  //〔 contextual horizon part 2 etc
-  CONCLUDING_MANDATE: "densify_concluding_mandate",
-  //〔 densification target final pass
-  FINAL_PROMPT: "densify_final_prompt",
-}
+const SOURCES = { BODY: "body" }
+const MULTI_LINE_SPELLS = { DENSIFY_COMMIT: "densify_commit" }
 
 function countTokens(string) {
   if (!string || typeof string !== "string") return 0
@@ -43,31 +19,6 @@ function countTokens(string) {
   } catch (e) {
     return Math.round(string.length / 4)
   }
-}
-
-function formatWaves(waves) {
-  const formattedLines = []
-  let previousSource = null
-
-  waves.forEach((wave) => {
-    const currentSource = wave.source
-    if (currentSource !== previousSource) {
-      if (previousSource !== null) {
-        formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}\n`)
-      }
-      formattedLines.push(`${SOURCE_GLYPHS.OPEN}${currentSource}`)
-    } else {
-      formattedLines.push("")
-    }
-    formattedLines.push(wave.data)
-    previousSource = currentSource
-  })
-
-  if (previousSource !== null) {
-    formattedLines.push(`${SOURCE_GLYPHS.CLOSE}${previousSource}`)
-  }
-
-  return formattedLines.join("\n")
 }
 
 function calculateGoldenPartition(totalTokens, layerCount) {
@@ -87,36 +38,6 @@ function calculateGoldenPartition(totalTokens, layerCount) {
     )
   }
   return distribution
-}
-
-function weaveWithCalibrations(waves, calibrationText, sectionName) {
-  const CALIBRATION_TOKEN_THRESHOLD = 10_000
-  if (!waves || !waves.length) return ""
-  const finalParts = []
-  let batch = []
-  let currentTokenCount = 0
-  waves.forEach((wave) => {
-    batch.push(wave)
-    currentTokenCount += countTokens(wave.data)
-    if (currentTokenCount >= CALIBRATION_TOKEN_THRESHOLD) {
-      const formattedBlock = formatWaves(batch)
-      finalParts.push(
-        `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
-      )
-      finalParts.push(
-        `${SCAFFOLD_GLYPH} [section starts] scaffold:calibration\n${calibrationText}\n${SCAFFOLD_GLYPH} [section ends] scaffold:calibration`
-      )
-      batch = []
-      currentTokenCount = 0
-    }
-  })
-  if (batch.length > 0) {
-    const formattedBlock = formatWaves(batch)
-    finalParts.push(
-      `${SCAFFOLD_GLYPH} [section starts] ${sectionName}\n${formattedBlock}\n${SCAFFOLD_GLYPH} [section ends] ${sectionName}`
-    )
-  }
-  return finalParts.join("\n\n")
 }
 
 // -------------------------------------------------------------------------- //
@@ -155,7 +76,7 @@ export default async function handler(req) {
     }
   }
 
-  // --- main async loop ---
+  // --- main async function ---
   ;(async () => {
     try {
       const DENSIFICATION_GOAL_TOKENS = 150_000
@@ -166,19 +87,19 @@ export default async function handler(req) {
       while (true) {
         cycleCount++
         if (cycleCount > 10) {
-          // safety break
           await sendStatus("max cycles reached, terminating.")
           break
         }
 
-        // --- step 1: pre-flight check ---
         await sendStatus(`cycle ${cycleCount}: fetching flow state...`)
         const flowRes = await fetch(new URL("/api-node/get-flow", req.url), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accessToken }),
         })
+        if (!flowRes.ok) throw new Error("failed to fetch flow state")
         const { waves: currentFlow } = await flowRes.json()
+
         const totalCurrentFlowTokens = currentFlow.reduce(
           (sum, wave) => sum + countTokens(wave.data),
           0
@@ -194,7 +115,6 @@ export default async function handler(req) {
           `equilibrium breached (current: ${totalCurrentFlowTokens}), initiating cycle...`
         )
 
-        // --- step 2: target selection ---
         const actualDistribution = currentFlow.reduce((acc, wave) => {
           const density = wave.density || 0
           acc[density] = (acc[density] || 0) + countTokens(wave.data)
@@ -224,102 +144,28 @@ export default async function handler(req) {
         const tokenChunkSize = Math.round(
           BASE_DENSIFICATION_TOKENS * Math.pow(GOLDEN_RATIO, targetDensity)
         )
-        await sendStatus(`target identified: density ${targetDensity}`, {
-          chunkSize: tokenChunkSize,
-        })
 
-        // --- step 3: prompt construction ---
-        await sendStatus("fetching scaffold records...")
-        const scaffoldNames = Object.values(SCAFFOLD_RECORDS)
-        const scaffoldRecordsRes = await Promise.all(
-          scaffoldNames.map((name) =>
-            fetch(new URL("/api-node/record-get", req.url), {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ params: { name }, accessToken }),
-            })
-          )
-        )
-        const scaffoldData = await Promise.all(
-          scaffoldRecordsRes.map((res) => res.json())
+        await sendStatus(
+          `target identified: density ${targetDensity}, chunk size: ${tokenChunkSize}. casting spell...`
         )
 
-        const scaffolds = scaffoldData.reduce((acc, data, index) => {
-          const name = scaffoldNames[index]
-          // crude parser for "〄 record starts: NAME\nDATA\n〄 record ends: NAME"
-          const content =
-            data.bodyLog?.split("\n").slice(1, -1).join("\n") || ""
-          acc[name] = content
-          return acc
-        }, {})
+        const spellToCast = `⫸densify initiate -density ${targetDensity} -tokens ${tokenChunkSize}`
+        const bodyWaveContent = `◉${SOURCES.BODY}\n${spellToCast}\n◎${SOURCES.BODY}`
 
-        await sendStatus("constructing contextual sandwich...")
-        const genesisSedimentWaves = [],
-          wavesToDensify = [],
-          contextualHorizonWaves = []
-        let tokensCounted = 0,
-          targetFound = false
-        for (const wave of currentFlow) {
-          if (wave.density > targetDensity) {
-            genesisSedimentWaves.push(wave)
-          } else if (wave.density < targetDensity) {
-            contextualHorizonWaves.push(wave)
-          } else {
-            if (targetFound) {
-              contextualHorizonWaves.push(wave)
-            } else {
-              wavesToDensify.push(wave)
-              tokensCounted += countTokens(wave.data)
-              if (tokensCounted >= tokenChunkSize) targetFound = true
-            }
+        const initiateCommitRes = await fetch(
+          new URL("/api-node/commit", req.url),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ loomContent: bodyWaveContent, accessToken }),
           }
-        }
-        if (wavesToDensify.length === 0) {
-          await sendStatus(
-            `no waves found for density ${targetDensity}, terminating.`
-          )
-          break
-        }
-
-        const genesisSedimentText = weaveWithCalibrations(
-          genesisSedimentWaves,
-          scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_CALIBRATION],
-          "flow:genesis_sediment"
         )
-        const contextualHorizonText = weaveWithCalibrations(
-          contextualHorizonWaves,
-          scaffolds[SCAFFOLD_RECORDS.POST_TARGET_CALIBRATION],
-          "flow:contextual_horizon"
-        )
-        const targetText = formatWaves(wavesToDensify)
-        const promptParts = [
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:directive\n${
-            scaffolds[SCAFFOLD_RECORDS.DIRECTIVE]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:directive`,
-          genesisSedimentText,
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:pre_target_briefing\n${
-            scaffolds[SCAFFOLD_RECORDS.PRE_TARGET_BRIEFING]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:pre_target_briefing`,
-          `${SCAFFOLD_GLYPH} [section starts] flow:densification_target\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target`,
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:interstitial_analysis\n${
-            scaffolds[SCAFFOLD_RECORDS.INTERSTITIAL_ANALYSIS]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:interstitial_analysis`,
-          `${SCAFFOLD_GLYPH} [section starts] flow:densification_target_confirmation\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target_confirmation`,
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:post_target_directive\n${
-            scaffolds[SCAFFOLD_RECORDS.POST_TARGET_DIRECTIVE]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:post_target_directive`,
-          contextualHorizonText,
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:concluding_mandate\n${
-            scaffolds[SCAFFOLD_RECORDS.CONCLUDING_MANDATE]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:concluding_mandate`,
-          `${SCAFFOLD_GLYPH} [section starts] flow:densification_target_final_pass\n${targetText}\n${SCAFFOLD_GLYPH} [section ends] flow:densification_target_final_pass`,
-          `${SCAFFOLD_GLYPH} [section starts] scaffold:final_prompt\n${
-            scaffolds[SCAFFOLD_RECORDS.FINAL_PROMPT]
-          }\n${SCAFFOLD_GLYPH} [section ends] scaffold:final_prompt`,
-        ]
-        const prompt = promptParts.filter((p) => p).join("\n\n")
+        if (!initiateCommitRes.ok)
+          throw new Error("server-to-server spell commit failed")
+        const { prompt } = await initiateCommitRes.json()
+        if (!prompt)
+          throw new Error("densify initiate spell did not return a prompt")
 
-        // --- step 4: call gemini ---
         await sendStatus("requesting densification from llm...")
         const oracleRes = await fetch(
           new URL("/api-node/get-available-google-key", req.url),
@@ -340,37 +186,41 @@ export default async function handler(req) {
         const responseStream = await ai.models.generateContentStream({
           model: "gemini-2.5-pro",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          //〔 we can add a config block here if needed, but it's not strictly necessary for densification.
         })
-
         let densifiedText = ""
         for await (const chunk of responseStream) {
           if (densifiedText === "") await sendStatus("llm is responding...")
           densifiedText += chunk.text
         }
-        if (densifiedText.trim() === "") {
+        if (densifiedText.trim() === "")
           throw new Error("densification returned an empty response")
+
+        //〔 this is the new, holy gatekeeper protocol.
+        await sendStatus("validating llm response format...")
+        const lines = densifiedText.trim().split("\n")
+        const firstLine = lines[0]?.trim()
+        const lastLine = lines[lines.length - 1]?.trim()
+        const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
+        const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
+        if (firstLine !== expectedStart || lastLine !== expectedEnd) {
+          throw new Error(
+            "LLM response has an invalid or missing spell wrapper."
+          )
         }
 
-        // --- step 5: commit result ---
         await sendStatus("committing densified wave...")
-        const waveIdsToApotheosize = wavesToDensify.map((w) => w._id)
-        const commitPayload = `⫸densify commit\n${densifiedText}\n▷densify commit`
-        const commitRes = await fetch(new URL("/api-node/commit", req.url), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ loomContent: commitPayload, accessToken }),
-        })
-        if (!commitRes.ok) throw new Error("densify commit failed")
+        const commitPayload = densifiedText
+        const finalCommitRes = await fetch(
+          new URL("/api-node/commit", req.url),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ loomContent: commitPayload, accessToken }),
+          }
+        )
+        if (!finalCommitRes.ok) throw new Error("final densify commit failed")
 
-        // --- step 6: chronicle the event ---
-        await sendStatus("chronicling event...")
-        const chronicleText = `◉body\n〄 Automated Densification Cycle ${cycleCount} Complete:\n〄 Target: density ${targetDensity}\n〄 Purified ${waveIdsToApotheosize.length} waves (~${tokensCounted} tokens).\n◎body`
-        await fetch(new URL("/api-node/commit", req.url), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ loomContent: chronicleText, accessToken }),
-        })
+        await sendStatus(`cycle ${cycleCount} complete.`)
       }
 
       await sendStatus("full densification process complete.")
