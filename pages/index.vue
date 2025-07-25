@@ -121,6 +121,7 @@ const isCopyingFullContext = ref(false)
 const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
 const isForging = ref(false)
+const isDensifying = ref(false)
 
 const isCopyingCode = ref(false)
 const rawCodeBlocks = ref([])
@@ -137,6 +138,8 @@ const commitWithForge = ref(false)
 const screenMode = ref("scribe") // scribe, plain
 
 const forgeStatus = ref("forge")
+const densifyStatus = ref("densify")
+
 const commitStatus = computed(() => {
   let status = `commit ${commitInitiator.value}`
   if (commitWithForge.value) status += " with forge"
@@ -159,6 +162,13 @@ const confirmJob = {
     },
     status: forgeStatus,
   },
+  densify: {
+    enter: async () => {
+      await onDensify()
+      setHotkeysMode("normal")
+    },
+    status: densifyStatus,
+  },
 }
 
 const shortcuts = {
@@ -179,6 +189,7 @@ const shortcuts = {
     h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
     m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
     l: enterConfirmForgeMode,
+    s: enterConfirmDensifyMode,
     t: () => {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
@@ -437,6 +448,11 @@ async function enterConfirmForgeMode() {
   setHotkeysMode("confirm")
 }
 
+async function enterConfirmDensifyMode() {
+  currentConfirmJob.value = "densify"
+  setHotkeysMode("confirm")
+}
+
 async function fetchFlow() {
   isFetchingFlow.value = true
   const { success, waves: fetchedWaves } = await getFlow()
@@ -513,6 +529,29 @@ async function copyLastTwoFragments() {
   )
 
   copyFragmentsByWaves(wavesToCopy, isCopyingLastTwo)
+}
+
+async function onDensify() {
+  if (isDensifying.value) return
+
+  isDensifying.value = true
+  densifyStatus.value = "densifying..."
+
+  try {
+    await densify({
+      onStatus: (status) => {
+        densifyStatus.value = status
+      },
+    })
+
+    //〔 on successful completion, fetch the new flow.
+    await fetchFlow()
+  } catch (error) {
+    console.error("error during densify", error)
+  } finally {
+    isDensifying.value = false
+    densifyStatus.value = "densify"
+  }
 }
 
 async function onForge() {

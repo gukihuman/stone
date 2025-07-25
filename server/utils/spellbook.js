@@ -1,4 +1,4 @@
-// ~/server/utils/spellbook.js
+// ✎ ~/server/utils/spellbook.js
 import {
   ONE_LINE_SPELLS,
   MULTI_LINE_SPELLS,
