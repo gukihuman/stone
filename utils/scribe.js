@@ -58,12 +58,15 @@ export default function scribe(text) {
             codeBlockLang
           )}</div>`
         }
+        let codeLineHtml = `<div class="scribe-code-line-block">`
         for (const codeLine of codeBlockContent) {
           const escapedLine = escapeHtml(codeLine)
-          codeHtml += `<div class="scribe-code-line">${
+          codeLineHtml += `<div class="scribe-code-line">${
             escapedLine || "&nbsp;"
           }</div>`
         }
+        codeLineHtml += "</div>"
+        codeHtml += codeLineHtml
         codeHtml += '<div class="scribe-copy-button">copy</div>'
         codeHtml += "</div>"
         htmlLines.push(codeHtml)
@@ -132,6 +135,8 @@ export default function scribe(text) {
       codeHtml += `<div class="scribe-code-language">${escapeHtml(
         codeBlockLang
       )}</div>`
+    } else {
+      codeHtml += `<div class="scribe-code-language"></div>`
     }
     for (const codeLine of codeBlockContent) {
       const escapedLine = escapeHtml(codeLine)

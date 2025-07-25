@@ -143,13 +143,16 @@ html {
   @apply rounded-r-3xl overflow-hidden bg-moss-700 bg-opacity-20;
 }
 .scribe-code-language {
-  @apply font-bitcount text-moss-200 text-3xl px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mb-6;
+  @apply font-bitcount text-moss-200 text-3xl px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 h-[52px];
+}
+.scribe-code-line-block {
+  @apply py-6;
 }
 .scribe-code-line {
   @apply pl-8 text-sm;
 }
 .scribe-copy-button {
-  @apply font-bitcount text-moss-200 text-3xl cursor-pointer hover:bg-moss-650/70 px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mt-6;
+  @apply font-bitcount text-moss-200 text-3xl cursor-pointer hover:bg-moss-650/70 px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2;
 }
 
 .scribe-copy-button--pending {
