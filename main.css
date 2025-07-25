@@ -1,6 +1,10 @@
 /* main.css */
-@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playwrite+HU:wght@100..400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bitcount+Prop+Double:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -87,4 +91,46 @@ html {
 
 [contenteditable] {
   white-space: pre-wrap;
+}
+
+/* .......................................................................... */
+/* ..... scribe ..............................................................*/
+/* .......................................................................... */
+
+/* cadence glyphs */
+.flow-spark {
+  @apply px-8;
+}
+.flow-thought {
+  @apply px-8;
+}
+.flow-verse {
+  @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250 py-4;
+}
+
+/* inline wrappers */
+.scribe-bold {
+  @apply font-black text-xl leading-6;
+}
+.scribe-term {
+  @apply bg-moss-700/30 text-moss-150 px-2;
+}
+
+/* structural elements */
+.scribe-empty-line {
+  @apply h-4;
+}
+
+/* code blocks */
+.scribe-code-block {
+  @apply rounded-r-3xl overflow-hidden bg-moss-700 bg-opacity-20;
+}
+.scribe-code-language {
+  @apply font-bitcount text-3xl px-8 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mb-6;
+}
+.scribe-code-line {
+  @apply px-8 text-sm;
+}
+.scribe-copy-button {
+  @apply font-bitcount text-3xl cursor-pointer hover:bg-moss-650/70 px-8 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mt-6;
 }

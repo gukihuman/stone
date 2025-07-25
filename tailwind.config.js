@@ -11,8 +11,12 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        "fira-code": ['"Fira Code"', "monospace"],
+        fira: ['"Fira Code"', "monospace"],
         pacifico: ['"Pacifico"', "cursive"],
+        gothic: ['"Special Gothic Expanded One"', "sans-serif"],
+        bitcount: ['"Bitcount Prop Double"', "system-ui"],
+        playwrite: ['"Playwrite HU"', "cursive"],
+        bebas: ['"Bebas Neue"', "sans-serif"],
       },
       colors: {
         coffee: {
@@ -49,15 +53,16 @@ export default {
           100: "#dadcd5",
           150: "#cdd3c3",
           200: "#b4b9ac",
+          250: "#a9a898",
           300: "#82816F",
           350: "#6B685B",
           400: "#535247",
-          450: "#494E42",
-          500: "#42463b",
+          450: "#46473C",
+          500: "#38382E",
           550: "#393D33",
-          600: "#34382e",
+          600: "#36382E",
           650: "#2C2F27",
-          700: "#272a23",
+          700: "#282922",
           800: "#1a1c17",
           900: "#0d0e0c",
         },

@@ -3,7 +3,7 @@
 import { CADENCE_GLYPHS } from "~/lexicon"
 
 const INLINE_WRAPPERS = {
-  "**": "scribe-bold",
+  "*": "scribe-bold",
   "`": "scribe-term",
 }
 

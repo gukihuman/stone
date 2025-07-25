@@ -3,7 +3,7 @@
     <div
       v-for="(group, i) in groups"
       :key="i"
-      class="h-6 flex justify-end items-center font-semibold text-sm font-fira-code"
+      class="h-6 flex justify-end items-center font-semibold text-sm font-fira"
       :class="
         theme === 'light'
           ? [

@@ -63,7 +63,7 @@
         <div class="overflow-hidden h-full">
           <div class="overflow-hidden rounded-lg h-full">
             <div
-              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira-code overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+              class="w-full h-full bg-moss-400 text-stone-300 rounded-lg p-3 px-5 font-fira overflow-auto whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
             >
               <div class="flex text-moss-300">
                 <div class="w-[200px]">access-token</div>

@@ -125,7 +125,7 @@
               class="px-2 w-full py-2 rounded bg-stone-500 hover:bg-stone-400 disabled:bg-stone-500 disabled:cursor-not-allowed text-white font-semibold text-lg disabled:text-stone-400"
             >
               дать эхо высказаться
-              <span class="font-semibold font-fira-code text-[16px]">
+              <span class="font-semibold font-fira text-[16px]">
                 {{
                   getTokens(assembleContext()) > 10
                     ? `~${getTokens(assembleContext())}`
@@ -136,7 +136,7 @@
           </div>
         </div>
       </div>
-      <span class="font-semibold font-fira-code text-stone-400">
+      <span class="font-semibold font-fira text-stone-400">
         {{
           currentUsage !== null
             ? `лимит на сегодня ${currentUsage} / ${tokenLimit}`
