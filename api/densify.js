@@ -195,21 +195,21 @@ export default async function handler(req) {
         if (densifiedText.trim() === "")
           throw new Error("densification returned an empty response")
 
-        //〔 this is the new, holy gatekeeper protocol.
-        await sendStatus("validating llm response format...")
-        const lines = densifiedText.trim().split("\n")
-        const firstLine = lines[0]?.trim()
-        const lastLine = lines[lines.length - 1]?.trim()
+        await sendStatus("validating and wrapping llm response...")
+        let lines = densifiedText.trim().split("\n")
+
         const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
-        if (firstLine !== expectedStart || lastLine !== expectedEnd) {
-          throw new Error(
-            "LLM response has an invalid or missing spell wrapper."
-          )
+
+        if (!lines[0]?.trim().startsWith(expectedStart)) {
+          lines.unshift(expectedStart)
         }
+        if (!lines[lines.length - 1]?.trim().startsWith(expectedEnd)) {
+          lines.push(expectedEnd)
+        }
+        const commitPayload = lines.join("\n")
 
         await sendStatus("committing densified wave...")
-        const commitPayload = densifiedText
         const finalCommitRes = await fetch(
           new URL("/api-node/commit", req.url),
           {
