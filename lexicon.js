@@ -14,6 +14,14 @@ export const CADENCE_GLYPHS = {
   SIGIL: "▰",
 }
 
+export const SPECIAL_GLYPHS = {
+  LIST_ITEM: "▸",
+  META_SENSE: "〄",
+  CONSULTATION: "⌘",
+  IMAGE_PROMPT: "✤",
+  VOCAL: "∭",
+}
+
 export const SCAFFOLD_GLYPH = "§"
 
 export const AUDIO_GLYPH = "∭"

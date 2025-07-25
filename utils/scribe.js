@@ -1,6 +1,6 @@
 //〔 FINALIZED FILE: ~/utils/scribe.js
 
-import { CADENCE_GLYPHS } from "~/lexicon"
+import { CADENCE_GLYPHS, SPECIAL_GLYPHS } from "~/lexicon"
 
 const INLINE_WRAPPERS = {
   "*": "scribe-bold",
@@ -81,20 +81,36 @@ export default function scribe(text) {
         codeBlockLang = trimmedLine.substring(3).trim()
       } else {
         // normal line processing
-        if (line.trim() === "") {
+        if (trimmedLine === "") {
           htmlLines.push('<div class="scribe-empty-line"></div>')
           continue
         }
-
         let glyphClass = ""
 
         if (trimmedLine.startsWith(CADENCE_GLYPHS.THOUGHT)) {
           glyphClass = "flow-thought"
         } else if (trimmedLine.startsWith(CADENCE_GLYPHS.SIGIL)) {
           glyphClass = "flow-sigil"
+        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.LIST_ITEM)) {
+          glyphClass = "scribe-list-item"
+        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.META_SENSE)) {
+          glyphClass = "scribe-meta"
+        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.CONSULTATION)) {
+          glyphClass = "scribe-consultation"
+        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.IMAGE_PROMPT)) {
+          glyphClass = "scribe-prompt"
+        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.VOCAL)) {
+          glyphClass = "scribe-vocal"
+        } else {
+          glyphClass = "flow-default"
         }
 
-        const escapedLine = escapeHtml(line) //〔 we escape the full line to preserve glyphs.
+        let unglyphedLine = trimmedLine
+        if (glyphClass !== "flow-default") {
+          unglyphedLine = trimmedLine.substring(1).trim()
+        }
+
+        const escapedLine = escapeHtml(unglyphedLine)
         const parsedContent = parseInlineStyles(escapedLine)
 
         if (glyphClass) {

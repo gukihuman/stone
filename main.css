@@ -104,6 +104,26 @@ html {
 .flow-sigil {
   @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250 py-4;
 }
+.flow-default {
+  @apply px-8;
+}
+
+/* special glyphs */
+.scribe-list-item {
+  @apply px-8;
+}
+.scribe-meta {
+  @apply px-8;
+}
+.scribe-consultation {
+  @apply px-8;
+}
+.scribe-prompt {
+  @apply px-8;
+}
+.scribe-vocal {
+  @apply px-8;
+}
 
 /* inline wrappers */
 .scribe-bold {
