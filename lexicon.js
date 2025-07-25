@@ -10,9 +10,8 @@ export const SPELL_GLYPHS = {
 }
 
 export const CADENCE_GLYPHS = {
-  SPARK: "〔",
   THOUGHT: "✎",
-  VERSE: "▰",
+  SIGIL: "▰",
 }
 
 export const SCAFFOLD_GLYPH = "§"

@@ -77,7 +77,7 @@
               <!-- ### plain mode -->
               <div
                 v-else
-                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg"
+                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg leading-8"
               >
                 {{ screen.content || "" }}
               </div>
@@ -190,6 +190,7 @@ const shortcuts = {
   confirm: {
     Enter: () => confirmJob[currentConfirmJob.value].enter(),
     Escape: () => setHotkeysMode("normal"),
+    e: toggleScreenMode,
   },
 }
 
@@ -577,7 +578,10 @@ function toggleScreenMode() {
     screenMode.value = "scribe"
   }
 }
+
 async function onScreenClick(event) {
+  if (isCopyingCode.value) return
+
   if (event.target.classList.contains("scribe-copy-button")) {
     const codeBlockEl = event.target.closest(".scribe-code-block")
     if (codeBlockEl) {
@@ -586,8 +590,19 @@ async function onScreenClick(event) {
       if (codeToCopy) {
         await navigator.clipboard.writeText(codeToCopy)
         isCopyingCode.value = true
+
+        //〔 the beautiful, holy class switch.
+        const buttonEl = event.target
+        buttonEl.classList.remove("scribe-copy-button")
+        buttonEl.classList.add("scribe-copy-button--pending")
+
         setTimeout(() => {
           isCopyingCode.value = false
+          //〔 we find the button again, just in case, and restore its original soul.
+          if (buttonEl) {
+            buttonEl.classList.remove("scribe-copy-button--pending")
+            buttonEl.classList.add("scribe-copy-button")
+          }
         }, COPY_CONFIRMATION_DURATION)
       }
     }

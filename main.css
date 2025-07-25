@@ -98,19 +98,16 @@ html {
 /* .......................................................................... */
 
 /* cadence glyphs */
-.flow-spark {
-  @apply px-8;
-}
 .flow-thought {
   @apply px-8;
 }
-.flow-verse {
+.flow-sigil {
   @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250 py-4;
 }
 
 /* inline wrappers */
 .scribe-bold {
-  @apply font-black text-xl leading-6;
+  @apply font-black;
 }
 .scribe-term {
   @apply bg-moss-700/30 text-moss-150 px-2;
@@ -118,7 +115,7 @@ html {
 
 /* structural elements */
 .scribe-empty-line {
-  @apply h-4;
+  @apply h-6;
 }
 
 /* code blocks */
@@ -126,11 +123,15 @@ html {
   @apply rounded-r-3xl overflow-hidden bg-moss-700 bg-opacity-20;
 }
 .scribe-code-language {
-  @apply font-bitcount text-3xl px-8 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mb-6;
+  @apply font-bitcount text-moss-200 text-3xl px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mb-6;
 }
 .scribe-code-line {
-  @apply px-8 text-sm;
+  @apply pl-8 text-sm;
 }
 .scribe-copy-button {
-  @apply font-bitcount text-3xl cursor-pointer hover:bg-moss-650/70 px-8 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mt-6;
+  @apply font-bitcount text-moss-200 text-3xl cursor-pointer hover:bg-moss-650/70 px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 mt-6;
+}
+
+.scribe-copy-button--pending {
+  @apply font-bitcount text-3xl text-moss-200 px-14 bg-gradient-to-r from-moss-350 to-transparent py-2 mt-6;
 }

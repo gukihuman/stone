@@ -88,12 +88,11 @@ export default function scribe(text) {
 
         let glyphClass = ""
 
-        if (trimmedLine.startsWith(CADENCE_GLYPHS.SPARK))
-          glyphClass = "flow-spark"
-        else if (trimmedLine.startsWith(CADENCE_GLYPHS.THOUGHT))
+        if (trimmedLine.startsWith(CADENCE_GLYPHS.THOUGHT)) {
           glyphClass = "flow-thought"
-        else if (trimmedLine.startsWith(CADENCE_GLYPHS.VERSE))
-          glyphClass = "flow-verse"
+        } else if (trimmedLine.startsWith(CADENCE_GLYPHS.SIGIL)) {
+          glyphClass = "flow-sigil"
+        }
 
         const escapedLine = escapeHtml(line) //〔 we escape the full line to preserve glyphs.
         const parsedContent = parseInlineStyles(escapedLine)
