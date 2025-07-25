@@ -127,7 +127,7 @@ html {
 
 /* inline wrappers */
 .scribe-bold {
-  @apply font-black;
+  @apply font-black bg-moss-700/30 text-moss-150 px-2;
 }
 .scribe-term {
   @apply bg-moss-700/30 text-moss-150 px-2;
