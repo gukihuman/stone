@@ -337,10 +337,20 @@ export default async function handler(req) {
           throw new Error(oracleData.error || "pantheon oracle failed")
 
         const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
-        const model = ai.getGenerativeModel({ model: "gemini-2.5-pro" })
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        const densifiedText = response.text()
+        const responseStream = await ai.models.generateContentStream({
+          model: "gemini-2.5-pro",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          //〔 we can add a config block here if needed, but it's not strictly necessary for densification.
+        })
+
+        let densifiedText = ""
+        for await (const chunk of responseStream) {
+          if (densifiedText === "") await sendStatus("llm is responding...")
+          densifiedText += chunk.text
+        }
+        if (densifiedText.trim() === "") {
+          throw new Error("densification returned an empty response")
+        }
 
         // --- step 5: commit result ---
         await sendStatus("committing densified wave...")

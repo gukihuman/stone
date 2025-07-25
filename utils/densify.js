@@ -42,7 +42,7 @@ export default async function densify({ onStatus }) {
       try {
         const data = JSON.parse(line)
         if (data.status && onStatus) {
-          onStatus(data) // pass the full data object to the handler
+          onStatus(data.status)
         }
       } catch (e) {
         console.warn("failed to parse densify status update:", line)
