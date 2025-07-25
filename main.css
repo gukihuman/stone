@@ -102,7 +102,7 @@ html {
   @apply px-8;
 }
 .flow-sigil {
-  @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250 py-4;
+  @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250;
 }
 .flow-default {
   @apply px-8;
@@ -156,5 +156,5 @@ html {
 }
 
 .scribe-copy-button--pending {
-  @apply font-bitcount text-3xl text-moss-200 px-14 bg-gradient-to-r from-moss-350 to-transparent py-2 mt-6;
+  @apply font-bitcount text-3xl text-moss-200 px-14 bg-gradient-to-r from-moss-350 to-transparent py-2;
 }

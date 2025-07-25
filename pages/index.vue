@@ -12,7 +12,7 @@
         >
           <!-- ## status -->
           <div
-            class="flex flex-shrink-0 h-[50px] font-pacifico text-coffee-400 px-8 text-3xl cursor-default"
+            class="flex flex-shrink-0 h-[50px] font-pacifico text-coffee-400 px-14 text-3xl cursor-default"
           >
             {{ screen.status || "" }}
           </div>
@@ -34,7 +34,7 @@
         <transition-group
           name="flow-list"
           tag="div"
-          class="flex flex-col gap-5 py-6 flex-shrink-0 -z-10"
+          class="flex flex-col gap-5 py-6 flex-shrink-0"
           :style="{ width: `${LEFT_COLUMN_WIDTH}px` }"
         >
           <div
@@ -57,11 +57,11 @@
           </div>
         </transition-group>
         <div
-          class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden flex flex-col"
+          class="flex-grow p-2 bg-moss-350 rounded-xl overflow-hidden flex flex-col z-10"
         >
           <!-- ## status -->
           <div
-            class="flex h-[50px] font-pacifico text-moss-200 px-8 text-3xl cursor-default flex-shrink-0"
+            class="flex h-[50px] font-pacifico text-moss-200 px-14 text-3xl cursor-default flex-shrink-0"
           >
             {{ screen.status || "" }}
           </div>
