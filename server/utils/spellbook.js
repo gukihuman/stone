@@ -307,7 +307,7 @@ export default {
     ]
 
     return {
-      bodyLog: "〄 densification job initiated. prompt is sent to guki",
+      bodyLog: "〄 densification job initiated",
       prompt: promptParts.join("\n\n"),
     }
   },

@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: /api/densify.js (v3.1 - The Gatekeeper)
+// ✎ ~/api/densify.js (v3.2 - The Pacemaker)
 
 import { GoogleGenAI } from "@google/genai"
 import { encode } from "gpt-tokenizer"
@@ -197,10 +197,8 @@ export default async function handler(req) {
 
         await sendStatus("validating and wrapping llm response...")
         let lines = densifiedText.trim().split("\n")
-
         const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
-
         if (!lines[0]?.trim().startsWith(expectedStart)) {
           lines.unshift(expectedStart)
         }
@@ -221,6 +219,11 @@ export default async function handler(req) {
         if (!finalCommitRes.ok) throw new Error("final densify commit failed")
 
         await sendStatus(`cycle ${cycleCount} complete.`)
+
+        await sendStatus(
+          "initiating 60-second cooldown to respect rate limits..."
+        )
+        await new Promise((resolve) => setTimeout(resolve, 60000))
       }
 
       await sendStatus("full densification process complete.")
