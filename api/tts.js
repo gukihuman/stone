@@ -76,7 +76,7 @@ export default async function handler(req) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  modelKey: "googleFlashTtsRequests",
+                  modelKey: "googleFlashTts",
                   accessToken,
                   deniedKeys,
                 }),
