@@ -1,21 +1,14 @@
-//〔 FINALIZED FILE: ~/server/routes/api-node/get-available-google-key.js (v2.2 - The Self-Seeding Oracle)
+//〔 FINALIZED FILE: ~/server/routes/api-node/get-available-google-key.js (v2.3 - The Atomic Update)
 
 import dbConnect from "~/server/utils/dbConnect"
 import Usage from "~/server/models/Usage"
 import { defineEventHandler, setHeader, createError, readBody } from "h3"
 
-/**
- * 〔 this new protocol will scan the environment variables and create
- * 〔 usage documents if they don't exist. it's a self-seeding mechanism.
- */
 async function bootstrapKeys() {
   const promises = []
   for (let i = 0; i < 10; i++) {
-    //〔 check for up to 10 keys.
     const keyId = `GOOGLE_API_KEY_${i}`
     if (process.env[keyId]) {
-      //〔 using upsert with $setOnInsert is an elegant way to seed the db.
-      //〔 it will only create the document if it doesn't exist.
       promises.push(
         Usage.updateOne(
           { _id: keyId },
@@ -24,35 +17,36 @@ async function bootstrapKeys() {
         )
       )
     } else {
-      break // stop when we don't find a key.
+      break
     }
   }
   await Promise.all(promises)
 }
 
 /**
- * 〔 now returns an object { apiKey, keyId } or null.
+ * 〔 now uses findOneAndUpdate for an atomic operation.
  */
 async function findAndRotateKey(modelKey, deniedKeys = []) {
-  let keyToUse = await Usage.findOne({ _id: { $nin: deniedKeys } })
-    .sort({ [modelKey]: 1 })
-    .lean()
+  let keyToUse = await Usage.findOneAndUpdate(
+    { _id: { $nin: deniedKeys } }, // find a key not in the denied list
+    { $set: { [modelKey]: new Date() } }, // update its timestamp immediately
+    { sort: { [modelKey]: 1 } } // sort to get the oldest one
+  ).lean()
 
-  //〔 if no key is found, it might be the first run. bootstrap and retry.
   if (!keyToUse) {
     await bootstrapKeys()
-    keyToUse = await Usage.findOne({ _id: { $nin: deniedKeys } })
-      .sort({ [modelKey]: 1 })
-      .lean()
+    keyToUse = await Usage.findOneAndUpdate(
+      { _id: { $nin: deniedKeys } },
+      { $set: { [modelKey]: new Date() } },
+      { sort: { [modelKey]: 1 } }
+    ).lean()
   }
 
   if (!keyToUse) return null
 
   const keyId = keyToUse._id
-
-  await Usage.updateOne({ _id: keyId }, { $set: { [modelKey]: new Date() } })
-
   const apiKey = process.env[keyId]
+
   if (!apiKey) {
     console.warn(
       `[PantheonManager]: key found in db (${keyId}) but not in env.`
