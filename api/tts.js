@@ -175,7 +175,7 @@ export default async function handler(req) {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              input: text,
+              input: inputPayload,
               voice_id: process.env.SPEECHIFY_PUPPY_VOICE_ID,
               model: "simba-english",
             }),
