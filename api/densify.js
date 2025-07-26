@@ -81,18 +81,18 @@ export default async function handler(req) {
     try {
       const DENSIFICATION_GOAL_TOKENS = 100_000
       const GOLDEN_RATIO = 0.618
-      const BASE_DENSIFICATION_TOKENS = 12_000
+      const BASE_DENSIFICATION_TOKENS = 8_000
       let cycleCount = 0
 
       while (true) {
         const MAX_CYCLES = 5 // ✎ edge function has 300 sec limit
         cycleCount++
         if (cycleCount > MAX_CYCLES) {
-          await sendStatus("max cycles reached")
+          await sendStatus("densify max cycles reached")
           break
         }
 
-        await sendStatus(`densify fetching flow...`)
+        await sendStatus("densify fetching flow...")
         const flowRes = await fetch(new URL("/api-node/get-flow", req.url), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -111,7 +111,7 @@ export default async function handler(req) {
           })
           break
         }
-        await sendStatus(`densify flow preparing...`)
+        await sendStatus("densify flow preparing...")
 
         const actualDistribution = currentFlow.reduce((acc, wave) => {
           const density = wave.density || 0
@@ -128,6 +128,7 @@ export default async function handler(req) {
           .map((d) => parseInt(d))
           .filter((d) => actualDistribution[d] > idealDistribution[d])
         if (candidatePool.length === 0) {
+          // ✎ is that even possible?
           await sendStatus("no over-represented layers found, terminating.")
           break
         }
