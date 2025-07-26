@@ -79,7 +79,7 @@ export default async function handler(req) {
   // --- main async function ---
   ;(async () => {
     try {
-      const DENSIFICATION_GOAL_TOKENS = 115_000
+      const DENSIFICATION_GOAL_TOKENS = 100_000
       const GOLDEN_RATIO = 0.618
       const BASE_DENSIFICATION_TOKENS = 12_000
       let cycleCount = 0

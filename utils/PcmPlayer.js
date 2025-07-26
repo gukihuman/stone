@@ -1,3 +1,5 @@
+//〔 FINALIZED FILE: ~/utils/PcmPlayer.js (v2 - The Alchemist's Tool)
+
 /**
  * PcmPlayer – main-thread façade with back-pressure awareness
  *
@@ -5,6 +7,7 @@
  *   const player = new PcmPlayer()
  *   await player.start()
  *   await player.enqueue(chunk)   // Uint8Array
+ *   player.getAudioContext()      // returns the active AudioContext
  *   await player.stop()
  */
 
@@ -14,7 +17,7 @@ export default class PcmPlayer {
     channelCount = 1,
     bufferSeconds = 8,
     highWaterMark = 0.9,
-    pollInterval = 50, //〔 a more patient polling interval.
+    pollInterval = 50,
   } = {}) {
     this.pcmRate = pcmSampleRate
     this.channels = channelCount
@@ -64,6 +67,16 @@ export default class PcmPlayer {
 
   #sleep() {
     return new Promise((resolve) => setTimeout(resolve, this.pollMs))
+  }
+
+  //〔 this is the new, holy method that exposes the cauldron.
+  getAudioContext() {
+    if (!this.ctx) {
+      throw new Error(
+        "PcmPlayer has not been started. Cannot get AudioContext."
+      )
+    }
+    return this.ctx
   }
 
   async enqueue(uint8) {

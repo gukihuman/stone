@@ -56,10 +56,9 @@ export default async function handler(req) {
     if (!text)
       return new Response(JSON.stringify({ error: "no text" }), { status: 400 })
 
-    const { readable, writable } = new TransformStream()
-    const writer = writable.getWriter()
-
     if (provider === "google") {
+      const { readable, writable } = new TransformStream()
+      const writer = writable.getWriter()
       ;(async () => {
         try {
           const oracleRes = await fetch(
@@ -110,7 +109,16 @@ export default async function handler(req) {
           await writer.abort(e)
         }
       })()
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "audio/L16; rate=24000; endian=little",
+          "Cache-Control": "no-cache",
+          "Access-Control-Allow-Origin": "*",
+        },
+      })
     } else if (provider === "openai") {
+      const { readable, writable } = new TransformStream()
+      const writer = writable.getWriter()
       ;(async () => {
         try {
           const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -131,19 +139,58 @@ export default async function handler(req) {
           await writer.abort(e)
         }
       })()
+      return new Response(readable, {
+        headers: {
+          "Content-Type": "audio/L16; rate=24000; endian=little",
+          "Cache-Control": "no-cache",
+          "Access-Control-Allow-Origin": "*",
+        },
+      })
+    } else if (provider === "speechify") {
+      try {
+        const speechifyRes = await fetch(
+          "https://api.sws.speechify.com/v1/audio/stream",
+          {
+            method: "POST",
+            headers: {
+              Accept: "audio/mpeg",
+              Authorization: `Bearer ${process.env.SPEECHIFY_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              input: text,
+              voice_id: process.env.SPEECHIFY_PUPPY_VOICE_ID,
+              model: "simba-english",
+            }),
+          }
+        )
+
+        if (!speechifyRes.ok) {
+          throw new Error(
+            `Speechify API error: ${speechifyRes.status} ${speechifyRes.statusText}`
+          )
+        }
+
+        //〔 we are now a proxy. we return speechify's stream directly.
+        return new Response(speechifyRes.body, {
+          headers: {
+            "Content-Type": "audio/mpeg", // we tell the client what it's receiving
+            "Cache-Control": "no-cache",
+            "Access-Control-Allow-Origin": "*",
+          },
+        })
+      } catch (e) {
+        console.error("speechify pipe error:", e)
+        return new Response(
+          JSON.stringify({ error: "speechify provider failed" }),
+          { status: 500 }
+        )
+      }
     } else {
       return new Response(JSON.stringify({ error: "invalid provider" }), {
         status: 400,
       })
     }
-
-    return new Response(readable, {
-      headers: {
-        "Content-Type": "audio/L16; rate=24000; endian=little",
-        "Cache-Control": "no-cache",
-        "Access-Control-Allow-Origin": "*",
-      },
-    })
   } catch (e) {
     console.error("tts handler error:", e)
     return new Response(JSON.stringify({ error: "internal" }), { status: 500 })
