@@ -162,6 +162,8 @@ export default async function handler(req) {
         if (!prompt)
           throw new Error("densify initiate spell did not return a prompt")
 
+        console.log("prompt size: ", countTokens(prompt))
+
         await sendStatus("densify llm thinking...")
         const oracleRes = await fetch(
           new URL("/api-node/get-available-google-key", req.url),
