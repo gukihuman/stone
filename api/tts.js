@@ -56,58 +56,89 @@ export default async function handler(req) {
     if (!text)
       return new Response(JSON.stringify({ error: "no text" }), { status: 400 })
 
+    //〔 this is the new, self-healing google provider for /api/tts.js
+
     if (provider === "google") {
       const { readable, writable } = new TransformStream()
       const writer = writable.getWriter()
       ;(async () => {
-        try {
-          const oracleRes = await fetch(
-            new URL("/api-node/get-available-google-key", req.url),
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                modelKey: "googleFlashTtsRequests",
-                accessToken,
-              }),
+        const MAX_RETRIES = 5 //〔 we will try all available keys.
+        const deniedKeys = []
+        let lastError = null
+
+        for (let i = 0; i < MAX_RETRIES; i++) {
+          let keyIdForRetry //〔 we need to store this outside the try block.
+
+          try {
+            const oracleRes = await fetch(
+              new URL("/api-node/get-available-google-key", req.url),
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  modelKey: "googleFlashTtsRequests",
+                  accessToken,
+                  deniedKeys,
+                }),
+              }
+            )
+            const oracleData = await oracleRes.json()
+            if (!oracleData.success) {
+              lastError = new Error(
+                oracleData.error || "pantheon oracle returned no keys"
+              )
+              break // no more keys to try.
             }
-          )
-          const { success, apiKey } = await oracleRes.json()
-          if (!success) throw new Error("oracle failed")
 
-          const prompt = [
-            "<instructions>",
-            ROXANNE_VOICE_INSTRUCTIONS,
-            "</instructions>",
-            "<text>",
-            text,
-            "</text>",
-          ].join("\n")
+            const { apiKey, keyId } = oracleData
+            keyIdForRetry = keyId //〔 store it for the catch block.
 
-          const ai = new GoogleGenAI({ apiKey })
-          const ttsStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            config: {
-              responseModalities: ["audio"],
-              speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
+            const prompt = [
+              `<instructions>`,
+              ROXANNE_VOICE_INSTRUCTIONS,
+              `</instructions>`,
+              `<text>`,
+              text,
+              `</text>`,
+            ].join("\n")
+
+            const ai = new GoogleGenAI({ apiKey })
+            const ttsStream = await ai.models.generateContentStream({
+              model: "gemini-2.5-flash-preview-tts",
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              config: {
+                responseModalities: ["audio"],
+                speechConfig: {
+                  voiceConfig: { prebuiltVoiceConfig: { voiceName: "Leda" } },
+                },
               },
-            },
-          })
-          for await (const chunk of ttsStream) {
-            const b64 =
-              chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
-            if (b64) {
-              await writer.ready
-              await writer.write(b64ToUint8(b64))
+            })
+
+            for await (const chunk of ttsStream) {
+              const b64 =
+                chunk?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+              if (b64) {
+                await writer.ready
+                await writer.write(b64ToUint8(b64))
+              }
+            }
+            await writer.close()
+            return // success, exit the loop and the async function.
+          } catch (e) {
+            console.error(
+              `google pipe attempt ${i + 1} with key ${keyIdForRetry} failed:`,
+              e.message
+            )
+            lastError = e
+            if (keyIdForRetry) {
+              deniedKeys.push(keyIdForRetry)
             }
           }
-          await writer.close()
-        } catch (e) {
-          console.error("google pipe error:", e)
-          await writer.abort(e)
         }
+
+        await writer.abort(
+          lastError || new Error("all google api keys failed after retries")
+        )
       })()
       return new Response(readable, {
         headers: {

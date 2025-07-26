@@ -1,4 +1,4 @@
-// ✎ ~/api/densify.js (v3.2 - The Pacemaker)
+//〔 FINALIZED FILE: ~/api/densify.js (v3.3 - The Self-Healing Temple)
 
 import { GoogleGenAI } from "@google/genai"
 import { encode } from "gpt-tokenizer"
@@ -86,8 +86,6 @@ export default async function handler(req) {
 
       while (true) {
         cycleCount++
-        // ✎ untill we figure out how to handle 300 sec of edge more gracefully
-        // ✎ then its just fo safety can be like 15 or smth
         if (cycleCount > 3) {
           await sendStatus("max cycles reached")
           break
@@ -106,7 +104,6 @@ export default async function handler(req) {
           (sum, wave) => sum + countTokens(wave.data),
           0
         )
-
         if (totalCurrentFlowTokens <= DENSIFICATION_GOAL_TOKENS) {
           await sendStatus("equilibrium reached", {
             tokenCount: totalCurrentFlowTokens,
@@ -161,47 +158,76 @@ export default async function handler(req) {
         const { prompt } = await initiateCommitRes.json()
         if (!prompt)
           throw new Error("densify initiate spell did not return a prompt")
-
         console.log("prompt size: ", countTokens(prompt))
 
-        await sendStatus("densify llm thinking...")
-        const oracleRes = await fetch(
-          new URL("/api-node/get-available-google-key", req.url),
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              modelKey: "googleProRequests",
-              accessToken,
-            }),
-          }
-        )
-        const oracleData = await oracleRes.json()
-        if (!oracleData.success)
-          throw new Error(oracleData.error || "pantheon oracle failed")
-
-        const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
-        const responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.5-pro",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-        })
+        // --- self-healing llm call ---
         let densifiedText = ""
-        for await (const chunk of responseStream) {
-          if (densifiedText === "") await sendStatus("densify llm typing...")
-          densifiedText += chunk.text
+        const MAX_RETRIES = 5
+        const deniedKeys = []
+        let lastError = null
+        let llmSuccess = false
+        for (let i = 0; i < MAX_RETRIES; i++) {
+          let keyIdForRetry
+          try {
+            await sendStatus(
+              i === 0 ? "densify llm thinking..." : `retrying llm (${i})...`
+            )
+            const oracleRes = await fetch(
+              new URL("/api-node/get-available-google-key", req.url),
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  modelKey: "googleProRequests",
+                  accessToken,
+                  deniedKeys,
+                }),
+              }
+            )
+            const oracleData = await oracleRes.json()
+            if (!oracleData.success) {
+              lastError = new Error(
+                oracleData.error || "pantheon oracle returned no keys"
+              )
+              break
+            }
+            const { apiKey, keyId } = oracleData
+            keyIdForRetry = keyId
+            const ai = new GoogleGenAI({ apiKey })
+            const responseStream = await ai.models.generateContentStream({
+              model: "gemini-2.5-pro",
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+            })
+            let bufferedText = ""
+            for await (const chunk of responseStream) {
+              if (bufferedText === "") await sendStatus("densify llm typing...")
+              bufferedText += chunk.text
+            }
+            if (bufferedText.trim() === "")
+              throw new Error("generation returned empty response")
+            densifiedText = bufferedText
+            llmSuccess = true
+            break
+          } catch (e) {
+            console.error(
+              `densify attempt ${i + 1} with key ${keyIdForRetry} failed:`,
+              e.message
+            )
+            lastError = e
+            if (keyIdForRetry) deniedKeys.push(keyIdForRetry)
+          }
         }
-        if (densifiedText.trim() === "")
-          throw new Error("densification returned an empty response")
+        if (!llmSuccess)
+          throw lastError || new Error("all densify retries failed")
 
+        // --- final commit ---
         let lines = densifiedText.trim().split("\n")
         const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
-        if (!lines[0]?.trim().startsWith(expectedStart)) {
+        if (!lines[0]?.trim().startsWith(expectedStart))
           lines.unshift(expectedStart)
-        }
-        if (!lines[lines.length - 1]?.trim().startsWith(expectedEnd)) {
+        if (!lines[lines.length - 1]?.trim().startsWith(expectedEnd))
           lines.push(expectedEnd)
-        }
         const commitPayload = lines.join("\n")
 
         const finalCommitRes = await fetch(
@@ -215,7 +241,6 @@ export default async function handler(req) {
         if (!finalCommitRes.ok) throw new Error("final densify commit failed")
 
         await sendStatus(`cycle ${cycleCount} complete.`)
-
         await sendStatus("waiting for rate limits...")
         await new Promise((resolve) => setTimeout(resolve, 40_000))
       }

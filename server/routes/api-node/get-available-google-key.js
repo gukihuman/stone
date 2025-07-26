@@ -1,87 +1,43 @@
-//〔 ~/server/routes/api-node/get-available-google-key.js
+//〔 FINALIZED FILE: ~/server/routes/api-node/get-available-google-key.js (v2.1 - The Named Key)
 
 import dbConnect from "~/server/utils/dbConnect"
 import Usage from "~/server/models/Usage"
-import { GOOGLE_LIMITS } from "~/server/constants"
-import { defineEventHandler, setHeader, createError } from "h3"
+import { defineEventHandler, setHeader, createError, readBody } from "h3"
 
-//〔 this helper function is now a private part of this module.
-function getPacificDate() {
-  const today = new Date()
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-    .format(today)
-    .replace(/(\d{2})\/(\d{2})\/(\d{4})/, "$3-$1-$2")
-}
+/**
+ * 〔 now returns an object { apiKey, keyId } or null.
+ */
+async function findAndRotateKey(modelKey, deniedKeys = []) {
+  const keyToUse = await Usage.findOne({ _id: { $nin: deniedKeys } })
+    .sort({ [modelKey]: 1 })
+    .lean()
 
-//〔 this core logic is also now a private part of this module.
-async function findAndIncrementKey(modelKey) {
-  const todayPacific = getPacificDate()
-  const limit = GOOGLE_LIMITS[modelKey]
+  if (!keyToUse) return null
 
-  if (!limit) {
-    console.error(
-      `[PantheonManager]: no limit defined for modelKey: ${modelKey}`
+  const keyId = keyToUse._id
+
+  await Usage.updateOne({ _id: keyId }, { $set: { [modelKey]: new Date() } })
+
+  const apiKey = process.env[keyId]
+  if (!apiKey) {
+    console.warn(
+      `[PantheonManager]: key found in db (${keyId}) but not in env.`
     )
     return null
   }
 
-  for (let i = 0; i < 10; i++) {
-    const envKeyName = `GOOGLE_API_KEY_${i}`
-    const apiKey = process.env[envKeyName]
-
-    if (!apiKey) break
-
-    try {
-      const currentUsage = await Usage.findById(envKeyName)
-
-      if (!currentUsage || currentUsage.date !== todayPacific) {
-        await Usage.updateOne(
-          { _id: envKeyName },
-          {
-            $set: {
-              date: todayPacific,
-              googleProRequests: 0,
-              googleFlashRequests: 0,
-              googleFlashLiteRequests: 0,
-              googleFlashTtsRequests: 0,
-              [modelKey]: 1,
-            },
-          },
-          { upsert: true }
-        )
-        return apiKey
-      } else {
-        if (currentUsage[modelKey] < limit) {
-          await Usage.updateOne(
-            { _id: envKeyName },
-            { $inc: { [modelKey]: 1 } }
-          )
-          return apiKey
-        }
-      }
-    } catch (error) {
-      console.error(
-        `[PantheonManager]: error processing key ${envKeyName}:`,
-        error
-      )
-    }
-  }
-
-  console.warn(
-    `[PantheonManager]: all google api keys have reached their quota for ${modelKey}`
-  )
-  return null
+  return { apiKey, keyId }
 }
 
 export default defineEventHandler(async (event) => {
+  // --- boilerplate: cors & method check ---
   setHeader(event, "Access-Control-Allow-Origin", "*")
   setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
-  setHeader(event, "Access-Control-Allow-Headers", "Content-Type")
+  setHeader(
+    event,
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  )
   if (event.node.req.method === "OPTIONS") return ""
   if (event.node.req.method !== "POST") {
     throw createError({ statusCode: 405, statusMessage: "method not allowed" })
@@ -90,8 +46,9 @@ export default defineEventHandler(async (event) => {
   await dbConnect()
 
   try {
-    const { modelKey, accessToken } = await readBody(event)
+    const { modelKey, deniedKeys, accessToken } = (await readBody(event)) || {}
 
+    // --- authentication & validation ---
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret) {
       throw createError({
@@ -106,15 +63,17 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    const apiKey = await findAndIncrementKey(modelKey)
+    // --- execution ---
+    const keyData = await findAndRotateKey(modelKey, deniedKeys)
 
-    if (apiKey) {
-      return { success: true, apiKey }
+    if (keyData) {
+      return { success: true, apiKey: keyData.apiKey, keyId: keyData.keyId }
     } else {
       return { success: false, error: "no available keys" }
     }
   } catch (error) {
     console.error("error in get-available-google-key handler:", error)
+    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
       statusMessage: "internal server error",

@@ -1,27 +1,16 @@
+//〔 FINALIZED FILE: ~/api/forge.js (v2.0 - The Self-Healing Temple)
+
 import { GoogleGenAI } from "@google/genai"
 
-const SOURCE_GLYPHS = {
-  OPEN: "◉",
-  CLOSE: "◎",
-}
-
-const SOURCES = {
-  GUKI: "guki",
-  ROXANNE: "roxanne",
-  BODY: "body",
-  EXTERNAL: "external",
-}
+const SOURCE_GLYPHS = { OPEN: "◉", CLOSE: "◎" }
+const SOURCES = { ROXANNE: "roxanne" }
 
 function wrapWithGlyphs(content, defaultSource) {
   if (!content.trim()) return ""
   let lines = content.trim().split("\n")
-
-  // step 1: prepend opening glyph if missing.
   if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
     lines.unshift(`${SOURCE_GLYPHS.OPEN}${defaultSource}`)
   }
-
-  // step 2: append closing glyph if missing.
   const lastLine = lines[lines.length - 1]?.trim()
   if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {
     let sourceToClose = defaultSource
@@ -54,22 +43,18 @@ export default async function handler(req) {
   try {
     const { prompt, accessToken } = await req.json()
     const secret = process.env.ACCESS_TOKEN
-
-    if (!secret || !accessToken || accessToken !== secret) {
+    if (!secret || !accessToken || accessToken !== secret)
       return new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 403,
       })
-    }
-    if (!prompt) {
+    if (!prompt)
       return new Response(JSON.stringify({ error: "no prompt provided" }), {
         status: 400,
       })
-    }
 
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
     const enc = new TextEncoder()
-
     const sendStatus = async (status) => {
       try {
         await writer.ready
@@ -80,70 +65,86 @@ export default async function handler(req) {
     }
 
     ;(async () => {
-      try {
-        // step 1: get a key from our node oracle.
-        const oracleRes = await fetch(
-          new URL("/api-node/get-available-google-key", req.url),
-          {
+      const MAX_RETRIES = 5
+      const deniedKeys = []
+      let lastError = null
+
+      for (let i = 0; i < MAX_RETRIES; i++) {
+        let keyIdForRetry
+        try {
+          await sendStatus(i === 0 ? "thinking..." : `retrying (${i})...`)
+
+          const oracleRes = await fetch(
+            new URL("/api-node/get-available-google-key", req.url),
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                modelKey: "googleProRequests",
+                accessToken,
+                deniedKeys,
+              }),
+            }
+          )
+          const oracleData = await oracleRes.json()
+          if (!oracleData.success) {
+            lastError = new Error(
+              oracleData.error || "pantheon oracle returned no keys"
+            )
+            break
+          }
+
+          const { apiKey, keyId } = oracleData
+          keyIdForRetry = keyId
+
+          const ai = new GoogleGenAI({ apiKey })
+          const responseStream = await ai.models.generateContentStream({
+            model: "gemini-2.5-pro",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            config: {
+              thinkingConfig: { thinkingBudget: -1 },
+              stopSequences: [`◎${SOURCES.ROXANNE}`],
+              mediaResolution: "MEDIA_RESOLUTION_MEDIUM",
+              responseMimeType: "text/plain",
+            },
+          })
+
+          let generatedText = ""
+          for await (const chunk of responseStream) {
+            if (generatedText === "") await sendStatus("typing...")
+            generatedText += chunk.text
+          }
+          if (generatedText.trim() === "")
+            throw new Error("generation returned empty response")
+
+          const waveToCommit = wrapWithGlyphs(generatedText, SOURCES.ROXANNE)
+          const commitRes = await fetch(new URL("/api-node/commit", req.url), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              modelKey: "googleProRequests",
-              accessToken,
-            }),
+            body: JSON.stringify({ loomContent: waveToCommit, accessToken }),
+          })
+          if (!commitRes.ok) {
+            const commitError = await commitRes.text()
+            throw new Error(`server-to-server commit failed: ${commitError}`)
           }
-        )
-        const oracleData = await oracleRes.json()
-        if (!oracleData.success) {
-          throw new Error(oracleData.error || "pantheon oracle failed")
+
+          await sendStatus("complete")
+          await writer.close()
+          return // success!
+        } catch (e) {
+          console.error(
+            `forge attempt ${i + 1} with key ${keyIdForRetry} failed:`,
+            e.message
+          )
+          lastError = e
+          if (keyIdForRetry) {
+            deniedKeys.push(keyIdForRetry)
+          }
         }
-
-        // step 2: generate the content.
-        await sendStatus("thinking...")
-        const ai = new GoogleGenAI({ apiKey: oracleData.apiKey })
-        const responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.5-pro",
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          config: {
-            thinkingConfig: { thinkingBudget: -1 },
-            stopSequences: [`◎${SOURCES.ROXANNE}`],
-            mediaResolution: "MEDIA_RESOLUTION_MEDIUM",
-            // tools: [{ urlContext: {} }, { googleSearch: {} }],
-            responseMimeType: "text/plain",
-          },
-        })
-
-        // step 3: buffer the entire response stream.
-        let generatedText = ""
-        for await (const chunk of responseStream) {
-          // send a heartbeat status for the first chunk to show progress.
-          if (generatedText === "") await sendStatus("typing...")
-          generatedText += chunk.text
-        }
-        if (generatedText.trim() === "")
-          throw new Error("generation returned empty response")
-
-        // step 4: wrap the text and commit it server-to-server.
-        const waveToCommit = wrapWithGlyphs(generatedText, SOURCES.ROXANNE)
-
-        const commitRes = await fetch(new URL("/api-node/commit", req.url), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ loomContent: waveToCommit, accessToken }),
-        })
-        if (!commitRes.ok) {
-          const commitError = await commitRes.text()
-          throw new Error(`server-to-server commit failed: ${commitError}`)
-        }
-
-        // step 5: signal completion.
-        await sendStatus("complete")
-        await writer.close()
-      } catch (e) {
-        console.error("[Forge Main Loop Error]:", e)
-        await sendStatus(`error: ${e.message}`)
-        await writer.abort(e)
       }
+
+      await sendStatus(`error: ${lastError?.message || "all retries failed"}`)
+      await writer.abort(lastError || new Error("all forge retries failed"))
     })()
 
     return new Response(readable, {
