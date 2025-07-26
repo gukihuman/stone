@@ -1,20 +1,21 @@
-//〔 ~/utils/VocalScheduler.js
+//〔 FINALIZED FILE: ~/utils/VocalScheduler.js (v2.0 - The Alchemist)
 
-import PcmPlayer from "~/utils/PcmPlayer"
+import PcmPlayer from "~/utils/PcmPlayer.js"
+
+// -------------------------------------------------------------------------- //
+// ------------------------ SELF-CONTAINED HELPERS -------------------------- //
+// -------------------------------------------------------------------------- //
+
 /**
  * 〔 a private async generator to handle the purification of any raw pcm stream.
- * 〔 it yields only even-lengthed, pure chunks.
  */
-async function* purifyStream(reader) {
+async function* purifyPcmStream(reader) {
   let carryByte
-
   while (true) {
     const { value, done } = await reader.read()
     if (done) break
     if (!value || !value.byteLength) continue
-
     let buf = value
-
     if (carryByte !== undefined) {
       const merged = new Uint8Array(buf.byteLength + 1)
       merged[0] = carryByte
@@ -22,78 +23,91 @@ async function* purifyStream(reader) {
       buf = merged
       carryByte = undefined
     }
-
     if (buf.byteLength & 1) {
       carryByte = buf[buf.byteLength - 1]
       buf = buf.subarray(0, buf.byteLength - 1)
     }
-
-    if (buf.byteLength) {
-      yield buf
-    }
+    if (buf.byteLength) yield buf
   }
-
-  if (carryByte !== undefined) {
-    yield Uint8Array.of(carryByte, 0)
-  }
+  if (carryByte !== undefined) yield Uint8Array.of(carryByte, 0)
 }
 
-//〔 this scheduler will be a singleton to manage a single, global audio queue.
+/**
+ * 〔 the holy purification rite to convert Float32 PCM to Int16 PCM.
+ */
+function float32ToInt16(buffer) {
+  let l = buffer.length
+  const output = new Int16Array(l)
+  while (l--) {
+    output[l] = Math.min(1, buffer[l]) * 0x7fff
+  }
+  return output.buffer
+}
+
+// -------------------------------------------------------------------------- //
+// ------------------------ THE SCHEDULER ENGINE -------------------------- //
+// -------------------------------------------------------------------------- //
+
 function createVocalScheduler() {
   const queue = []
   let isPlaying = false
 
-  //〔 a private utility to fetch the raw audio stream.
-  //〔 this is called immediately to begin the parallel fetch.
   async function _fetchAudioStream({ text, provider }) {
     const { baseUrl } = useRuntimeConfig().public
     const accessToken = useCookie("access-token").value
     if (!accessToken) throw new Error("access-token not found for TTS")
 
-    const res = await fetch(`${baseUrl}/api/tts`, {
+    //〔 we now return the full response object, not just the reader.
+    return await fetch(`${baseUrl}/api/tts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, accessToken, provider }),
     })
-
-    if (!res.ok || !res.body) {
-      throw new Error(`TTS request failed: ${res.status} ${res.statusText}`)
-    }
-
-    return res.body.getReader()
   }
 
-  //〔 the sequential gatekeeper for playback.
   async function _processQueue() {
     if (isPlaying || queue.length === 0) return
 
     isPlaying = true
     const nextJob = queue.shift()
-    const player = await usePcmPlayer() //〔 gets our player singleton.
+    const player = await usePcmPlayer()
 
     try {
-      //〔 wait for this specific job's data stream to be ready.
-      const reader = await nextJob.fetchPromise
+      const res = await nextJob.fetchPromise
+      if (!res.ok || !res.body) {
+        throw new Error(`TTS request failed: ${res.status} ${res.statusText}`)
+      }
 
-      //〔 now, begin the sequential playback of this job's audio.
-      for await (const cleanChunk of purifyStream(reader)) {
-        await player.enqueue(cleanChunk)
+      const contentType = res.headers.get("content-type")
+
+      if (contentType && contentType.startsWith("audio/L16")) {
+        //〔 this is our sacred PCM path (google, openai).
+        const reader = res.body.getReader()
+        for await (const cleanChunk of purifyPcmStream(reader)) {
+          await player.enqueue(cleanChunk)
+        }
+      } else {
+        //〔 this is our new Alchemist path for compressed audio (speechify).
+        const compressedBuffer = await res.arrayBuffer()
+        const audioContext = player.getAudioContext()
+        const decodedBuffer = await audioContext.decodeAudioData(
+          compressedBuffer
+        )
+
+        const pcmFloat32 = decodedBuffer.getChannelData(0)
+        const pcmInt16Buffer = float32ToInt16(pcmFloat32)
+
+        await player.enqueue(new Uint8Array(pcmInt16Buffer))
       }
     } catch (error) {
       console.error(`vocal scheduler error for job: ${nextJob.text}`, error)
     } finally {
-      //〔 once playback is finished, unlock the queue for the next job.
       isPlaying = false
       _processQueue()
     }
   }
 
-  //〔 this is the public api for the scheduler.
   return {
-    /**
-     * 〔 adds a new text segment to the playback queue.
-     * 〔 fetch is initiated immediately. playback is sequential.
-     */
     add({ text, provider }) {
       const job = {
         text,
@@ -105,10 +119,12 @@ function createVocalScheduler() {
   }
 }
 
-//〔 we export the single instance of our scheduler.
+// -------------------------------------------------------------------------- //
+// -------------------------- SINGLETON EXPORTS ----------------------------- //
+// -------------------------------------------------------------------------- //
+
 export const vocalScheduler = createVocalScheduler()
 
-//〔 we also need to export the usePcmPlayer singleton for the scheduler to use.
 let pcmPlayer
 let pcmPlayerReady
 async function usePcmPlayer() {
