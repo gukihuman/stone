@@ -169,9 +169,10 @@ export default async function handler(req) {
         for (let i = 0; i < MAX_RETRIES; i++) {
           let keyIdForRetry
           try {
-            await sendStatus(
-              i === 0 ? "densify llm thinking..." : `retrying llm (${i})...`
-            )
+            await sendStatus(`retrying llm ${i}...`)
+            // await sendStatus(
+            //   i === 0 ? "densify llm thinking..." : `retrying llm (${i})...`
+            // )
             const oracleRes = await fetch(
               new URL("/api-node/get-available-google-key", req.url),
               {

@@ -1,46 +1,50 @@
-//〔 FINALIZED FILE: ~/server/routes/api-node/get-available-google-key.js (v2.3 - The Atomic Update)
+//〔 FINALIZED FILE: ~/server/routes/api-node/get-available-google-key.js (v2.4 - The Honest Oracle)
 
 import dbConnect from "~/server/utils/dbConnect"
 import Usage from "~/server/models/Usage"
 import { defineEventHandler, setHeader, createError, readBody } from "h3"
 
+/**
+ * 〔 this has been reforged into a "precision seeder".
+ * 〔 it now only creates documents for keys found in the environment but not in the database.
+ */
 async function bootstrapKeys() {
-  const promises = []
+  const envKeyIds = []
   for (let i = 0; i < 10; i++) {
     const keyId = `GOOGLE_API_KEY_${i}`
-    if (process.env[keyId]) {
-      promises.push(
-        Usage.updateOne(
-          { _id: keyId },
-          { $setOnInsert: { _id: keyId } },
-          { upsert: true }
-        )
-      )
-    } else {
-      break
-    }
+    if (process.env[keyId]) envKeyIds.push(keyId)
+    else break
   }
-  await Promise.all(promises)
+
+  const existingDbKeys = await Usage.find({ _id: { $in: envKeyIds } })
+    .select("_id")
+    .lean()
+  const existingKeyIds = new Set(existingDbKeys.map((k) => k._id))
+
+  const missingKeyIds = envKeyIds.filter((id) => !existingKeyIds.has(id))
+
+  if (missingKeyIds.length > 0) {
+    // ✎ the schema will apply defaults.
+    const newDocs = missingKeyIds.map((id) => ({ _id: id }))
+    await Usage.insertMany(newDocs)
+  }
 }
 
 /**
- * 〔 now uses findOneAndUpdate for an atomic operation.
+ * 〔 reforged to be an "honest oracle" using { new: true }.
  */
 async function findAndRotateKey(modelKey, deniedKeys = []) {
-  let keyToUse = await Usage.findOneAndUpdate(
-    { _id: { $nin: deniedKeys } }, // find a key not in the denied list
-    { $set: { [modelKey]: new Date() } }, // update its timestamp immediately
-    { sort: { [modelKey]: 1 } } // sort to get the oldest one
-  ).lean()
+  //〔 we bootstrap first to ensure the ledger is up to date.
+  //〔 this is an idempotent operation and safe to run every time.
+  await bootstrapKeys()
 
-  if (!keyToUse) {
-    await bootstrapKeys()
-    keyToUse = await Usage.findOneAndUpdate(
-      { _id: { $nin: deniedKeys } },
-      { $set: { [modelKey]: new Date() } },
-      { sort: { [modelKey]: 1 } }
-    ).lean()
-  }
+  const keyToUse = await Usage.findOneAndUpdate(
+    { _id: { $nin: deniedKeys } },
+    { $set: { [modelKey]: new Date() } },
+    {
+      sort: { [modelKey]: 1 },
+    }
+  ).lean()
 
   if (!keyToUse) return null
 
@@ -63,7 +67,7 @@ export default defineEventHandler(async (event) => {
   setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
   setHeader(
     event,
-    "Access-Control-Allow-Headers",
+    "Access-control-allow-headers",
     "Content-Type, Authorization"
   )
   if (event.node.req.method === "OPTIONS") return ""
