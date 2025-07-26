@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: ~/api/densify.js (v3.3 - The Self-Healing Temple)
+// ✎ ~/api/densify.js (v3.3 - The Self-Healing Temple)
 
 import { GoogleGenAI } from "@google/genai"
 import { encode } from "gpt-tokenizer"
@@ -85,8 +85,9 @@ export default async function handler(req) {
       let cycleCount = 0
 
       while (true) {
+        const MAX_CYCLES = 5 // ✎ edge function has 300 sec limit
         cycleCount++
-        if (cycleCount > 3) {
+        if (cycleCount > MAX_CYCLES) {
           await sendStatus("max cycles reached")
           break
         }
@@ -169,10 +170,7 @@ export default async function handler(req) {
         for (let i = 0; i < MAX_RETRIES; i++) {
           let keyIdForRetry
           try {
-            await sendStatus(`retrying llm ${i}...`)
-            // await sendStatus(
-            //   i === 0 ? "densify llm thinking..." : `retrying llm (${i})...`
-            // )
+            await sendStatus("thinking...")
             const oracleRes = await fetch(
               new URL("/api-node/get-available-google-key", req.url),
               {
