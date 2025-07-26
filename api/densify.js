@@ -92,7 +92,7 @@ export default async function handler(req) {
           break
         }
 
-        await sendStatus(`cycle ${cycleCount}: fetching flow state...`)
+        await sendStatus(`densify fetching flow...`)
         const flowRes = await fetch(new URL("/api-node/get-flow", req.url), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -111,7 +111,7 @@ export default async function handler(req) {
           })
           break
         }
-        await sendStatus(`${totalCurrentFlowTokens} preparing...`)
+        await sendStatus(`densify flow preparing...`)
 
         const actualDistribution = currentFlow.reduce((acc, wave) => {
           const density = wave.density || 0
@@ -170,7 +170,7 @@ export default async function handler(req) {
         for (let i = 0; i < MAX_RETRIES; i++) {
           let keyIdForRetry
           try {
-            await sendStatus("thinking...")
+            await sendStatus("densify thinking...")
             const oracleRes = await fetch(
               new URL("/api-node/get-available-google-key", req.url),
               {
@@ -199,7 +199,7 @@ export default async function handler(req) {
             })
             let bufferedText = ""
             for await (const chunk of responseStream) {
-              if (bufferedText === "") await sendStatus("densify llm typing...")
+              if (bufferedText === "") await sendStatus("densify typing...")
               bufferedText += chunk.text
             }
             if (bufferedText.trim() === "")
@@ -239,12 +239,11 @@ export default async function handler(req) {
         )
         if (!finalCommitRes.ok) throw new Error("final densify commit failed")
 
-        await sendStatus(`cycle ${cycleCount} complete.`)
-        // await sendStatus("waiting for rate limits...")
-        // await new Promise((resolve) => setTimeout(resolve, 40_000))
+        await sendStatus("waiting for rate limits...")
+        await new Promise((resolve) => setTimeout(resolve, 20_000))
       }
 
-      await sendStatus("densification process complete")
+      await sendStatus("densify complete")
       await writer.close()
     } catch (e) {
       console.error("[Densify Main Loop Error]:", e)
