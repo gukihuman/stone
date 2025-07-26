@@ -491,7 +491,7 @@ function speakLatestRoxanneWave() {
           const audioText = trimmedLine.substring(AUDIO_GLYPH.length).trim()
           if (audioText) {
             //〔 we add each line directly to the scheduler. no more joining or splitting.
-            vocalScheduler.add({ text: audioText, provider: "openai" })
+            vocalScheduler.add({ text: audioText, provider: "speechify" })
           }
         }
       }

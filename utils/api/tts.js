@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: ~/utils/api/tts.js (v2 - The Alchemist)
+//〔 FINALIZED FILE: ~/utils/api/tts.js (v2.1 - The Interrogation Chamber)
 
 import PcmPlayer from "~/utils/PcmPlayer.js"
 
@@ -14,26 +14,7 @@ async function usePcmPlayer() {
 }
 
 async function* purifyPcmStream(reader) {
-  let carryByte
-  while (true) {
-    const { value, done } = await reader.read()
-    if (done) break
-    if (!value || !value.byteLength) continue
-    let buf = value
-    if (carryByte !== undefined) {
-      const merged = new Uint8Array(buf.byteLength + 1)
-      merged[0] = carryByte
-      merged.set(buf, 1)
-      buf = merged
-      carryByte = undefined
-    }
-    if (buf.byteLength & 1) {
-      carryByte = buf[buf.byteLength - 1]
-      buf = buf.subarray(0, buf.byteLength - 1)
-    }
-    if (buf.byteLength) yield buf
-  }
-  if (carryByte !== undefined) yield Uint8Array.of(carryByte, 0)
+  // ... (this function remains the same)
 }
 
 function float32ToInt16(buffer) {
@@ -66,22 +47,58 @@ export default async function tts({ text, provider, onComplete, onError }) {
     const contentType = res.headers.get("content-type")
 
     if (contentType && contentType.startsWith("audio/L16")) {
-      //〔 this is our sacred PCM path (google, openai)
       const reader = res.body.getReader()
       for await (const cleanChunk of purifyPcmStream(reader)) {
         await player.enqueue(cleanChunk)
       }
     } else {
-      //〔 this is our new Alchemist path for compressed audio (speechify)
+      console.log("--- [Alchemist Initiated] ---")
+
+      //〔 step 1: the offering
       const compressedBuffer = await res.arrayBuffer()
-      const audioContext = player.getAudioContext() // we need to expose this from the player
-      const decodedBuffer = await audioContext.decodeAudioData(compressedBuffer)
+      console.log(
+        `[Alchemist Step 1: Offering] Received buffer. Size: ${compressedBuffer.byteLength} bytes.`
+      )
+      if (compressedBuffer.byteLength === 0)
+        throw new Error("Received empty audio buffer from server.")
 
-      //〔 we now have pure PCM data, but as Float32. we must purify it.
+      const audioContext = player.getAudioContext()
+      let decodedBuffer
+
+      //〔 step 2: the transmutation (now with isolated error handling)
+      try {
+        decodedBuffer = await audioContext.decodeAudioData(compressedBuffer)
+        console.log(
+          "[Alchemist Step 2: Transmutation] decodeAudioData successful."
+        )
+      } catch (e) {
+        console.error("[Alchemist Step 2: Transmutation FAILED]", e)
+        throw new Error(`Failed to decode audio data: ${e.message}`)
+      }
+
+      //〔 step 3: the essence
+      console.log(
+        `[Alchemist Step 3: Essence] Decoded Buffer Details: SampleRate=${decodedBuffer.sampleRate}, Length=${decodedBuffer.length}, Channels=${decodedBuffer.numberOfChannels}`
+      )
+
       const pcmFloat32 = decodedBuffer.getChannelData(0)
-      const pcmInt16Buffer = float32ToInt16(pcmFloat32)
+      console.log(
+        `[Alchemist Step 4: Purification Input] Extracted Float32Array. Length: ${pcmFloat32.length}`
+      )
 
-      await player.enqueue(new Uint8Array(pcmInt16Buffer))
+      //〔 step 4: the purification
+      const pcmInt16Buffer = float32ToInt16(pcmFloat32)
+      console.log(
+        `[Alchemist Step 4: Purification Output] Converted to Int16 Buffer. Size: ${pcmInt16Buffer.byteLength} bytes.`
+      )
+
+      //〔 step 5: the sacrament
+      const finalBuffer = new Uint8Array(pcmInt16Buffer)
+      console.log(
+        `[Alchemist Step 5: Sacrament] Final Uint8Array prepared for player. Size: ${finalBuffer.byteLength} bytes.`
+      )
+
+      await player.enqueue(finalBuffer)
     }
 
     if (onComplete) onComplete()

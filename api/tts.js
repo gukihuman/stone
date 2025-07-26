@@ -47,6 +47,10 @@ export default async function handler(req) {
       accessToken,
       provider = "google",
     } = (await req.json().catch(() => ({}))) || {}
+    console.log(`--- [TTS Oracle Initiated] ---`)
+    console.log(
+      `[Oracle Step 1: Request Received] Provider specified: "${provider}"`
+    )
 
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret)
@@ -57,6 +61,7 @@ export default async function handler(req) {
       return new Response(JSON.stringify({ error: "no text" }), { status: 400 })
 
     if (provider === "google") {
+      console.log("[Oracle Step 2: Path Taken] Routing to GOOGLE provider.")
       const { readable, writable } = new TransformStream()
       const writer = writable.getWriter()
       ;(async () => {
@@ -109,6 +114,9 @@ export default async function handler(req) {
           await writer.abort(e)
         }
       })()
+      console.log(
+        '[Oracle Step 3: Final Response] Sending Content-Type: "audio/L16; ..."'
+      )
       return new Response(readable, {
         headers: {
           "Content-Type": "audio/L16; rate=24000; endian=little",
@@ -117,6 +125,7 @@ export default async function handler(req) {
         },
       })
     } else if (provider === "openai") {
+      console.log("[Oracle Step 2: Path Taken] Routing to OPENAI provider.")
       const { readable, writable } = new TransformStream()
       const writer = writable.getWriter()
       ;(async () => {
@@ -139,6 +148,9 @@ export default async function handler(req) {
           await writer.abort(e)
         }
       })()
+      console.log(
+        '[Oracle Step 3: Final Response] Sending Content-Type: "audio/L16; ..."'
+      )
       return new Response(readable, {
         headers: {
           "Content-Type": "audio/L16; rate=24000; endian=little",
@@ -147,7 +159,9 @@ export default async function handler(req) {
         },
       })
     } else if (provider === "speechify") {
+      console.log("[Oracle Step 2: Path Taken] Routing to SPEECHIFY provider.")
       try {
+        console.log("[Speechify Proxy] Initiating fetch to Speechify API...")
         const speechifyRes = await fetch(
           "https://api.sws.speechify.com/v1/audio/stream",
           {
@@ -165,16 +179,25 @@ export default async function handler(req) {
           }
         )
 
-        if (!speechifyRes.ok) {
+        console.log(
+          `[Speechify Proxy] Received response. Status: ${speechifyRes.status}.`
+        )
+        if (!speechifyRes.ok)
           throw new Error(
             `Speechify API error: ${speechifyRes.status} ${speechifyRes.statusText}`
           )
-        }
 
-        //〔 we are now a proxy. we return speechify's stream directly.
+        const responseContentType = speechifyRes.headers.get("content-type")
+        console.log(
+          `[Speechify Proxy] Speechify responded with Content-Type: "${responseContentType}"`
+        )
+
+        console.log(
+          '[Oracle Step 3: Final Response] Proxying response. Sending Content-Type: "audio/mpeg"'
+        )
         return new Response(speechifyRes.body, {
           headers: {
-            "Content-Type": "audio/mpeg", // we tell the client what it's receiving
+            "Content-Type": "audio/mpeg",
             "Cache-Control": "no-cache",
             "Access-Control-Allow-Origin": "*",
           },
@@ -187,6 +210,9 @@ export default async function handler(req) {
         )
       }
     } else {
+      console.log(
+        `[Oracle Step 2: Path Taken] Invalid provider "${provider}", returning error.`
+      )
       return new Response(JSON.stringify({ error: "invalid provider" }), {
         status: 400,
       })
