@@ -11,7 +11,7 @@ export default async function densify({ onStatus }) {
   const accessToken = useCookie("access-token").value
   if (!accessToken) throw new Error("access-token not found for densify")
 
-  onStatus({ status: "initiating contact with equilibrium engine..." })
+  onStatus("contacting equilibrium...")
 
   const res = await fetch(`${baseUrl}/api/densify`, {
     method: "POST",

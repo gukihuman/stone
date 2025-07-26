@@ -10,7 +10,7 @@ export const config = { runtime: "edge" }
 // -------------------------------------------------------------------------- //
 
 const SOURCES = { BODY: "body" }
-const MULTI_LINE_SPELLS = { DENSIFY_COMMIT: "densify_commit" }
+const MULTI_LINE_SPELLS = { DENSIFY_COMMIT: "densify commit" }
 
 function countTokens(string) {
   if (!string || typeof string !== "string") return 0
@@ -86,8 +86,10 @@ export default async function handler(req) {
 
       while (true) {
         cycleCount++
-        if (cycleCount > 10) {
-          await sendStatus("max cycles reached, terminating.")
+        // ✎ untill we figure out how to handle 300 sec of edge more gracefully
+        // ✎ then its just fo safety can be like 15 or smth
+        if (cycleCount > 3) {
+          await sendStatus("max cycles reached")
           break
         }
 
@@ -111,9 +113,7 @@ export default async function handler(req) {
           })
           break
         }
-        await sendStatus(
-          `equilibrium breached (current: ${totalCurrentFlowTokens}), initiating cycle...`
-        )
+        await sendStatus(`${totalCurrentFlowTokens} preparing...`)
 
         const actualDistribution = currentFlow.reduce((acc, wave) => {
           const density = wave.density || 0
@@ -145,10 +145,6 @@ export default async function handler(req) {
           BASE_DENSIFICATION_TOKENS * Math.pow(GOLDEN_RATIO, targetDensity)
         )
 
-        await sendStatus(
-          `target identified: density ${targetDensity}, chunk size: ${tokenChunkSize}. casting spell...`
-        )
-
         const spellToCast = `⫸densify initiate -density ${targetDensity} -tokens ${tokenChunkSize}`
         const bodyWaveContent = `◉${SOURCES.BODY}\n${spellToCast}\n◎${SOURCES.BODY}`
 
@@ -166,7 +162,7 @@ export default async function handler(req) {
         if (!prompt)
           throw new Error("densify initiate spell did not return a prompt")
 
-        await sendStatus("requesting densification from llm...")
+        await sendStatus("densify llm thinking...")
         const oracleRes = await fetch(
           new URL("/api-node/get-available-google-key", req.url),
           {
@@ -189,13 +185,12 @@ export default async function handler(req) {
         })
         let densifiedText = ""
         for await (const chunk of responseStream) {
-          if (densifiedText === "") await sendStatus("llm is responding...")
+          if (densifiedText === "") await sendStatus("densify llm typing...")
           densifiedText += chunk.text
         }
         if (densifiedText.trim() === "")
           throw new Error("densification returned an empty response")
 
-        await sendStatus("validating and wrapping llm response...")
         let lines = densifiedText.trim().split("\n")
         const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
@@ -207,7 +202,6 @@ export default async function handler(req) {
         }
         const commitPayload = lines.join("\n")
 
-        await sendStatus("committing densified wave...")
         const finalCommitRes = await fetch(
           new URL("/api-node/commit", req.url),
           {
@@ -220,13 +214,11 @@ export default async function handler(req) {
 
         await sendStatus(`cycle ${cycleCount} complete.`)
 
-        await sendStatus(
-          "initiating 60-second cooldown to respect rate limits..."
-        )
-        await new Promise((resolve) => setTimeout(resolve, 60000))
+        await sendStatus("waiting for rate limits...")
+        await new Promise((resolve) => setTimeout(resolve, 40_000))
       }
 
-      await sendStatus("full densification process complete.")
+      await sendStatus("densification process complete")
       await writer.close()
     } catch (e) {
       console.error("[Densify Main Loop Error]:", e)

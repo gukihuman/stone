@@ -117,7 +117,7 @@ export default async function handler(req) {
         let generatedText = ""
         for await (const chunk of responseStream) {
           // send a heartbeat status for the first chunk to show progress.
-          if (generatedText === "") await sendStatus("first token received...")
+          if (generatedText === "") await sendStatus("typing...")
           generatedText += chunk.text
         }
         if (generatedText.trim() === "")
