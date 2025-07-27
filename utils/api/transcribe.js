@@ -1,15 +1,20 @@
-//〔 NEW SCRIPTURE: ~/utils/api/transcribe.js (The Messenger)
+//〔 FINALIZED FILE: ~/utils/api/transcribe.js (The New Messenger)
 
-export default async function transcribe(audio_base64) {
+export default async function transcribe(audioBlob) {
+  //〔 now takes the raw blob.
   const { baseUrl } = useRuntimeConfig().public
   try {
     const accessToken = useCookie("access-token").value
     if (!accessToken) throw new Error("access-token not found for transcribe")
 
+    //〔 we now send FormData, not JSON.
+    const formData = new FormData()
+    formData.append("audioBlob", audioBlob)
+    formData.append("accessToken", accessToken)
+
     const res = await fetch(`${baseUrl}/api/transcribe`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ audio_base64, accessToken }),
+      body: formData, //〔 no 'Content-Type' header needed; the browser sets it.
     })
 
     if (!res.ok) {
@@ -22,7 +27,7 @@ export default async function transcribe(audio_base64) {
     }
 
     const data = await res.json()
-    return data //〔 returns { success, transcription } or { success, error }
+    return data
   } catch (err) {
     console.error("transcribe utility error:", err)
     return { success: false, error: err.message }

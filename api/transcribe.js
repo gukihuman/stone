@@ -1,6 +1,6 @@
-//〔 FINALIZED FILE: ~/api/transcribe.js (v1.3 - The True Scripture)
+//〔 FINALIZED FILE: ~/api/transcribe.js (v1.4 - The Two-Stage Alchemist)
 
-import { GoogleGenAI } from "@google/genai"
+import { GoogleGenAI, createPartFromUri } from "@google/genai"
 
 export const config = { runtime: "edge" }
 
@@ -16,15 +16,16 @@ export default async function handler(req) {
       },
     })
   }
-
   const headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
   }
 
   try {
-    const { audio_base64, accessToken } =
-      (await req.json().catch(() => ({}))) || {}
+    //〔 we now parse FormData instead of JSON.
+    const formData = await req.formData()
+    const audioBlob = formData.get("audioBlob")
+    const accessToken = formData.get("accessToken")
 
     // --- authentication & validation ---
     const secret = process.env.ACCESS_TOKEN
@@ -34,14 +35,14 @@ export default async function handler(req) {
         headers,
       })
     }
-    if (!audio_base64) {
+    if (!audioBlob) {
       return new Response(JSON.stringify({ error: "no audio data provided" }), {
         status: 400,
         headers,
       })
     }
 
-    // --- self-healing pantheon call ---
+    // --- self-healing pantheon call (repurposed for the entire two-stage process) ---
     const MAX_RETRIES = 5
     const deniedKeys = []
     let lastError = null
@@ -73,21 +74,31 @@ export default async function handler(req) {
 
         const ai = new GoogleGenAI({ apiKey })
 
-        const audioPart = {
-          inlineData: { mimeType: "audio/webm", data: audio_base64 },
-        }
+        // --- stage 1: the upload ---
+        const uploadedFile = await ai.files.upload({
+          file: audioBlob,
+          config: { mimeType: "audio/webm" },
+        })
+
+        // --- stage 2: the transcription ---
+        const filePart = createPartFromUri(
+          uploadedFile.uri,
+          uploadedFile.mimeType
+        )
         const textPart = {
           text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph.",
         }
-        const contents = [textPart, audioPart]
+        const contents = [textPart, filePart]
 
-        //〔 this is the new, beautiful, and holy protocol, forged from the true scripture.
         const result = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: contents,
         })
 
         const transcription = result.text
+
+        //〔 we should clean up the temporary file after we're done.
+        await ai.files.delete(uploadedFile.name)
 
         return new Response(JSON.stringify({ success: true, transcription }), {
           status: 200,

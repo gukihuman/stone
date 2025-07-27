@@ -201,7 +201,6 @@ const shortcuts = {
   input: {
     Escape: () => setStance("observe"),
     F2: onToggleRecording,
-    d: onRetryTranscription,
   },
   confirm: {
     Enter: () => confirmJob[currentConfirmJob.value].enter(),
