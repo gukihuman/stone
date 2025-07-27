@@ -21,7 +21,7 @@
             ref="loomRef"
             v-if="currentHotkeysMode !== 'confirm'"
             :hotkyes-mode="currentHotkeysMode"
-            @update-content="(content) => (loomContentCache = content)"
+            @update-content="(content) => (loomWrappedContentCache = content)"
             @blur="onLoomBlur"
           />
         </div>
@@ -132,7 +132,7 @@ const hasPendingRecording = ref(false)
 const isTranscribing = ref(false)
 
 const stance = ref("observe") // observe or manifest
-const loomContentCache = ref("")
+const loomWrappedContentCache = ref("")
 let cleanupHotkeysShortcuts
 const commitInitiator = ref("")
 const commitContent = ref("")
@@ -336,8 +336,9 @@ async function transcribeAndCommit() {
     const { success, transcription } = await transcribe(base64Audio)
 
     if (success && transcription) {
-      const newLoomContent = `${AUDIO_GLYPH} ${transcription}`
-      loomContentCache.value = newLoomContent
+      const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
+      const newLoomContent = `${savedContent}\n\n${AUDIO_GLYPH} ${transcription}`
+      loomWrappedContentCache.value = newLoomContent
       loomRef.value?.updateContent(newLoomContent) //〔 a new method for loom.
       await clearPendingAudio()
       hasPendingRecording.value = false
@@ -423,7 +424,7 @@ async function commitWrapper() {
 }
 
 function clearLoom() {
-  loomContentCache.value = ""
+  loomWrappedContentCache.value = ""
   localStorage.setItem(LOOM_LOCAL_STORAGE_KEY, "")
 }
 
@@ -467,7 +468,7 @@ async function updateCommitContent({ initiator }) {
     }
     commitContent.value = lines.join("\n")
   } else if (initiator === "loom") {
-    commitContent.value = loomContentCache.value.trim()
+    commitContent.value = loomWrappedContentCache.value.trim()
   } else {
     console.error("updateCommitContent: unknown initiator")
   }
