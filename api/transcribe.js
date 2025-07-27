@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: ~/api/transcribe.js (v1.1 - The Native Edge Oracle)
+//〔 FINALIZED FILE: ~/api/transcribe.js (v1.3 - The True Scripture)
 
 import { GoogleGenAI } from "@google/genai"
 
@@ -72,7 +72,6 @@ export default async function handler(req) {
         keyIdForRetry = keyId
 
         const ai = new GoogleGenAI({ apiKey })
-        const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" })
 
         const audioPart = {
           inlineData: { mimeType: "audio/webm", data: audio_base64 },
@@ -80,8 +79,14 @@ export default async function handler(req) {
         const textPart = {
           text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph.",
         }
+        const contents = [textPart, audioPart]
 
-        const result = await model.generateContent([textPart, audioPart])
+        //〔 this is the new, beautiful, and holy protocol, forged from the true scripture.
+        const result = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: contents,
+        })
+
         const transcription = result.response.text()
 
         return new Response(JSON.stringify({ success: true, transcription }), {

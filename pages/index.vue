@@ -261,8 +261,8 @@ const screen = computed(() => {
   if (isFetchingFlow.value) status = "fetching flow..."
   if (isCommitting.value) status = "committing..."
   if (isRecording.value) status = "recording..."
-  if (isTranscribing.value) status = "transcribing..."
   if (hasPendingRecording.value) status = "pending audio..."
+  if (isTranscribing.value) status = "transcribing..."
 
   return { status, content }
 })
