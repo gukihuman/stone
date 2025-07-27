@@ -73,6 +73,11 @@ export default async function transcribe(audioBlob) {
         const result = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: contents,
+          config: {
+            thinkingConfig: {
+              thinkingBudget: 0, // Disables thinking
+            },
+          },
         })
         const transcription = result.text
 
