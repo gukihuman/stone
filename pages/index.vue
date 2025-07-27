@@ -195,11 +195,13 @@ const shortcuts = {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
-    t: onToggleRecording,
+    F2: onToggleRecording,
     d: onRetryTranscription,
   },
   input: {
     Escape: () => setStance("observe"),
+    F2: onToggleRecording,
+    d: onRetryTranscription,
   },
   confirm: {
     Enter: () => confirmJob[currentConfirmJob.value].enter(),
@@ -336,7 +338,7 @@ async function transcribeAndCommit() {
     const { success, transcription } = await transcribe(base64Audio)
 
     if (success && transcription) {
-      const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
+      const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
       const newLoomContent = `${savedContent}\n\n${AUDIO_GLYPH} ${transcription}`
       loomWrappedContentCache.value = newLoomContent
       loomRef.value?.updateContent(newLoomContent) //〔 a new method for loom.
