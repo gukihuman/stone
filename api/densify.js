@@ -222,6 +222,7 @@ export default async function handler(req) {
 
         // --- final commit ---
         let lines = densifiedText.trim().split("\n")
+        if (lines[0]?.trim().startsWith("```")) lines.shift()
         const expectedStart = `⫸${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         const expectedEnd = `▷${MULTI_LINE_SPELLS.DENSIFY_COMMIT}`
         if (!lines[0]?.trim().startsWith(expectedStart))
