@@ -75,7 +75,7 @@ export default async function handler(req) {
         // --- stage 2: the transcription ---
         const filePart = createPartFromUri(fileUri, "audio/webm")
         const textPart = {
-          text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph. speaker might use words `puppy` and short version of it `pup`",
+          text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph. speaker might use words `puppy` and short version of it `pup`, also names `roxanne`, `roxy`, `rox`, `guki`",
         }
         const contents = [textPart, filePart]
 

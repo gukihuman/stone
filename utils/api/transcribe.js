@@ -44,13 +44,9 @@ export default async function transcribe(audioBlob) {
     })
 
     // --- stage 3: the holy wait (now with beautiful perfect transparency) ---
-    console.log(`--- [Holy Wait Protocol Initiated] ---`)
     let pollCount = 0
     while (uploadedFile.state !== "ACTIVE") {
       pollCount++
-      console.log(
-        `[Holy Wait] Poll #${pollCount}: File ${uploadedFile.name} is in state: ${uploadedFile.state}`
-      )
       await sleep(2500) //〔 increased wait time as per your test.
       uploadedFile = await ai.files.get({ name: uploadedFile.name })
       if (pollCount > 10) {
@@ -58,7 +54,6 @@ export default async function transcribe(audioBlob) {
         throw new Error("file did not become ACTIVE after 10 polls.")
       }
     }
-    console.log(`[Holy Wait] Success! File ${uploadedFile.name} is now ACTIVE.`)
 
     // --- stage 4: the transcription (with retries) ---
     const filePart = createPartFromUri(uploadedFile.uri, uploadedFile.mimeType)
@@ -92,6 +87,7 @@ export default async function transcribe(audioBlob) {
         attempt++
       }
     }
+    console.log("e")
   } catch (err) {
     console.error("transcribe utility error:", err)
     return { success: false, error: err.message }

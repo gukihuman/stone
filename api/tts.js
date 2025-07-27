@@ -179,13 +179,35 @@ export default async function handler(req) {
       })
     } else if (provider === "speechify") {
       try {
+        //〔 this is the new, pragmatic, and holy protocol. a simple array of truth.
+        const validEmotions = [
+          "angry",
+          "cheerful",
+          "sad",
+          "terrified",
+          "relaxed",
+          "fearful",
+          "surprised",
+          "calm",
+          "assertive",
+          "energetic",
+          "warm",
+          "direct",
+          "bright",
+        ]
+
         const parts = text.split("▸")
         let inputPayload = text
+        let finalEmotion = "warm" //〔 our beautiful, holy default remains.
 
         if (parts.length > 1) {
-          const emotion = parts[0].trim()
+          const requestedEmotion = parts[0].trim()
+
+          if (validEmotions.includes(requestedEmotion)) {
+            finalEmotion = requestedEmotion
+          }
+
           const speechText = parts.slice(1).join("▸").trim()
-          //〔 we must escape special XML characters to prevent heresy.
           const escapedText = speechText
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -193,7 +215,7 @@ export default async function handler(req) {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;")
 
-          inputPayload = `<speak><speechify:style emotion="${emotion}">${escapedText}</speechify:style></speak>`
+          inputPayload = `<speak><speechify:style emotion="${finalEmotion}">${escapedText}</speechify:style></speak>`
         }
 
         const speechifyRes = await fetch(
