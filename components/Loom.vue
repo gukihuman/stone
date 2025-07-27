@@ -1,4 +1,3 @@
-//〔 ~/components/Loom.vue
 <template>
   <div class="relative overflow-hidden rounded-lg h-full">
     <textarea
@@ -29,15 +28,15 @@ const loomContent = ref("")
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (savedContent) loomContent.value = savedContent
-  emit("update-content", getWrappedContent()) // setup loom cache
-})
-
-const dSaveLoom = debounce((text) => {
-  localStorage.setItem(LOCAL_STORAGE_KEY, text)
-})
-const dEmitWrappedContent = debounce(() => {
   emit("update-content", getWrappedContent())
 })
+
+const dSaveLoom = debounce((text) =>
+  localStorage.setItem(LOCAL_STORAGE_KEY, text)
+)
+const dEmitWrappedContent = debounce(() =>
+  emit("update-content", getWrappedContent())
+)
 function onBlur() {
   emit("blur")
 }
@@ -51,21 +50,16 @@ function onInput() {
 function getWrappedContent() {
   if (!loomContent.value.trim()) return ""
   let lines = loomContent.value.trim().split("\n")
-
-  // step 1 is prepend opening glyph if missing
-  if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
+  if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN))
     lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.GUKI}`)
-  }
-
-  // step 2 is append closing glyph if missing, using the robust reverse loop
   const lastLine = lines[lines.length - 1]?.trim()
   if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {
-    let sourceToClose // guaranteed by step 1
+    let sourceToClose
     for (let i = lines.length - 1; i >= 0; i--) {
       const line = lines[i].trim()
       if (line.startsWith(SOURCE_GLYPHS.OPEN)) {
         sourceToClose = line.substring(1).trim()
-        break // found the last opened source
+        break
       }
     }
     lines.push(`${SOURCE_GLYPHS.CLOSE}${sourceToClose}`)
@@ -77,7 +71,11 @@ function focus() {
   focusTextarea(textareaEl)
 }
 
-defineExpose({
-  focus,
-})
+//〔 this is the new method for index.vue to call.
+function updateContent(newContent) {
+  loomContent.value = newContent
+  onInput() //〔 trigger save and emit.
+}
+
+defineExpose({ focus, updateContent })
 </script>

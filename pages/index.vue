@@ -101,6 +101,8 @@ import externalImg from "~/assets/external.jpg"
 import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
 import { vocalScheduler } from "~/utils/VocalScheduler"
 import scribe from "~/utils/scribe"
+import { useAudioRecorder } from "~/composables/useAudioRecorder"
+import { useLocalAudio } from "~/composables/useLocalAudio"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
@@ -109,6 +111,8 @@ const LEFT_COLUMN_WIDTH = 100
 const RIGHT_COLUMN_WIDTH = 70
 
 const { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts } = useHotkeys()
+const { isRecording, startRecording, stopRecording } = useAudioRecorder()
+const { savePendingAudio, getPendingAudio, clearPendingAudio } = useLocalAudio()
 
 const loomRef = ref(null)
 const waves = ref([])
@@ -122,21 +126,18 @@ const isCopyingPrompt = ref(false)
 const isContentToCommitEmpty = ref(false)
 const isForging = ref(false)
 const isDensifying = ref(false)
-
 const isCopyingCode = ref(false)
 const rawCodeBlocks = ref([])
+const hasPendingRecording = ref(false)
+const isTranscribing = ref(false)
 
 const stance = ref("observe") // observe or manifest
-
 const loomContentCache = ref("")
-
 let cleanupHotkeysShortcuts
 const commitInitiator = ref("")
 const commitContent = ref("")
 const commitWithForge = ref(false)
-
 const screenMode = ref("scribe") // scribe, plain
-
 const forgeStatus = ref("forge")
 const densifyStatus = ref("densify")
 
@@ -173,7 +174,7 @@ const confirmJob = {
 
 const shortcuts = {
   normal: {
-    // left
+    // ✎ left
     o: () => setStance("manifest"),
     e: toggleScreenMode,
     y: copyFragmentRawData,
@@ -182,7 +183,7 @@ const shortcuts = {
     g: selectNextFragment,
     i: selectPreviousFragment,
 
-    // right hand
+    // ✎ right hand
     r: () => {
       enterConfirmCommitMode({ initiator: "clipboard", withForge: false })
     },
@@ -190,10 +191,12 @@ const shortcuts = {
     m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
     l: enterConfirmForgeMode,
     s: enterConfirmDensifyMode,
-    t: () => {
+    f: () => {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
+    t: onToggleRecording,
+    d: onRetryTranscription,
   },
   input: {
     Escape: () => setStance("observe"),
@@ -214,34 +217,23 @@ const sourceImgMap = {
 
 const displayFragments = computed(() => {
   if (!waves.value.length) return []
-
   const fragments = []
-
   let currentFragment = null
-
   waves.value.forEach((fragment) => {
     if (currentFragment && currentFragment.source === fragment.source) {
-      // If source is the same, merge the data
       currentFragment.data += "\n\n" + fragment.data
       currentFragment.waveIds.push(fragment._id)
     } else {
-      // if source has changed, push the previous fragment and start a new one
-      if (currentFragment) {
-        fragments.push(currentFragment)
-      }
+      if (currentFragment) fragments.push(currentFragment)
       currentFragment = {
-        // We use the last fragment's id as the key for the fragment
         _id: fragment._id,
         source: fragment.source,
         data: fragment.data,
-        waveIds: [fragment._id], // Keep track of the original waves
+        waveIds: [fragment._id],
       }
     }
   })
-  // Push the very last fragment after the loop
-  if (currentFragment) {
-    fragments.push(currentFragment)
-  }
+  if (currentFragment) fragments.push(currentFragment)
   return fragments.slice(-5)
 })
 
@@ -251,11 +243,9 @@ const focusedFragment = computed(() => {
 })
 
 const screen = computed(() => {
-  let status
-  let content
-  if (currentHotkeysMode.value === "input") {
-    status = "loom"
-  } else if (currentHotkeysMode.value === "confirm") {
+  let status, content
+  if (currentHotkeysMode.value === "input") status = "loom"
+  else if (currentHotkeysMode.value === "confirm") {
     status = confirmJob[currentConfirmJob.value].status?.value || ""
     content = confirmJob[currentConfirmJob.value].screen?.value || ""
   } else if (focusedFragment.value) {
@@ -270,6 +260,9 @@ const screen = computed(() => {
   if (isCopyingRawFragment.value) status = "raw fragment copied to clipboard"
   if (isFetchingFlow.value) status = "fetching flow..."
   if (isCommitting.value) status = "committing..."
+  if (isRecording.value) status = "recording..."
+  if (isTranscribing.value) status = "transcribing..."
+  if (hasPendingRecording.value) status = "pending audio..."
 
   return { status, content }
 })
@@ -282,14 +275,15 @@ const parsedScreen = computed(() => {
 })
 
 // --- Lifecycle & Data ---
-onMounted(() => {
+onMounted(async () => {
   cleanupHotkeysShortcuts = setHotkeysShortcuts({
     normal: shortcuts.normal,
     input: shortcuts.input,
     confirm: shortcuts.confirm,
   })
-  fetchFlow()
-  // initiate loom
+  await fetchFlow()
+  const pendingAudio = await getPendingAudio()
+  if (pendingAudio) hasPendingRecording.value = true
   setHotkeysMode("input")
   nextTick(() => {
     setHotkeysMode("normal")
@@ -301,6 +295,59 @@ onUnmounted(() => {
     cleanupHotkeysShortcuts()
   }
 })
+// --- Transcription Logic ---
+async function onToggleRecording() {
+  if (isRecording.value) {
+    const audioBlob = await stopRecording()
+    if (audioBlob) {
+      await savePendingAudio(audioBlob)
+      hasPendingRecording.value = true
+      await transcribeAndCommit()
+    }
+  } else {
+    if (hasPendingRecording.value) return //〔 prevent recording if there's pending audio.
+    await startRecording()
+  }
+}
+
+async function onRetryTranscription() {
+  if (hasPendingRecording.value && !isTranscribing.value) {
+    await transcribeAndCommit()
+  }
+}
+
+async function transcribeAndCommit() {
+  if (isTranscribing.value) return
+  isTranscribing.value = true
+  try {
+    const audioBlob = await getPendingAudio()
+    if (!audioBlob) {
+      hasPendingRecording.value = false
+      return
+    }
+
+    const base64Audio = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result.split(",")[1])
+      reader.onerror = reject
+      reader.readAsDataURL(audioBlob)
+    })
+
+    const { success, transcription } = await transcribe(base64Audio)
+
+    if (success && transcription) {
+      const newLoomContent = `${AUDIO_GLYPH} ${transcription}`
+      loomContentCache.value = newLoomContent
+      loomRef.value?.updateContent(newLoomContent) //〔 a new method for loom.
+      await clearPendingAudio()
+      hasPendingRecording.value = false
+    }
+  } catch (error) {
+    console.error("transcription failed:", error)
+  } finally {
+    isTranscribing.value = false
+  }
+}
 
 function selectNextFragment() {
   const currentFragments = displayFragments.value
