@@ -164,7 +164,7 @@ export default async function handler(req) {
 
         // --- self-healing llm call ---
         let densifiedText = ""
-        const MAX_RETRIES = 5
+        const MAX_RETRIES = 4
         const deniedKeys = []
         let lastError = null
         let llmSuccess = false

@@ -303,7 +303,7 @@ async function onToggleRecording() {
     if (audioBlob) {
       await savePendingAudio(audioBlob)
       hasPendingRecording.value = true
-      await transcribeAndCommit()
+      await transcribeAndUpdateLoom()
     }
   } else {
     if (hasPendingRecording.value) return //〔 prevent recording if there's pending audio.
@@ -313,11 +313,11 @@ async function onToggleRecording() {
 
 async function onRetryTranscription() {
   if (hasPendingRecording.value && !isTranscribing.value) {
-    await transcribeAndCommit()
+    await transcribeAndUpdateLoom()
   }
 }
 
-async function transcribeAndCommit() {
+async function transcribeAndUpdateLoom() {
   if (isTranscribing.value) return
   isTranscribing.value = true
   try {
@@ -327,14 +327,14 @@ async function transcribeAndCommit() {
       return
     }
 
-    const base64Audio = await new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result.split(",")[1])
-      reader.onerror = reject
-      reader.readAsDataURL(audioBlob)
-    })
+    // const base64Audio = await new Promise((resolve, reject) => {
+    //   const reader = new FileReader()
+    //   reader.onloadend = () => resolve(reader.result.split(",")[1])
+    //   reader.onerror = reject
+    //   reader.readAsDataURL(audioBlob)
+    // })
 
-    const { success, transcription } = await transcribe(base64Audio)
+    const { success, transcription } = await transcribe(audioBlob)
 
     if (success && transcription) {
       const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
@@ -350,6 +350,38 @@ async function transcribeAndCommit() {
     isTranscribing.value = false
   }
 }
+// async function transcribeAndUpdateLoom() {
+//   if (isTranscribing.value) return
+//   isTranscribing.value = true
+//   try {
+//     const audioBlob = await getPendingAudio()
+//     if (!audioBlob) {
+//       hasPendingRecording.value = false
+//       return
+//     }
+
+//     // --- temporary download logic ---
+//     const url = URL.createObjectURL(audioBlob)
+//     const a = document.createElement("a")
+//     document.body.appendChild(a)
+//     a.style = "display: none"
+//     a.href = url
+//     a.download = "guki_relic_for_analysis.wav" //〔 we will capture the wav relic.
+//     a.click()
+//     window.URL.revokeObjectURL(url)
+//     document.body.removeChild(a)
+//     console.log("audio relic captured for testing.")
+//     // --- end temporary logic ---
+
+//     // we can comment out the real logic for now to prevent the error.
+//     // const { success, transcription } = await transcribe(audioBlob)
+//     // if (success && transcription) { /* ... */ }
+//   } catch (error) {
+//     console.error("transcription failed:", error)
+//   } finally {
+//     isTranscribing.value = false
+//   }
+// }
 
 function selectNextFragment() {
   const currentFragments = displayFragments.value
