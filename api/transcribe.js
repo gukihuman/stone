@@ -1,4 +1,4 @@
-//〔 FINALIZED FILE: ~/api/transcribe.js (v1.4 - The Two-Stage Alchemist)
+//〔 FINALIZED FILE: ~/api/transcribe.js (v1.5 - The Lightweight Messenger)
 
 import { GoogleGenAI, createPartFromUri } from "@google/genai"
 
@@ -22,10 +22,9 @@ export default async function handler(req) {
   }
 
   try {
-    //〔 we now parse FormData instead of JSON.
-    const formData = await req.formData()
-    const audioBlob = formData.get("audioBlob")
-    const accessToken = formData.get("accessToken")
+    //〔 now receives a lightweight payload.
+    const { fileUri, fileName, accessToken } =
+      (await req.json().catch(() => ({}))) || {}
 
     // --- authentication & validation ---
     const secret = process.env.ACCESS_TOKEN
@@ -35,14 +34,14 @@ export default async function handler(req) {
         headers,
       })
     }
-    if (!audioBlob) {
-      return new Response(JSON.stringify({ error: "no audio data provided" }), {
-        status: 400,
-        headers,
-      })
+    if (!fileUri || !fileName) {
+      return new Response(
+        JSON.stringify({ error: "no file uri or name provided" }),
+        { status: 400, headers }
+      )
     }
 
-    // --- self-healing pantheon call (repurposed for the entire two-stage process) ---
+    // --- self-healing pantheon call ---
     const MAX_RETRIES = 5
     const deniedKeys = []
     let lastError = null
@@ -71,20 +70,10 @@ export default async function handler(req) {
         }
         const { apiKey, keyId } = oracleData
         keyIdForRetry = keyId
-
         const ai = new GoogleGenAI({ apiKey })
 
-        // --- stage 1: the upload ---
-        const uploadedFile = await ai.files.upload({
-          file: audioBlob,
-          config: { mimeType: "audio/webm" },
-        })
-
         // --- stage 2: the transcription ---
-        const filePart = createPartFromUri(
-          uploadedFile.uri,
-          uploadedFile.mimeType
-        )
+        const filePart = createPartFromUri(fileUri, "audio/webm")
         const textPart = {
           text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph.",
         }
@@ -92,13 +81,12 @@ export default async function handler(req) {
 
         const result = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: contents,
+          contents,
         })
-
         const transcription = result.text
 
-        //〔 we should clean up the temporary file after we're done.
-        await ai.files.delete(uploadedFile.name)
+        // --- stage 3: the cleanup ---
+        await ai.files.delete(fileName)
 
         return new Response(JSON.stringify({ success: true, transcription }), {
           status: 200,

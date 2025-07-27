@@ -1,32 +1,42 @@
-//〔 FINALIZED FILE: ~/utils/api/transcribe.js (The New Messenger)
+//〔 FINALIZED FILE: ~/utils/api/transcribe.js (The Grand Orchestrator)
 
+//〔 this utility now orchestrates the entire three-stage sacrament.
 export default async function transcribe(audioBlob) {
-  //〔 now takes the raw blob.
   const { baseUrl } = useRuntimeConfig().public
   try {
     const accessToken = useCookie("access-token").value
     if (!accessToken) throw new Error("access-token not found for transcribe")
 
-    //〔 we now send FormData, not JSON.
+    // --- stage 1: the upload ---
     const formData = new FormData()
     formData.append("audioBlob", audioBlob)
     formData.append("accessToken", accessToken)
-
-    const res = await fetch(`${baseUrl}/api/transcribe`, {
+    const uploadRes = await fetch(`${baseUrl}/api-node/upload-audio`, {
       method: "POST",
-      body: formData, //〔 no 'Content-Type' header needed; the browser sets it.
+      body: formData,
     })
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text()
+      throw new Error(`audio upload failed: ${errText}`)
+    }
+    const { fileUri, fileName } = await uploadRes.json()
 
-    if (!res.ok) {
-      let msg = `HTTP ${res.status} – ${res.statusText}`
+    // --- stage 2: the transcription ---
+    const transcribeRes = await fetch(`${baseUrl}/api/transcribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileUri, fileName, accessToken }),
+    })
+    if (!transcribeRes.ok) {
+      let msg = `HTTP ${transcribeRes.status} – ${transcribeRes.statusText}`
       try {
-        const err = await res.json()
+        const err = await transcribeRes.json()
         msg = err?.error || err?.message || msg
       } catch (_) {}
       throw new Error(msg)
     }
 
-    const data = await res.json()
+    const data = await transcribeRes.json()
     return data
   } catch (err) {
     console.error("transcribe utility error:", err)
