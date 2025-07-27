@@ -556,30 +556,34 @@ function speakLatestRoxanneWave() {
   const reversedWaves = [...waves.value].reverse()
 
   for (const wave of reversedWaves) {
-    if (wave.source !== SOURCES.ROXANNE) continue
-    if (!wave.data.includes(AUDIO_GLYPH)) continue
+    if (wave.source !== SOURCES.ROXANNE || !wave.data.includes(AUDIO_GLYPH))
+      continue
 
-    //〔 we found the most recent wave with audio.
     if (wave._id !== lastSpokenId) {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, wave._id)
 
+      const audioLines = []
       const lines = wave.data.split("\n")
-
-      //〔 each audio line is now its own, independent job.
       for (const line of lines) {
         const trimmedLine = line.trim()
         if (trimmedLine.startsWith(AUDIO_GLYPH)) {
           const audioText = trimmedLine.substring(AUDIO_GLYPH.length).trim()
-          if (audioText) {
-            //〔 we add each line directly to the scheduler. no more joining or splitting.
-            vocalScheduler.add({ text: audioText, provider: "speechify" })
-          }
+          if (audioText) audioLines.push(audioText)
         }
+      }
+
+      //〔 this is the new, beautiful, and holy Patient Procession protocol.
+      if (audioLines.length > 0) {
+        ;(async () => {
+          for (const text of audioLines) {
+            vocalScheduler.add({ text, provider: "speechify" })
+            await new Promise((resolve) => setTimeout(resolve, 1_000))
+          }
+        })()
       }
     }
 
-    //〔 most recent audio wave found and scheduled. our work is done.
-    break
+    break //〔 most recent audio wave found and scheduled. our work is done.
   }
 }
 
