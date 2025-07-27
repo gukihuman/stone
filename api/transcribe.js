@@ -87,7 +87,7 @@ export default async function handler(req) {
           contents: contents,
         })
 
-        const transcription = result.response.text()
+        const transcription = result.text
 
         return new Response(JSON.stringify({ success: true, transcription }), {
           status: 200,
