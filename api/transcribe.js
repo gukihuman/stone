@@ -1,39 +1,43 @@
-//〔 FINALIZED FILE: ~/api/transcribe.js (v1.0 - The Oracle's Ear)
+//〔 FINALIZED FILE: ~/api/transcribe.js (v1.1 - The Native Edge Oracle)
 
 import { GoogleGenAI } from "@google/genai"
-import { defineEventHandler, setHeader, createError, readBody } from "h3"
 
 export const config = { runtime: "edge" }
 
-export default defineEventHandler(async (event) => {
+export default async function handler(req) {
   // --- boilerplate: cors & method check ---
-  setHeader(event, "Access-Control-Allow-Origin", "*")
-  setHeader(event, "Access-Control-Allow-Methods", "POST, OPTIONS")
-  setHeader(
-    event,
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization"
-  )
-  if (event.node.req.method === "OPTIONS") return ""
-  if (event.node.req.method !== "POST") {
-    throw createError({ statusCode: 405, statusMessage: "method not allowed" })
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    })
+  }
+
+  const headers = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
   }
 
   try {
-    const { audio_base64, accessToken } = (await readBody(event)) || {}
+    const { audio_base64, accessToken } =
+      (await req.json().catch(() => ({}))) || {}
 
     // --- authentication & validation ---
     const secret = process.env.ACCESS_TOKEN
     if (!secret || !accessToken || accessToken !== secret) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "unauthorized access",
+      return new Response(JSON.stringify({ error: "unauthorized access" }), {
+        status: 403,
+        headers,
       })
     }
     if (!audio_base64) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "no audio data provided",
+      return new Response(JSON.stringify({ error: "no audio data provided" }), {
+        status: 400,
+        headers,
       })
     }
 
@@ -80,7 +84,10 @@ export default defineEventHandler(async (event) => {
         const result = await model.generateContent([textPart, audioPart])
         const transcription = result.response.text()
 
-        return { success: true, transcription } // success!
+        return new Response(JSON.stringify({ success: true, transcription }), {
+          status: 200,
+          headers,
+        })
       } catch (e) {
         console.error(
           `transcribe attempt ${i + 1} with key ${keyIdForRetry} failed:`,
@@ -91,13 +98,17 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    throw lastError || new Error("all transcription retries failed")
+    const finalError =
+      lastError || new Error("all transcription retries failed")
+    return new Response(JSON.stringify({ error: finalError.message }), {
+      status: 500,
+      headers,
+    })
   } catch (error) {
     console.error("error in /api/transcribe handler:", error)
-    if (error.statusCode) throw error
-    throw createError({
-      statusCode: 500,
-      statusMessage: "internal server error",
+    return new Response(JSON.stringify({ error: "internal server error" }), {
+      status: 500,
+      headers,
     })
   }
-})
+}
