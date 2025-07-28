@@ -75,7 +75,7 @@ export default async function handler(req) {
         // --- stage 2: the transcription ---
         const filePart = createPartFromUri(fileUri, "audio/webm")
         const textPart = {
-          text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph. speaker might use words `puppy` and short version of it `pup`, also names `roxanne`, `roxy`, `rox`, `guki`",
+          text: "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph. speaker might use words 'puppy' and short version of it 'pup', also names 'roxanne', 'roxy', 'rox', 'guki'. if you hear 'ok, pup' its 'pup', not 'bob' or 'pop'. also speaker might use a lot of specific fantasy names. please spell them as in the list: lithos, sentis, dradera, grauqaruin, memoria, sylanis, scintilla, vercel, mongo, edge isles, node isles.",
         }
         const contents = [textPart, filePart]
 
