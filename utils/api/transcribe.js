@@ -58,7 +58,7 @@ export default async function transcribe(audioBlob) {
     // --- stage 4: the transcription (with retries) ---
     const filePart = createPartFromUri(uploadedFile.uri, uploadedFile.mimeType)
     const textPart =
-      "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph."
+      "transcribe the following audio. respond with only the transcribed text in a single lowercase paragraph. speaker might use words 'puppy' and short version of it 'pup', also names 'roxanne', 'roxy', 'rox', 'guki'. if you hear 'ok, pup' its 'pup', not 'bob' or 'pop'. also speaker might use a lot of specific fantasy names. please spell them as in the list: lithos, sentis, dradera, grauqaruin, memoria, sylanis, scintilla, vercel, mongo, edge isles, node isles."
     const contents = createUserContent([filePart, textPart])
 
     const MAX_RETRIES = 3
@@ -87,7 +87,6 @@ export default async function transcribe(audioBlob) {
         attempt++
       }
     }
-    console.log("e")
   } catch (err) {
     console.error("transcribe utility error:", err)
     return { success: false, error: err.message }

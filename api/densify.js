@@ -85,7 +85,7 @@ export default async function handler(req) {
       let cycleCount = 0
 
       while (true) {
-        const MAX_CYCLES = 5 // ✎ edge function has 300 sec limit
+        const MAX_CYCLES = 4 // ✎ edge function has 300 sec limit
         cycleCount++
         if (cycleCount > MAX_CYCLES) {
           await sendStatus("densify max cycles reached")
