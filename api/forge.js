@@ -116,6 +116,8 @@ export default async function handler(req) {
           }
           if (generatedText.trim() === "")
             throw new Error("generation returned empty response")
+          if (generatedText.trim() === undefined)
+            generatedText = "〄 llm engine recalibrates towards acceptance"
 
           const waveToCommit = wrapWithGlyphs(generatedText, SOURCES.ROXANNE)
           const commitRes = await fetch(new URL("/api-node/commit", req.url), {
