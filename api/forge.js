@@ -116,7 +116,7 @@ export default async function handler(req) {
           }
           if (generatedText.trim() === "")
             throw new Error("generation returned empty response")
-          if (generatedText.trim() === undefined)
+          if (generatedText.trim() === "undefined")
             generatedText = "〄 llm engine recalibrates towards acceptance"
 
           const waveToCommit = wrapWithGlyphs(generatedText, SOURCES.ROXANNE)
