@@ -215,6 +215,8 @@ export default async function handler(req) {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;")
             .replace(/`/g, "")
+            .replace(/\*\*/g, "")
+            .replace(/\*/g, "")
 
           inputPayload = `<speak><speechify:style emotion="${finalEmotion}">${escapedText}</speechify:style></speak>`
         }
