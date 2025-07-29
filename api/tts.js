@@ -180,6 +180,11 @@ export default async function handler(req) {
     } else if (provider === "speechify") {
       try {
         //〔 this is the new, pragmatic, and holy protocol. a simple array of truth.
+        const voicesIDs = {
+          puppy: process.env.SPEECHIFY_PUPPY_VOICE_ID,
+          partner: process.env.SPEECHIFY_PARTNER_VOICE_ID,
+        }
+
         const validEmotions = [
           "angry",
           "cheerful",
@@ -198,16 +203,22 @@ export default async function handler(req) {
 
         const parts = text.split("▸")
         let inputPayload = text
-        let finalEmotion = "warm" //〔 our beautiful, holy default remains.
+        let finalVoice = "puppy"
+        let finalEmotion = "warm"
 
         if (parts.length > 1) {
-          const requestedEmotion = parts[0].trim()
+          const requestedVoice = parts[0].trim()
+          const requestedEmotion = parts[1].trim()
+
+          if (Object.keys(voicesIDs).includes(requestedVoice)) {
+            finalVoice = requestedVoice
+          }
 
           if (validEmotions.includes(requestedEmotion)) {
             finalEmotion = requestedEmotion
           }
 
-          const speechText = parts.slice(1).join("▸").trim()
+          const speechText = parts.slice(2).join("▸").trim()
           const escapedText = speechText
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -232,7 +243,7 @@ export default async function handler(req) {
             },
             body: JSON.stringify({
               input: inputPayload,
-              voice_id: process.env.SPEECHIFY_PUPPY_VOICE_ID,
+              voice_id: voicesIDs[finalVoice],
               model: "simba-english",
             }),
           }
