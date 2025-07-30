@@ -15,4 +15,10 @@ export default defineNuxtConfig({
     },
   },
   imports: { dirs: ["utils/**"] }, // want to remove
+  dir: {
+    pages: "continents",
+  },
+  components: {
+    dirs: [{ path: "~/settlements", pathPrefix: false, extensions: [".vue"] }],
+  },
 })

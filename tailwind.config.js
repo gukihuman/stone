@@ -1,11 +1,7 @@
 export default {
   content: [
-    "./components/**/*.{vue,js,ts}",
-    "./layouts/**/*.vue",
-    "./pages/**/*.vue",
-    "./composables/**/*.{js,ts}",
-    "./plugins/**/*.{js,ts}",
-    "./app.vue",
+    "./continents/**/*.vue",
+    "./settlements/**/*.{vue,js,ts}",
     "./main.css",
   ],
   theme: {

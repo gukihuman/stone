@@ -1,4 +1,4 @@
-// ✎ ~/pages/sentis.vue
+// ☷ ~/continents/sentis.vue
 <template>
   <div
     class="flex h-screen items-center justify-center pb-20 bg-circles-gradient"

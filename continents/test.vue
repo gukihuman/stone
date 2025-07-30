@@ -1,4 +1,4 @@
-// pages/test.vue
+// ✎ ~/continents/test.vue
 <template>
   <div class="p-2 h-screen flex justify-center">
     <div
