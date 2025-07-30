@@ -1,6 +1,6 @@
 // ~/nuxt.config.ts
 const devBaseUrl = "stone-git-core-gukis-projects.vercel.app"
-// const devBaseUrl = "stone-seven.vercel.app"
+// const devBaseUrl = "stone-seven.vercel.app" // want to restore
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -14,6 +14,5 @@ export default defineNuxtConfig({
       baseUrl: `https://${process.env.NUXT_PUBLIC_BASE_URL || devBaseUrl}`,
     },
   },
-  imports: { dirs: ["utils/**"] },
-  // routeRules: { "/": { redirect: "/smth" } },
+  imports: { dirs: ["utils/**"] }, // want to remove
 })

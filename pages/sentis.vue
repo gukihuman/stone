@@ -1,4 +1,4 @@
-// 〔 ~/pages/index.vue
+// ✎ ~/pages/sentis.vue
 <template>
   <div
     class="flex h-screen items-center justify-center pb-20 bg-circles-gradient"
@@ -94,6 +94,9 @@
 </template>
 
 <script setup>
+import soundStartRecording from "~/assets/sound/startRecording.mp3"
+import soundStopRecording from "~/assets/sound/stopRecording.mp3"
+import soundCommit from "~/assets/sound/commit.mp3"
 import gukiImg from "~/assets/guki.jpg"
 import roxanneImg from "~/assets/roxanne.jpg"
 import bodyImg from "~/assets/body.jpg"
@@ -103,6 +106,7 @@ import { vocalScheduler } from "~/utils/VocalScheduler"
 import scribe from "~/utils/scribe"
 import { useAudioRecorder } from "~/composables/useAudioRecorder"
 import { useLocalAudio } from "~/composables/useLocalAudio"
+import { nextTick } from "vue"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
@@ -174,10 +178,10 @@ const confirmJob = {
 
 const shortcuts = {
   normal: {
-    // ✎ left
+    // ✎ left hand
     o: () => setStance("manifest"),
     e: toggleScreenMode,
-    y: copyFragmentRawData,
+    b: copyFragmentRawData,
     c: copyLastTwoFragments,
     q: () => copyFragmentsByWaves(waves.value, isCopyingFullContext),
     g: selectNextFragment,
@@ -195,12 +199,19 @@ const shortcuts = {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
-    F2: onToggleRecording,
     d: onRetryTranscription,
+
+    // ✎ stick
+    // F2: () => {}, // smth
+    F4: onToggleRecording,
+    y: justTalk,
   },
   input: {
+    // left hand
     Escape: () => setStance("observe"),
-    F2: onToggleRecording,
+
+    // ✎ stick
+    F4: onToggleRecording,
   },
   confirm: {
     Enter: () => confirmJob[currentConfirmJob.value].enter(),
@@ -299,6 +310,7 @@ onUnmounted(() => {
 // --- Transcription Logic ---
 async function onToggleRecording() {
   if (isRecording.value) {
+    playSound(soundStopRecording)
     const audioBlob = await stopRecording()
     if (audioBlob) {
       await savePendingAudio(audioBlob)
@@ -307,6 +319,7 @@ async function onToggleRecording() {
     }
   } else {
     if (hasPendingRecording.value) return //〔 prevent recording if there's pending audio.
+    playSound(soundStartRecording)
     await startRecording()
   }
 }
@@ -371,6 +384,7 @@ function selectPreviousFragment() {
 }
 
 async function commitWrapper() {
+  playSound(soundCommit)
   await updateCommitContent({ initiator: commitInitiator.value })
   if (isCommitting.value || !commitContent.value) return
 
@@ -692,6 +706,20 @@ async function onScreenClick(event) {
       }
     }
   }
+}
+async function justTalk() {
+  // ✎ brutal force quick solution
+  if (!isRecording.value) {
+    onToggleRecording()
+  } else {
+    await onToggleRecording()
+    await enterConfirmCommitMode({ initiator: "loom", withForge: true })
+    confirmJob[currentConfirmJob.value].enter()
+  }
+}
+function playSound(sound) {
+  const audio = new Audio(sound)
+  audio.play()
 }
 </script>
 <style scoped>

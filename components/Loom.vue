@@ -74,7 +74,8 @@ function focus() {
 //〔 this is the new method for index.vue to call.
 function updateContent(newContent) {
   loomContent.value = newContent
-  onInput() //〔 trigger save and emit.
+  localStorage.setItem(LOCAL_STORAGE_KEY, newContent)
+  emit("update-content", getWrappedContent())
 }
 
 defineExpose({ focus, updateContent })
