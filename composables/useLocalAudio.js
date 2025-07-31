@@ -3,8 +3,8 @@
 
 import { openDB } from "idb"
 
-const DB_NAME = "StoneAudioDB"
-const DB_VERSION = 1
+const DB_NAME = "diplis"
+const DB_VERSION = 2
 const STORE_NAME = "pending_audio"
 const AUDIO_KEY = "pending_guki_audio"
 

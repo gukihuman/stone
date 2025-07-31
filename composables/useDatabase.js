@@ -1,7 +1,7 @@
 import { openDB } from "idb"
 
 export default function () {
-  const DB_VERSION = 1
+  const DB_VERSION = 2
   const DEFAULT_APP_FIELDS = {
     focusedField: "text",
     focusedEntity: "jane",

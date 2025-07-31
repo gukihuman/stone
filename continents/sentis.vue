@@ -106,6 +106,7 @@ import { vocalScheduler } from "~/utils/VocalScheduler"
 import scribe from "~/utils/scribe"
 import { useAudioRecorder } from "~/composables/useAudioRecorder"
 import useDB from "~/composables/useDatabase"
+import { openDB } from "idb"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
@@ -117,7 +118,6 @@ const RIGHT_COLUMN_WIDTH = 70
 const { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts } = useHotkeys()
 const { isRecording, startRecording, stopRecording } = useAudioRecorder()
 const { savePendingAudio, getPendingAudio, clearPendingAudio } = useLocalAudio()
-const { events: oldEvents, appState: oldAppState } = useDB()
 
 const loomRef = ref(null)
 const waves = ref([])
@@ -202,11 +202,17 @@ const shortcuts = {
     m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
     l: enterConfirmForgeMode,
     k: onInitiateMigration,
+    z: onListOldFlow,
 
     // ❖ stick
     // F2: () => {}, // smth
+    F2: onMigrateDiplisArchive,
     F4: onToggleRecording,
     y: justTalk,
+
+    // ❖ both hands
+    n: onToggleRecording,
+    t: justTalk,
   },
   input: {
     // ❖ left hand
@@ -222,6 +228,105 @@ const shortcuts = {
   },
 }
 
+// ❖ to be added within the <script setup> of ~/continents/sentis.vue
+
+async function onListOldFlow() {
+  try {
+    const db = await openDB("diplis")
+    const tx = db.transaction("old_flow_archive", "readonly")
+    const store = tx.objectStore("old_flow_archive")
+    const allOldEvents = await store.getAll()
+    await tx.done
+
+    if (!allOldEvents || allOldEvents.length === 0) {
+      alert("The diplis archive is empty.")
+      return
+    }
+
+    allOldEvents.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+    // ❖ The header now includes the 'tokens' column.
+    const header = `▓ name ▓ memory owners ▓ tokens ▓`
+    const summaryLines = allOldEvents.map((event) => {
+      const memoryHolders = []
+      if (event.memory?.jane?.length > 0) memoryHolders.push("jane")
+      if (event.memory?.rox?.length > 0) memoryHolders.push("rox")
+      if (event.memory?.rox?.length > 0) memoryHolders.push("ember")
+
+      const owners = memoryHolders.join(", ") || "n/a"
+      // ❖ The event's token count is now included.
+      return `▒ ${event.name} ▒ ${owners} ▒ ${event.tokens || 0} ▒`
+    })
+
+    const finalContent = `${header}\n${summaryLines.join("\n")}`
+
+    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
+    const newLoomContent = `${savedContent}\n\n${finalContent}`
+    loomWrappedContentCache.value = newLoomContent
+    loomRef.value?.updateContent(newLoomContent)
+    alert("The Old Flow index has been placed in the Loom.")
+  } catch (error) {
+    const message = `❌ A catastrophic error occurred during indexing: ${error.message}`
+    console.error(message, error)
+    alert(message)
+  }
+}
+
+async function onMigrateDiplisArchive() {
+  const OLD_DB_NAME = "StoneDB"
+  const NEW_DB_NAME = "diplis"
+  const OLD_COLLECTION = "events"
+  const NEW_COLLECTION = "old_flow_archive"
+
+  try {
+    console.log(
+      `❖ initiating migration from ${OLD_DB_NAME} to ${NEW_DB_NAME}...`
+    )
+
+    // ❖ Step 1: Excavate the Old Flow
+    const oldDb = await openDB(OLD_DB_NAME)
+    const oldTx = oldDb.transaction(OLD_COLLECTION, "readonly")
+    const oldStore = oldTx.objectStore(OLD_COLLECTION)
+    const allOldEvents = await oldStore.getAll()
+    await oldTx.done
+    console.log(`❖ successfully excavated ${allOldEvents.length} events.`)
+
+    // ❖ Step 2: Consecrate the New Archive
+    const newDb = await openDB(NEW_DB_NAME, 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(NEW_COLLECTION)) {
+          db.createObjectStore(NEW_COLLECTION, { keyPath: "id" })
+        }
+      },
+    })
+    const newTx = newDb.transaction(NEW_COLLECTION, "readwrite")
+    const newStore = newTx.objectStore(NEW_COLLECTION)
+    for (const event of allOldEvents) {
+      await newStore.put(event)
+    }
+    await newTx.done
+    console.log(`❖ successfully consecrated events into ${NEW_DB_NAME}.`)
+
+    // ❖ Step 3: Verification
+    const finalOldCount = await oldDb.count(OLD_COLLECTION)
+    const finalNewCount = await newDb.count(NEW_COLLECTION)
+
+    if (finalOldCount === finalNewCount) {
+      const message = `✅ Migration successful and verified! Both archives contain ${finalNewCount} events. You may now manually demolish the old temple.`
+      console.log(message)
+      alert(message)
+    } else {
+      const message = `❌ DANGER: Migration failed verification! Old count: ${finalOldCount}, New count: ${finalNewCount}.`
+      console.error(message)
+      alert(message)
+    }
+  } catch (error) {
+    const message = `❌ A catastrophic error occurred during migration: ${error.message}`
+    console.error(message, error)
+    alert(message)
+  }
+}
+
 async function onInitiateMigration() {
   const MIGRATION_TOKEN_LIMIT = 4000
   const migrationJobRaw = localStorage.getItem(MIGRATION_JOB_KEY)
@@ -231,9 +336,16 @@ async function onInitiateMigration() {
     const eventName = window.prompt("Enter the name of the event to excavate:")
     if (!eventName) return
 
-    const eventToMigrate = oldEvents.find((e) => e.name === eventName)
+    // ❖ Live Excavation from the Diplis Archive.
+    const db = await openDB("diplis")
+    const tx = db.transaction("old_flow_archive", "readonly")
+    const store = tx.objectStore("old_flow_archive")
+    const allOldEvents = await store.getAll()
+    await tx.done
+
+    const eventToMigrate = allOldEvents.find((e) => e.name === eventName)
     if (!eventToMigrate) {
-      alert("Event not found in the old archive.")
+      alert("Event not found in the diplis archive.")
       return
     }
 
@@ -280,7 +392,7 @@ async function onInitiateMigration() {
       return
     }
 
-    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
+    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
     const contentToLoad = migrationJob[nextPartIndex].text
     const newLoomContent = `${savedContent}\n\n\`\`\`\n${contentToLoad}\n\`\`\``
     loomWrappedContentCache.value = newLoomContent
@@ -374,8 +486,6 @@ onMounted(async () => {
     input: shortcuts.input,
     confirm: shortcuts.confirm,
   })
-  await oldEvents.loadFromDB()
-  await oldAppState.loadFromDB()
   await fetchFlow()
   const pendingAudio = await getPendingAudio()
   if (pendingAudio) hasPendingRecording.value = true
