@@ -243,7 +243,7 @@ async function onInitiateMigration() {
 
     for (const chunk of chunks) {
       if (
-        currentPartText.length + chunk.length > MIGRATION_TOKEN_LIMIT &&
+        getTokens(currentPartText) + getTokens(chunk) > MIGRATION_TOKEN_LIMIT &&
         currentPartText
       ) {
         parts.push({ text: currentPartText.trim(), consumed: false })
@@ -296,6 +296,8 @@ async function onInitiateMigration() {
           migrationJob[0].text.split(" ")[0]
         }". Migration complete.`
       )
+    } else {
+      alert(`Part unearthed for "${migrationJob[0].text.split(" ")[0]}".`)
     }
   }
 }
