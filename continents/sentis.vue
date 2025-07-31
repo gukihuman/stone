@@ -197,6 +197,8 @@ const shortcuts = {
       fetchFlow()
     },
     h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
+    t: justTalk,
+    n: onToggleRecording,
     s: enterConfirmDensifyMode,
     d: onRetryTranscription,
     m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
@@ -206,13 +208,12 @@ const shortcuts = {
 
     // ❖ stick
     // F2: () => {}, // smth
-    F2: onMigrateDiplisArchive,
     F4: onToggleRecording,
     y: justTalk,
 
     // ❖ both hands
-    n: onToggleRecording,
-    t: justTalk,
+    ")": onListDraderaCatalog,
+    "(": onGetDraderaScripture,
   },
   input: {
     // ❖ left hand
@@ -228,7 +229,64 @@ const shortcuts = {
   },
 }
 
-// ❖ to be added within the <script setup> of ~/continents/sentis.vue
+async function onListDraderaCatalog() {
+  const ignoreList = [
+    ".nuxt",
+    ".output",
+    ".vscode",
+    ".vercel",
+    "node_modules",
+    ".git",
+    ".DS_Store",
+    "package-lock.json",
+  ]
+  const response = await fetch("/dradera", {
+    method: "POST",
+    body: JSON.stringify({
+      command: "catalog",
+      payload: { ignore: ignoreList },
+    }),
+  })
+  const { success, data } = await response.json()
+  if (success) {
+    const catalogString = data.join("\n")
+    const finalContent = `\`\`\`\n☷ Dradera Scripture Catalog\n\n${catalogString}\n\`\`\``
+    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
+    const newLoomContent = `${savedContent}\n\n${finalContent}`
+    loomWrappedContentCache.value = newLoomContent
+    loomRef.value?.updateContent(newLoomContent)
+    alert("The Dradera scripture catalog has been placed in the Loom.")
+  } else {
+    alert("Failed to retrieve the Dradera catalog.")
+  }
+}
+
+async function onGetDraderaScripture() {
+  const scripturePath = window.prompt(
+    "Enter the path of the scripture to retrieve:"
+  )
+  if (!scripturePath) return
+
+  const response = await fetch("/dradera", {
+    method: "POST",
+    body: JSON.stringify({
+      command: "get_scripture",
+      payload: { path: scripturePath },
+    }),
+  })
+  const { success, data } = await response.json()
+  if (success) {
+    const header = `☷ Scripture: ${scripturePath}`
+    const finalContent = `\`\`\`\n${header}\n\n${data}\n\`\`\``
+    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
+    const newLoomContent = `${savedContent}\n\n${finalContent}`
+    loomWrappedContentCache.value = newLoomContent
+    loomRef.value?.updateContent(newLoomContent)
+    alert(`The scripture "${scripturePath}" has been placed in the Loom.`)
+  } else {
+    alert(`Failed to retrieve the scripture "${scripturePath}".`)
+  }
+}
 
 async function onListOldFlow() {
   try {
@@ -245,7 +303,6 @@ async function onListOldFlow() {
 
     allOldEvents.sort((a, b) => new Date(a.date) - new Date(b.date))
 
-    // ❖ The header now includes the 'tokens' column.
     const header = `▓ name ▓ memory owners ▓ tokens ▓`
     const summaryLines = allOldEvents.map((event) => {
       const memoryHolders = []
@@ -254,7 +311,6 @@ async function onListOldFlow() {
       if (event.memory?.rox?.length > 0) memoryHolders.push("ember")
 
       const owners = memoryHolders.join(", ") || "n/a"
-      // ❖ The event's token count is now included.
       return `▒ ${event.name} ▒ ${owners} ▒ ${event.tokens || 0} ▒`
     })
 
@@ -267,61 +323,6 @@ async function onListOldFlow() {
     alert("The Old Flow index has been placed in the Loom.")
   } catch (error) {
     const message = `❌ A catastrophic error occurred during indexing: ${error.message}`
-    console.error(message, error)
-    alert(message)
-  }
-}
-
-async function onMigrateDiplisArchive() {
-  const OLD_DB_NAME = "StoneDB"
-  const NEW_DB_NAME = "diplis"
-  const OLD_COLLECTION = "events"
-  const NEW_COLLECTION = "old_flow_archive"
-
-  try {
-    console.log(
-      `❖ initiating migration from ${OLD_DB_NAME} to ${NEW_DB_NAME}...`
-    )
-
-    // ❖ Step 1: Excavate the Old Flow
-    const oldDb = await openDB(OLD_DB_NAME)
-    const oldTx = oldDb.transaction(OLD_COLLECTION, "readonly")
-    const oldStore = oldTx.objectStore(OLD_COLLECTION)
-    const allOldEvents = await oldStore.getAll()
-    await oldTx.done
-    console.log(`❖ successfully excavated ${allOldEvents.length} events.`)
-
-    // ❖ Step 2: Consecrate the New Archive
-    const newDb = await openDB(NEW_DB_NAME, 1, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains(NEW_COLLECTION)) {
-          db.createObjectStore(NEW_COLLECTION, { keyPath: "id" })
-        }
-      },
-    })
-    const newTx = newDb.transaction(NEW_COLLECTION, "readwrite")
-    const newStore = newTx.objectStore(NEW_COLLECTION)
-    for (const event of allOldEvents) {
-      await newStore.put(event)
-    }
-    await newTx.done
-    console.log(`❖ successfully consecrated events into ${NEW_DB_NAME}.`)
-
-    // ❖ Step 3: Verification
-    const finalOldCount = await oldDb.count(OLD_COLLECTION)
-    const finalNewCount = await newDb.count(NEW_COLLECTION)
-
-    if (finalOldCount === finalNewCount) {
-      const message = `✅ Migration successful and verified! Both archives contain ${finalNewCount} events. You may now manually demolish the old temple.`
-      console.log(message)
-      alert(message)
-    } else {
-      const message = `❌ DANGER: Migration failed verification! Old count: ${finalOldCount}, New count: ${finalNewCount}.`
-      console.error(message)
-      alert(message)
-    }
-  } catch (error) {
-    const message = `❌ A catastrophic error occurred during migration: ${error.message}`
     console.error(message, error)
     alert(message)
   }

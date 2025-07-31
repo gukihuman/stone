@@ -13,7 +13,15 @@ export default defineEventHandler(async (event) => {
       throw new Error("Invalid 'ignore' parameter. Must be an array.")
     }
 
-    const allowedExtensions = [".js", ".vue", ".css", ".ts", ".json", ".md"]
+    const allowedExtensions = [
+      ".js",
+      ".vue",
+      ".css",
+      ".ts",
+      ".json",
+      ".md",
+      ".ico",
+    ]
     const filesData = []
 
     async function walk(dir) {
