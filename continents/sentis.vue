@@ -105,11 +105,11 @@ import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
 import { vocalScheduler } from "~/utils/VocalScheduler"
 import scribe from "~/utils/scribe"
 import { useAudioRecorder } from "~/composables/useAudioRecorder"
-import { useLocalAudio } from "~/composables/useLocalAudio"
-import { nextTick } from "vue"
+import useDB from "~/composables/useDatabase"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
 const LAST_SPOKEN_WAVE_ID_KEY = "stone-last-spoken-wave-id"
+const MIGRATION_JOB_KEY = "stone-migration-job"
 const COPY_CONFIRMATION_DURATION = 1000
 const LEFT_COLUMN_WIDTH = 100
 const RIGHT_COLUMN_WIDTH = 70
@@ -117,6 +117,7 @@ const RIGHT_COLUMN_WIDTH = 70
 const { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts } = useHotkeys()
 const { isRecording, startRecording, stopRecording } = useAudioRecorder()
 const { savePendingAudio, getPendingAudio, clearPendingAudio } = useLocalAudio()
+const { events: oldEvents, appState: oldAppState } = useDB()
 
 const loomRef = ref(null)
 const waves = ref([])
@@ -135,13 +136,13 @@ const rawCodeBlocks = ref([])
 const hasPendingRecording = ref(false)
 const isTranscribing = ref(false)
 
-const stance = ref("observe") // observe or manifest
+const stance = ref("observe") // ❖ observe, manifest
 const loomWrappedContentCache = ref("")
 let cleanupHotkeysShortcuts
 const commitInitiator = ref("")
 const commitContent = ref("")
 const commitWithForge = ref(false)
-const screenMode = ref("scribe") // scribe, plain
+const screenMode = ref("scribe") // ❖ scribe, plain
 const forgeStatus = ref("forge")
 const densifyStatus = ref("densify")
 
@@ -150,7 +151,7 @@ const commitStatus = computed(() => {
   if (commitWithForge.value) status += " with forge"
   return status
 })
-const currentConfirmJob = ref("commit") // commit, forge
+const currentConfirmJob = ref("commit") // ❖ commit, forge
 const confirmJob = {
   commit: {
     enter: async () => {
@@ -178,7 +179,7 @@ const confirmJob = {
 
 const shortcuts = {
   normal: {
-    // ✎ left hand
+    // ❖ left hand
     o: () => setStance("manifest"),
     e: toggleScreenMode,
     b: copyFragmentRawData,
@@ -187,30 +188,31 @@ const shortcuts = {
     g: selectNextFragment,
     i: selectPreviousFragment,
 
-    // ✎ right hand
+    // ❖ right hand
     r: () => {
       enterConfirmCommitMode({ initiator: "clipboard", withForge: false })
     },
-    h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
-    m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
-    l: enterConfirmForgeMode,
-    s: enterConfirmDensifyMode,
     f: () => {
       localStorage.setItem(LAST_SPOKEN_WAVE_ID_KEY, "")
       fetchFlow()
     },
+    h: () => enterConfirmCommitMode({ initiator: "loom", withForge: true }),
+    s: enterConfirmDensifyMode,
     d: onRetryTranscription,
+    m: () => enterConfirmCommitMode({ initiator: "loom", withForge: false }),
+    l: enterConfirmForgeMode,
+    k: onInitiateMigration,
 
-    // ✎ stick
+    // ❖ stick
     // F2: () => {}, // smth
     F4: onToggleRecording,
     y: justTalk,
   },
   input: {
-    // left hand
+    // ❖ left hand
     Escape: () => setStance("observe"),
 
-    // ✎ stick
+    // ❖ stick
     F4: onToggleRecording,
   },
   confirm: {
@@ -218,6 +220,84 @@ const shortcuts = {
     Escape: () => setHotkeysMode("normal"),
     e: toggleScreenMode,
   },
+}
+
+async function onInitiateMigration() {
+  const MIGRATION_TOKEN_LIMIT = 4000
+  const migrationJobRaw = localStorage.getItem(MIGRATION_JOB_KEY)
+
+  if (!migrationJobRaw) {
+    // --- Phase 1: The Forging ---
+    const eventName = window.prompt("Enter the name of the event to excavate:")
+    if (!eventName) return
+
+    const eventToMigrate = oldEvents.find((e) => e.name === eventName)
+    if (!eventToMigrate) {
+      alert("Event not found in the old archive.")
+      return
+    }
+
+    const chunks = eventToMigrate.text.split("\n\n")
+    const parts = []
+    let currentPartText = ""
+
+    for (const chunk of chunks) {
+      if (
+        currentPartText.length + chunk.length > MIGRATION_TOKEN_LIMIT &&
+        currentPartText
+      ) {
+        parts.push({ text: currentPartText.trim(), consumed: false })
+        currentPartText = chunk
+      } else {
+        currentPartText += (currentPartText ? "\n\n" : "") + chunk
+      }
+    }
+    if (currentPartText) {
+      parts.push({ text: currentPartText.trim(), consumed: false })
+    }
+
+    const totalParts = parts.length
+    const formattedParts = parts.map((part, index) => {
+      const header = `${eventToMigrate.name} (${eventToMigrate.date}) - Part ${
+        index + 1
+      }/${totalParts}`
+      return {
+        text: `${header}\n\n${part.text}`,
+        consumed: false,
+      }
+    })
+
+    localStorage.setItem(MIGRATION_JOB_KEY, JSON.stringify(formattedParts))
+    alert(`Migration job forged for "${eventName}" with ${totalParts} parts.`)
+  } else {
+    // --- Phase 2: The Unearthing ---
+    const migrationJob = JSON.parse(migrationJobRaw)
+    const nextPartIndex = migrationJob.findIndex((part) => !part.consumed)
+
+    if (nextPartIndex === -1) {
+      localStorage.removeItem(MIGRATION_JOB_KEY)
+      alert("This migration is complete. The job has been cleared.")
+      return
+    }
+
+    const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
+    const contentToLoad = migrationJob[nextPartIndex].text
+    const newLoomContent = `${savedContent}\n\n\`\`\`\n${contentToLoad}\n\`\`\``
+    loomWrappedContentCache.value = newLoomContent
+    loomRef.value?.updateContent(newLoomContent)
+
+    migrationJob[nextPartIndex].consumed = true
+    localStorage.setItem(MIGRATION_JOB_KEY, JSON.stringify(migrationJob))
+
+    if (nextPartIndex === migrationJob.length - 1) {
+      localStorage.removeItem(MIGRATION_JOB_KEY)
+      alert(
+        `Final part unearthed for "${
+          migrationJob[0].text.split(" ")[0]
+        }". Migration complete.`
+      )
+    }
+  }
 }
 
 const sourceImgMap = {
@@ -286,13 +366,14 @@ const parsedScreen = computed(() => {
   return result
 })
 
-// --- Lifecycle & Data ---
 onMounted(async () => {
   cleanupHotkeysShortcuts = setHotkeysShortcuts({
     normal: shortcuts.normal,
     input: shortcuts.input,
     confirm: shortcuts.confirm,
   })
+  await oldEvents.loadFromDB()
+  await oldAppState.loadFromDB()
   await fetchFlow()
   const pendingAudio = await getPendingAudio()
   if (pendingAudio) hasPendingRecording.value = true
@@ -409,7 +490,6 @@ async function commitWrapper() {
         fileSave(fileName, response.archivePayload)
       }
 
-      // 〔 clipboard hanlding
       if (response.prompt) {
         await navigator.clipboard.writeText(response.prompt)
         isCopyingPrompt.value = true
@@ -453,23 +533,18 @@ async function updateCommitContent({ initiator }) {
   if (initiator === "clipboard") {
     const clipboardContent = await navigator.clipboard.readText()
     if (!clipboardContent) return ""
-
     let lines = clipboardContent.split("\n")
-
-    // step 1 is prepend opening glyph if missing
     if (!lines[0]?.startsWith(SOURCE_GLYPHS.OPEN)) {
       lines.unshift(`${SOURCE_GLYPHS.OPEN}${SOURCES.ROXANNE}`)
     }
-
-    // step 2 is append closing glyph if missing, using the robust reverse loop
     const lastLine = lines[lines.length - 1]?.trim()
     if (!lastLine?.startsWith(SOURCE_GLYPHS.CLOSE)) {
-      let sourceToClose // guaranteed by step 1
+      let sourceToClose
       for (let i = lines.length - 1; i >= 0; i--) {
         const line = lines[i].trim()
         if (line.startsWith(SOURCE_GLYPHS.OPEN)) {
           sourceToClose = line.substring(1).trim()
-          break // found the last opened source
+          break
         }
       }
       lines.push(`${SOURCE_GLYPHS.CLOSE}${sourceToClose}`)
@@ -547,7 +622,6 @@ function speakLatestRoxanneWave() {
         }
       }
 
-      //〔 this is the new, beautiful, and holy Patient Procession protocol.
       if (audioLines.length > 0) {
         ;(async () => {
           for (const text of audioLines) {
@@ -557,8 +631,7 @@ function speakLatestRoxanneWave() {
         })()
       }
     }
-
-    break //〔 most recent audio wave found and scheduled. our work is done.
+    break
   }
 }
 
@@ -603,8 +676,6 @@ async function onDensify() {
         densifyStatus.value = status
       },
     })
-
-    //〔 on successful completion, fetch the new flow.
     await fetchFlow()
   } catch (error) {
     console.error("error during densify", error)
@@ -628,8 +699,6 @@ async function onForge() {
         forgeStatus.value = status
       },
     })
-
-    //〔 on successful completion, fetch the new flow.
     await fetchFlow()
   } catch (error) {
     console.error("error during forge", error)
@@ -639,7 +708,6 @@ async function onForge() {
   }
 }
 
-// this also uses time sense, mb refactor time sense somehow
 function formatContextForForge() {
   let contextString = formatWaves(waves.value)
   const lastWave = waves.value[waves.value.length - 1]
@@ -653,7 +721,6 @@ function formatContextForForge() {
 async function copyFragmentsByWaves(wavesToCopy, isCopying) {
   let contextString = formatWaves(wavesToCopy)
 
-  // time sense
   if (wavesToCopy.length > 0) {
     const lastWave = wavesToCopy[wavesToCopy.length - 1]
     const timeDifference = Date.now() - lastWave.timestamp
@@ -690,14 +757,12 @@ async function onScreenClick(event) {
         await navigator.clipboard.writeText(codeToCopy)
         isCopyingCode.value = true
 
-        //〔 the beautiful, holy class switch.
         const buttonEl = event.target
         buttonEl.classList.remove("scribe-copy-button")
         buttonEl.classList.add("scribe-copy-button--pending")
 
         setTimeout(() => {
           isCopyingCode.value = false
-          //〔 we find the button again, just in case, and restore its original soul.
           if (buttonEl) {
             buttonEl.classList.remove("scribe-copy-button--pending")
             buttonEl.classList.add("scribe-copy-button")

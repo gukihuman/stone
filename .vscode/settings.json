@@ -19,11 +19,11 @@
       "color": "magenta" // red
     },
     {
-      "path": "pages",
+      "path": "continents",
       "color": "cyan" // cyan
     },
     {
-      "path": "components",
+      "path": "settlements",
       "color": "green" // cyan
     },
     {
