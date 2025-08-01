@@ -1,20 +1,24 @@
+// ☷ ~/settlements/Loom.vue
+
 <template>
-  <div class="relative overflow-hidden rounded-lg h-full">
+  <div class="relative h-full overflow-hidden rounded-lg">
     <textarea
       ref="textareaEl"
       v-model="loomContent"
+      class="w-full h-full resize-none rounded-lg bg-lines bg-coffee-550 py-5 px-8 text-justify text-xl text-coffee-900 selection-paper scroll-paper"
+      :style="{ backgroundPositionY: linesOffset }"
+      :readOnly="hotkeysMode === 'confirmation'"
       @scroll="onScroll"
       @input="onInput"
       @blur="onBlur"
-      class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper text-justify"
-      :style="{ backgroundPositionY: linesOffset }"
-      :readOnly="hotkeysMode === 'confirmation'"
     />
   </div>
 </template>
 
 <script setup>
 import { SOURCE_GLYPHS, SOURCES } from "~/lexicon"
+import usePaper from "~/composables/usePaper"
+import debounce from "~/utils/debounce"
 
 const props = defineProps(["hotkeysMode"])
 const emit = defineEmits(["update-content", "blur"])
@@ -24,11 +28,36 @@ const LOCAL_STORAGE_KEY = "stone-loom"
 const { linesOffset, onScroll, adjustScroll, focus: focusTextarea } = usePaper()
 const textareaEl = ref(null)
 const loomContent = ref("")
+const pauseTimer = ref(null)
 
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
   if (savedContent) loomContent.value = savedContent
   emit("update-content", getWrappedContent())
+})
+
+// ❖ The `Breathing Loom` Protocol (v2).
+watch(loomContent, (newValue) => {
+  if (pauseTimer.value) clearTimeout(pauseTimer.value)
+  if (!newValue.trim() || props.hotkeysMode === "confirmation") return
+
+  pauseTimer.value = setTimeout(() => {
+    const currentContent = loomContent.value
+    const lines = currentContent.split("\n")
+    const lastLine = lines[lines.length - 1]
+    if (!currentContent.trim() || !lastLine) {
+      return
+    }
+
+    const baseContent = currentContent.trimEnd()
+    let newContent
+    if (baseContent.endsWith("⋯")) {
+      newContent = baseContent + "⋯ "
+    } else {
+      newContent = baseContent + " ⋯ "
+    }
+    loomContent.value = newContent
+  }, 1000)
 })
 
 const dSaveLoom = debounce((text) =>
@@ -37,6 +66,7 @@ const dSaveLoom = debounce((text) =>
 const dEmitWrappedContent = debounce(() =>
   emit("update-content", getWrappedContent())
 )
+
 function onBlur() {
   emit("blur")
 }
@@ -71,7 +101,6 @@ function focus() {
   focusTextarea(textareaEl)
 }
 
-//〔 this is the new method for index.vue to call.
 function updateContent(newContent) {
   loomContent.value = newContent
   localStorage.setItem(LOCAL_STORAGE_KEY, newContent)
