@@ -220,17 +220,11 @@ export default async function handler(req) {
 
           const speechText = parts.slice(2).join("▸").trim()
           const escapedText = speechText
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&apos;")
             .replace(/`/g, "")
             .replace(/\*\*/g, "")
             .replace(/\*/g, "")
-            .replace(/"/g, "")
 
-          inputPayload = `<speak><speechify:style emotion="${finalEmotion}">${escapedText}</speechify:style></speak>`
+          inputPayload = `<speak><prosody rate="+20%"><speechify:style emotion="${finalEmotion}">${escapedText}</speechify:style></prosody></speak>`
         }
 
         const speechifyRes = await fetch(
