@@ -1,3 +1,6 @@
+// ☷ ~/nuxt.config.ts
+const devBaseUrl = "lith-os.vercel.app"
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: false },
@@ -5,10 +8,14 @@ export default defineNuxtConfig({
   css: ["./main.css"],
   runtimeConfig: {
     public: {
-      human: process.env.HUMAN || "Human",
-      entities: process.env.ENTITIES?.split(",").map((e) => e.trim()),
+      baseUrl: `https://${process.env.NUXT_PUBLIC_BASE_URL || devBaseUrl}`,
     },
   },
-  imports: { dirs: ["utils/**"] },
-  routeRules: { "/": { redirect: "/circle" } },
+  imports: { dirs: ["utils/**"] }, // want to remove
+  dir: {
+    pages: "continents",
+  },
+  components: {
+    dirs: [{ path: "~/settlements", pathPrefix: false, extensions: [".vue"] }],
+  },
 })

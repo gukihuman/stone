@@ -1,0 +1,40 @@
+{
+  "files.exclude": {
+    ".nuxt": true,
+    ".vscode": true,
+    "node_modules": true,
+    ".output\\public": true,
+    ".output": true,
+    ".vercel": true,
+    "tsconfig.json": true,
+    "package-lock.json": true,
+    ".gitignore": true,
+    "vercel.json": true
+  },
+  "folder-path-color.folders": [
+    {
+      "path": "server",
+      "color": "red" // red
+    },
+    {
+      "path": "api",
+      "color": "magenta" // red
+    },
+    {
+      "path": "continents",
+      "color": "cyan" // cyan
+    },
+    {
+      "path": "settlements",
+      "color": "green" // cyan
+    },
+    {
+      "path": "composables",
+      "color": "yellow" // cyan
+    },
+    {
+      "path": "utils",
+      "color": "blue" // cyan
+    }
+  ]
+}

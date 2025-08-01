@@ -1,45 +1,60 @@
+/* main.css */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playwrite+HU:wght@100..400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bitcount+Prop+Double:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Pacifico&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+html {
+  @apply bg-stone-600;
+}
 * {
   @apply focus:outline-none;
 }
 *::-webkit-scrollbar {
-  @apply w-[8px];
+  @apply w-10;
 }
-.scroll-wide::-webkit-scrollbar {
-  @apply w-[15px];
+.scroll-paper::-webkit-scrollbar-thumb {
+  @apply bg-coffee-650;
 }
-*::-webkit-scrollbar-thumb {
-  @apply bg-stone-600;
+.scroll-paper::-webkit-scrollbar-thumb:hover {
+  @apply bg-coffee-800 cursor-grab;
 }
-*::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+.scroll-screen::-webkit-scrollbar-thumb {
+  @apply bg-moss-350;
 }
-.scroll-light::-webkit-scrollbar-thumb {
-  @apply bg-stone-500;
+.scroll-screen::-webkit-scrollbar-thumb:hover {
+  @apply bg-moss-300 cursor-grab;
 }
-.scroll-light::-webkit-scrollbar-thumb:hover {
-  @apply bg-stone-700 cursor-grab;
+.selection-paper::selection {
+  @apply bg-coffee-800 text-coffee-100;
 }
-*::selection {
-  @apply bg-stone-600 text-stone-300;
-}
-.selection-light::selection {
-  @apply bg-stone-400 text-stone-800;
+.selection-screen::selection {
+  @apply bg-moss-300 text-moss-700;
 }
 .bg-circles {
   background-image: radial-gradient(
     circle at 50% 50%,
-    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.06) 2px,
     transparent 1px
   );
-  background-size: 16px 16px;
+  background-size: 12px 12px;
 }
-
+.bg-circles-gradient {
+  background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 0, 0, 0.06) 2px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.15) 100%);
+  background-size: 12px 12px, 100% 100%;
+}
 .bg-lines {
   background-image: linear-gradient(
     to bottom,
@@ -56,24 +71,91 @@
   );
   background-size: 100% 28px;
 }
-.text-stone-350 {
-  color: rgb(198, 192, 190);
+@keyframes screen‑scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 500px;
+  }
 }
-.text-stone-450 {
-  color: rgb(144, 137, 133);
+.bg-screen {
+  background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      rgba(255, 255, 255, 0.02) 500px
+    ),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.05) 2px, transparent 1px);
+  background-size: 100% 500px, 5px 5px;
+  animation: screen‑scroll 10s linear infinite;
 }
-.bg-stone-450 {
-  background-color: rgb(144, 137, 133);
-}
-.bg-stone-550 {
-  background-color: rgb(98, 92, 87);
-}
-.bg-stone-650 {
-  background-color: rgb(80, 76, 73);
-}
-.border-stone-550 {
-  border-color: rgb(98, 92, 87);
-}
+
 [contenteditable] {
   white-space: pre-wrap;
+}
+
+/* .......................................................................... */
+/* ..... scribe ..............................................................*/
+/* .......................................................................... */
+
+/* cadence glyphs */
+.flow-thought {
+  @apply px-8;
+}
+.flow-sigil {
+  @apply px-8 py-2 mx-8 font-fira rounded-3xl bg-moss-700/30;
+}
+.flow-default {
+  @apply px-8;
+}
+
+/* special glyphs */
+.scribe-list-item {
+  @apply px-8;
+}
+.scribe-meta {
+  @apply px-8;
+}
+.scribe-consultation {
+  @apply px-8;
+}
+.scribe-prompt {
+  @apply px-8;
+}
+.scribe-vocal {
+  @apply px-8;
+}
+
+/* inline wrappers */
+.scribe-bold {
+  @apply bg-moss-700/30 text-moss-150 px-2;
+}
+.scribe-term {
+  @apply bg-moss-700/30 text-moss-150 px-2;
+}
+
+/* structural elements */
+.scribe-empty-line {
+  @apply h-8;
+}
+
+/* code blocks */
+.scribe-code-block {
+  @apply rounded-r-3xl overflow-hidden bg-moss-700/20;
+}
+.scribe-code-language {
+  @apply font-bitcount text-moss-200 text-3xl px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 h-[52px];
+}
+.scribe-code-line-block {
+  @apply py-6;
+}
+.scribe-code-line {
+  @apply pl-8 text-sm;
+}
+.scribe-copy-button {
+  @apply font-bitcount text-moss-200 text-3xl cursor-pointer hover:bg-moss-650/70 px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2;
+}
+
+.scribe-copy-button--pending {
+  @apply font-bitcount text-3xl text-moss-200 px-14 bg-gradient-to-r from-moss-350 to-transparent py-2;
 }

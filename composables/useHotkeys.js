@@ -1,25 +1,28 @@
-export default function () {
-  const hotkeysLockedByInput = ref(false)
+// ~/composables/useHotkeys.js
+export default function useHotkeys() {
+  const currentHotkeysMode = ref("normal") // normal, input, or confirm
 
-  function resetFocus() {
-    if (document.activeElement) document.activeElement.blur()
-    hotkeysLockedByInput.value = false
+  function setHotkeysMode(newMode) {
+    if (["normal", "input", "confirm"].includes(newMode)) {
+      currentHotkeysMode.value = newMode
+    }
   }
-  function setupHotkeys(shortcuts) {
+
+  function setHotkeysShortcuts(shortcutMaps) {
     function handleKeyDown(e) {
-      // if input focused, only handle Escape
-      if (hotkeysLockedByInput.value) {
-        if (e.key === "Escape") resetFocus()
-        return
-      }
-      const handler = shortcuts[e.key]
+      const modeShortcuts = shortcutMaps[currentHotkeysMode.value]
+      if (!modeShortcuts) return
+
+      const handler = modeShortcuts[e.key]
       if (handler) {
-        handler()
         e.preventDefault()
+        handler()
       }
     }
+
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }
-  return { hotkeysLockedByInput, setupHotkeys }
+
+  return { currentHotkeysMode, setHotkeysMode, setHotkeysShortcuts }
 }
