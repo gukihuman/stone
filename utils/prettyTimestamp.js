@@ -1,4 +1,4 @@
-// ~/utils/misc/timestamp.js
+// ~/utils/misc/prettyTimestamp.js
 export default function () {
   const now = new Date()
   const hours = String(now.getHours()).padStart(2, "0")

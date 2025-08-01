@@ -5,6 +5,6 @@ export default function (string) {
   try {
     return encode(string).length
   } catch (e) {
-    console.error("❗ error counting tokens")
+    return Math.round(string.length / 4)
   }
 }

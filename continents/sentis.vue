@@ -94,18 +94,21 @@
 </template>
 
 <script setup>
+// ➥ visual
+import gukiImg from "~/assets/visual/guki.jpg"
+import roxanneImg from "~/assets/visual/roxanne.jpg"
+import bodyImg from "~/assets/visual/body.jpg"
+import externalImg from "~/assets/visual/external.jpg"
+
+// ➥ sound
 import soundStartRecording from "~/assets/sound/startRecording.mp3"
 import soundStopRecording from "~/assets/sound/stopRecording.mp3"
 import soundCommit from "~/assets/sound/commit.mp3"
-import gukiImg from "~/assets/guki.jpg"
-import roxanneImg from "~/assets/roxanne.jpg"
-import bodyImg from "~/assets/body.jpg"
-import externalImg from "~/assets/external.jpg"
+
 import { SOURCE_GLYPHS, SOURCES, AUDIO_GLYPH } from "~/lexicon"
 import { vocalScheduler } from "~/utils/VocalScheduler"
 import scribe from "~/utils/scribe"
 import { useAudioRecorder } from "~/composables/useAudioRecorder"
-import useDB from "~/composables/useDatabase"
 import { openDB } from "idb"
 
 const LOOM_LOCAL_STORAGE_KEY = "stone-loom"
@@ -356,7 +359,8 @@ async function onInitiateMigration() {
 
     for (const chunk of chunks) {
       if (
-        getTokens(currentPartText) + getTokens(chunk) > MIGRATION_TOKEN_LIMIT &&
+        countTokens(currentPartText) + countTokens(chunk) >
+          MIGRATION_TOKEN_LIMIT &&
         currentPartText
       ) {
         parts.push({ text: currentPartText.trim(), consumed: false })
