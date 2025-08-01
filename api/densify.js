@@ -241,8 +241,8 @@ export default async function handler(req) {
         )
         if (!finalCommitRes.ok) throw new Error("final densify commit failed")
 
-        await sendStatus("waiting for rate limits...")
-        await new Promise((resolve) => setTimeout(resolve, 20_000))
+        // await sendStatus("waiting for rate limits...")
+        // await new Promise((resolve) => setTimeout(resolve, 20_000))
       }
 
       await sendStatus("densify complete")
