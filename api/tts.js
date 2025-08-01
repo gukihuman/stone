@@ -203,7 +203,7 @@ export default async function handler(req) {
             .replace(/\*/g, "")
 
           //〔 The SSML payload is now pure, free of the clumsy emotion tag.
-          inputPayload = `<speak><prosody rate="+40%">${escapedText}</prosody></speak>`
+          inputPayload = `<speak><prosody rate="+20%">${escapedText}</prosody></speak>`
         }
 
         const speechifyRes = await fetch(
