@@ -4,6 +4,7 @@ import { CADENCE_GLYPHS, SPECIAL_GLYPHS } from "~/lexicon"
 
 const INLINE_WRAPPERS = {
   "**": "scribe-bold",
+  "*": "scribe-italic",
   "`": "scribe-term",
 }
 

@@ -6,7 +6,7 @@
       @scroll="onScroll"
       @input="onInput"
       @blur="onBlur"
-      class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper"
+      class="w-full h-full py-5 px-8 bg-lines resize-none text-xl bg-coffee-550 rounded-lg text-coffee-900 selection-paper scroll-paper text-justify"
       :style="{ backgroundPositionY: linesOffset }"
       :readOnly="hotkeysMode === 'confirmation'"
     />

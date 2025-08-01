@@ -103,7 +103,7 @@ html {
   @apply px-8;
 }
 .flow-sigil {
-  @apply px-8 py-2 mx-8 font-fira rounded-3xl bg-moss-700/30;
+  @apply px-8 py-2 mx-8 font-fira rounded-xl bg-moss-700/30;
 }
 .flow-default {
   @apply px-8;
@@ -128,6 +128,9 @@ html {
 
 /* inline wrappers */
 .scribe-bold {
+  @apply bg-moss-700/30 text-moss-150 px-2;
+}
+.scribe-italic {
   @apply bg-moss-700/30 text-moss-150 px-2;
 }
 .scribe-term {
