@@ -1,4 +1,5 @@
 /* main.css */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Playwrite+HU:wght@100..400&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Bitcount+Prop+Double:wght@100..900&display=swap");
@@ -102,7 +103,7 @@ html {
   @apply px-8;
 }
 .flow-sigil {
-  @apply px-8 text-5xl font-bebas leading-[48px] text-moss-250;
+  @apply px-8 py-2 mx-8 font-fira rounded-3xl bg-moss-700/30;
 }
 .flow-default {
   @apply px-8;
@@ -127,7 +128,7 @@ html {
 
 /* inline wrappers */
 .scribe-bold {
-  @apply font-black bg-moss-700/30 text-moss-150 px-2;
+  @apply bg-moss-700/30 text-moss-150 px-2;
 }
 .scribe-term {
   @apply bg-moss-700/30 text-moss-150 px-2;
@@ -135,12 +136,12 @@ html {
 
 /* structural elements */
 .scribe-empty-line {
-  @apply h-6;
+  @apply h-8;
 }
 
 /* code blocks */
 .scribe-code-block {
-  @apply rounded-r-3xl overflow-hidden bg-moss-700 bg-opacity-20;
+  @apply rounded-r-3xl overflow-hidden bg-moss-700/20;
 }
 .scribe-code-language {
   @apply font-bitcount text-moss-200 text-3xl px-14 bg-gradient-to-r from-moss-600/50 to-transparent py-2 h-[52px];

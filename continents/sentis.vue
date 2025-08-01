@@ -71,13 +71,13 @@
               <!-- ### scribe mode -->
               <div
                 v-if="screenMode === 'scribe'"
-                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 font-fira overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg leading-8"
+                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-xl leading-8"
                 v-html="parsedScreen.html"
               ></div>
               <!-- ### plain mode -->
               <div
                 v-else
-                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 font-fira overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-lg leading-8"
+                class="h-full bg-moss-400 text-moss-100 rounded-lg py-5 px-8 overflow-y-auto overflow-x-hidden whitespace-pre-wrap scroll-screen bg-screen cursor-default selection-screen text-xl leading-8"
               >
                 {{ screen.content || "" }}
               </div>
@@ -215,8 +215,8 @@ const shortcuts = {
     y: justTalk,
 
     // ❖ both hands
-    ")": onListDraderaCatalog,
-    "(": onGetDraderaScripture,
+    "(": onListDraderaCatalog,
+    ")": onGetDraderaScripture,
   },
   input: {
     // ❖ left hand

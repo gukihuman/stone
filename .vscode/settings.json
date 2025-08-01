@@ -7,7 +7,9 @@
     ".output": true,
     ".vercel": true,
     "tsconfig.json": true,
-    "package-lock.json": true
+    "package-lock.json": true,
+    ".gitignore": true,
+    "vercel.json": true
   },
   "folder-path-color.folders": [
     {

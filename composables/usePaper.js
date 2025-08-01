@@ -26,7 +26,10 @@ export default function () {
     textareaEl.value.focus()
     const length = textareaEl.value.value.length
     textareaEl.value.setSelectionRange(length, length)
-    scrollToBot(textareaEl.value, "auto")
+    textareaEl.value.scrollTo({
+      top: textareaEl.value.scrollHeight,
+      behavior: "auto",
+    })
   }
   return { linesOffset, onScroll, adjustScroll, focus }
 }

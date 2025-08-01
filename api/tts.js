@@ -201,7 +201,7 @@ export default async function handler(req) {
           "bright",
         ]
 
-        const parts = text.split("▸")
+        const parts = text.split("▒")
         let inputPayload = text
         let finalVoice = "puppy"
         let finalEmotion = "warm"
