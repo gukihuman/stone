@@ -1,6 +1,5 @@
-// ~/nuxt.config.ts
-const devBaseUrl = "lithos-git-core-gukis-projects.vercel.app"
-// const devBaseUrl = "lithos-smth.vercel.app" // want to restore, make a good name there
+// ☷ ~/nuxt.config.ts
+const devBaseUrl = "lith-os.vercel.app"
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",

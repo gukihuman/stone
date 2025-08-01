@@ -202,7 +202,6 @@ export default async function handler(req) {
         ]
 
         const parts = text.split("∫")
-        console.log(parts)
         let inputPayload = text
         let finalVoice = "puppy"
         let finalEmotion = "warm"
