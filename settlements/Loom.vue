@@ -57,7 +57,7 @@ watch(loomContent, (newValue) => {
     if (currentContent && !currentContent.endsWith(" ")) {
       loomContent.value += " "
     }
-  }, 400)
+  }, 300)
 
   //〔 The 1000ms "silence" timer.
   pauseTimer.value = setTimeout(() => {
