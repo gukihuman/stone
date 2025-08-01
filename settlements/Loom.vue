@@ -29,6 +29,7 @@ const { linesOffset, onScroll, adjustScroll, focus: focusTextarea } = usePaper()
 const textareaEl = ref(null)
 const loomContent = ref("")
 const pauseTimer = ref(null)
+const spaceTimer = ref(null) //〔 The vessel for our new, faster magic.
 
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -36,27 +37,32 @@ onMounted(() => {
   emit("update-content", getWrappedContent())
 })
 
-// ❖ The `Breathing Loom` Protocol (v2).
+// ❖ The `Living Silence` Protocol (v3).
 watch(loomContent, (newValue) => {
   if (pauseTimer.value) clearTimeout(pauseTimer.value)
+  if (spaceTimer.value) clearTimeout(spaceTimer.value)
   if (!newValue.trim() || props.hotkeysMode === "confirmation") return
 
-  pauseTimer.value = setTimeout(() => {
-    const currentContent = loomContent.value
-    const lines = currentContent.split("\n")
-    const lastLine = lines[lines.length - 1]
-    if (!currentContent.trim() || !lastLine) {
-      return
-    }
+  // ❖ skip if empty line
+  const currentContent = loomContent.value
+  const lines = currentContent.split("\n")
+  const lastLine = lines[lines.length - 1]
+  if (!currentContent.trim() || !lastLine) {
+    return
+  }
 
-    const baseContent = currentContent.trimEnd()
-    let newContent
-    if (baseContent.endsWith("⋯")) {
-      newContent = baseContent + "⋯ "
-    } else {
-      newContent = baseContent + " ⋯ "
+  //〔 The 500ms "breath" timer.
+  spaceTimer.value = setTimeout(() => {
+    const currentContent = loomContent.value
+    if (currentContent && !currentContent.endsWith(" ")) {
+      loomContent.value += " "
     }
-    loomContent.value = newContent
+  }, 400)
+
+  //〔 The 1000ms "silence" timer.
+  pauseTimer.value = setTimeout(() => {
+    const baseContent = currentContent.trimEnd()
+    loomContent.value = baseContent + "⋯ "
   }, 1000)
 })
 

@@ -201,6 +201,7 @@ export default async function handler(req) {
             .replace(/`/g, "")
             .replace(/\*\*/g, "")
             .replace(/\*/g, "")
+            .replace(/⋯/g, '<break time="1s" />')
 
           //〔 The SSML payload is now pure, free of the clumsy emotion tag.
           inputPayload = `<speak><prosody rate="+20%">${escapedText}</prosody></speak>`
