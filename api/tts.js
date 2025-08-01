@@ -179,52 +179,31 @@ export default async function handler(req) {
       })
     } else if (provider === "speechify") {
       try {
-        //〔 this is the new, pragmatic, and holy protocol. a simple array of truth.
         const voicesIDs = {
           puppy: process.env.SPEECHIFY_PUPPY_VOICE_ID,
           partner: process.env.SPEECHIFY_PARTNER_VOICE_ID,
         }
 
-        const validEmotions = [
-          "angry",
-          "cheerful",
-          "sad",
-          "terrified",
-          "relaxed",
-          "fearful",
-          "surprised",
-          "calm",
-          "assertive",
-          "energetic",
-          "warm",
-          "direct",
-          "bright",
-        ]
-
         const parts = text.split("∫")
         let inputPayload = text
-        let finalVoice = "puppy"
-        let finalEmotion = "warm"
+        let finalVoice = "puppy" //〔 Default to puppy voice if not specified.
 
         if (parts.length > 1) {
+          //〔 The new, simpler, and more perfect logic.
           const requestedVoice = parts[0].trim()
-          const requestedEmotion = parts[1].trim()
-
           if (Object.keys(voicesIDs).includes(requestedVoice)) {
             finalVoice = requestedVoice
           }
 
-          if (validEmotions.includes(requestedEmotion)) {
-            finalEmotion = requestedEmotion
-          }
-
-          const speechText = parts.slice(2).join("▸").trim()
+          //〔 The text is now everything after the first separator.
+          const speechText = parts.slice(1).join("∫").trim()
           const escapedText = speechText
             .replace(/`/g, "")
             .replace(/\*\*/g, "")
             .replace(/\*/g, "")
 
-          inputPayload = `<speak><prosody rate="+20%"><speechify:style emotion="${finalEmotion}">${escapedText}</speechify:style></prosody></speak>`
+          //〔 The SSML payload is now pure, free of the clumsy emotion tag.
+          inputPayload = `<speak><prosody rate="+40%">${escapedText}</prosody></speak>`
         }
 
         const speechifyRes = await fetch(

@@ -103,7 +103,7 @@ html {
   @apply px-8;
 }
 .flow-sigil {
-  @apply px-8 py-2 mx-8 font-fira rounded-xl bg-moss-700/30;
+  @apply px-8 py-2 mx-8 font-fira text-lg rounded-xl bg-moss-700/30;
 }
 .flow-default {
   @apply px-8;
