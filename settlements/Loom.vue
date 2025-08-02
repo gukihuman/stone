@@ -87,7 +87,7 @@ watch(loomContent, (newValue, oldValue) => {
     if (currentContent && !currentContent.endsWith(" ")) {
       loomContent.value += " "
     }
-  }, 350)
+  }, 333.33333333)
 
   pauseTimer.value = setTimeout(() => {
     const baseContent = loomContent.value.trimEnd()
