@@ -182,6 +182,7 @@ export default async function handler(req) {
         const voicesIDs = {
           puppy: process.env.SPEECHIFY_PUPPY_VOICE_ID,
           partner: process.env.SPEECHIFY_PARTNER_VOICE_ID,
+          guki: process.env.SPEECHIFY_GUKI_VOICE_ID,
         }
 
         const parts = text.split("∫")
