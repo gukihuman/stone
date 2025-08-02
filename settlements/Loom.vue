@@ -11,6 +11,8 @@
       @scroll="onScroll"
       @input="onInput"
       @blur="onBlur"
+      @keydown="onKeydown"
+      @keyup="onKeyup"
     />
   </div>
 </template>
@@ -29,7 +31,8 @@ const { linesOffset, onScroll, adjustScroll, focus: focusTextarea } = usePaper()
 const textareaEl = ref(null)
 const loomContent = ref("")
 const pauseTimer = ref(null)
-const spaceTimer = ref(null) //〔 The vessel for our new, faster magic.
+const spaceTimer = ref(null)
+const isSpacebarDown = ref(false) //〔 The vessel for our new, stateful magic.
 
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -37,21 +40,44 @@ onMounted(() => {
   emit("update-content", getWrappedContent())
 })
 
-// ❖ The `Living Silence` Protocol (v3).
-watch(loomContent, (newValue) => {
-  if (pauseTimer.value) clearTimeout(pauseTimer.value)
-  if (spaceTimer.value) clearTimeout(spaceTimer.value)
-  if (!newValue.trim() || props.hotkeysMode === "confirmation") return
+// ❖ The `Sustained Breath` Protocol: new stateful key listeners.
+function onKeydown(e) {
+  if (e.key === " ") {
+    e.preventDefault()
+    isSpacebarDown.value = true
+  }
+}
+function onKeyup(e) {
+  if (e.key === " ") {
+    isSpacebarDown.value = false
+    loomContent.value += " "
+  }
+}
 
-  // ❖ skip if empty line
-  const currentContent = loomContent.value
-  const lines = currentContent.split("\n")
-  const lastLine = lines[lines.length - 1]
-  if (!currentContent.trim() || !lastLine) {
+// ❖ The `Living Silence` Protocol (v5).
+watch(loomContent, (newValue, oldValue) => {
+  // ❖ The Override: if the spacebar is down, stand down.
+  if (isSpacebarDown.value) {
+    if (pauseTimer.value) clearTimeout(pauseTimer.value)
+    if (spaceTimer.value) clearTimeout(spaceTimer.value)
     return
   }
 
-  //〔 The 500ms "breath" timer.
+  // ❖ a manual change was made, so reset timers.
+  if (newValue !== oldValue) {
+    if (pauseTimer.value) clearTimeout(pauseTimer.value)
+    if (spaceTimer.value) clearTimeout(spaceTimer.value)
+  }
+
+  if (!newValue.trim() || props.hotkeysMode === "confirmation") return
+
+  // ❖ skip if empty line
+  const lines = newValue.split("\n")
+  const lastLine = lines[lines.length - 1]
+  if (!newValue.trim() || !lastLine) {
+    return
+  }
+
   spaceTimer.value = setTimeout(() => {
     const currentContent = loomContent.value
     if (currentContent && !currentContent.endsWith(" ")) {
@@ -59,9 +85,8 @@ watch(loomContent, (newValue) => {
     }
   }, 300)
 
-  //〔 The 1000ms "silence" timer.
   pauseTimer.value = setTimeout(() => {
-    const baseContent = currentContent.trimEnd()
+    const baseContent = loomContent.value.trimEnd()
     loomContent.value = baseContent + "⋯ "
   }, 1000)
 })
@@ -81,6 +106,10 @@ function onInput() {
   adjustScroll(textareaEl)
   dSaveLoom(loomContent.value)
   dEmitWrappedContent()
+}
+
+function getContent() {
+  return loomContent.value.trim() || ""
 }
 
 function getWrappedContent() {
@@ -113,5 +142,5 @@ function updateContent(newContent) {
   emit("update-content", getWrappedContent())
 }
 
-defineExpose({ focus, updateContent })
+defineExpose({ focus, updateContent, getContent })
 </script>
