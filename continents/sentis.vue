@@ -227,7 +227,7 @@ const shortcuts = {
       words.pop()
       const newLoomContent = words.join(" ") + " ⌧ "
       loomWrappedContentCache.value = newLoomContent
-      loomRef.value?.updateContent(newLoomContent)
+      loomRef.value?.setContent(newLoomContent)
     },
 
     // ❖ stick
@@ -265,7 +265,7 @@ async function onListDraderaCatalog() {
     const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
     const newLoomContent = `${savedContent}\n\n${finalContent}`
     loomWrappedContentCache.value = newLoomContent
-    loomRef.value?.updateContent(newLoomContent)
+    loomRef.value?.setContent(newLoomContent)
     alert("The Dradera scripture catalog has been placed in the Loom.")
   } else {
     alert("Failed to retrieve the Dradera catalog.")
@@ -292,7 +292,7 @@ async function onGetDraderaScripture() {
     const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
     const newLoomContent = `${savedContent}\n\n${finalContent}`
     loomWrappedContentCache.value = newLoomContent
-    loomRef.value?.updateContent(newLoomContent)
+    loomRef.value?.setContent(newLoomContent)
     alert(`The scripture "${scripturePath}" has been placed in the Loom.`)
   } else {
     alert(`Failed to retrieve the scripture "${scripturePath}".`)
@@ -330,7 +330,7 @@ async function onListOldFlow() {
     const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY) || ""
     const newLoomContent = `${savedContent}\n\n${finalContent}`
     loomWrappedContentCache.value = newLoomContent
-    loomRef.value?.updateContent(newLoomContent)
+    loomRef.value?.setContent(newLoomContent)
     alert("The Old Flow index has been placed in the Loom.")
   } catch (error) {
     const message = `❌ A catastrophic error occurred during indexing: ${error.message}`
@@ -409,7 +409,7 @@ async function onInitiateMigration() {
     const contentToLoad = migrationJob[nextPartIndex].text
     const newLoomContent = `${savedContent}\n\n\`\`\`\n${contentToLoad}\n\`\`\``
     loomWrappedContentCache.value = newLoomContent
-    loomRef.value?.updateContent(newLoomContent)
+    loomRef.value?.setContent(newLoomContent)
 
     migrationJob[nextPartIndex].consumed = true
     localStorage.setItem(MIGRATION_JOB_KEY, JSON.stringify(migrationJob))
@@ -552,7 +552,7 @@ async function transcribeAndUpdateLoom() {
       const savedContent = localStorage.getItem(LOOM_LOCAL_STORAGE_KEY)
       const newLoomContent = `${savedContent}\n\n${AUDIO_GLYPH} ${transcription}`
       loomWrappedContentCache.value = newLoomContent
-      loomRef.value?.updateContent(newLoomContent) //〔 a new method for loom.
+      loomRef.value?.setContent(newLoomContent)
       await clearPendingAudio()
       hasPendingRecording.value = false
     }

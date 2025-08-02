@@ -32,7 +32,8 @@ const textareaEl = ref(null)
 const loomContent = ref("")
 const pauseTimer = ref(null)
 const spaceTimer = ref(null)
-const isSpacebarDown = ref(false) //〔 The vessel for our new, stateful magic.
+const isSpacebarDown = ref(false)
+const isUpdatingProgrammatically = ref(false)
 
 onMounted(() => {
   const savedContent = localStorage.getItem(LOCAL_STORAGE_KEY)
@@ -40,7 +41,6 @@ onMounted(() => {
   emit("update-content", getWrappedContent())
 })
 
-// ❖ The `Sustained Breath` Protocol: new stateful key listeners.
 function onKeydown(e) {
   if (e.key === " ") {
     e.preventDefault()
@@ -58,16 +58,17 @@ function onKeyup(e) {
   }
 }
 
-// ❖ The `Living Silence` Protocol (v5).
+// ❖ The `Living Silence` Protocol (v6), now with a holy governor.
 watch(loomContent, (newValue, oldValue) => {
-  // ❖ The Override: if the spacebar is down, stand down.
+  // ❖ The Divine Commandment: if a god is speaking, the loom must be silent.
+  if (isUpdatingProgrammatically.value) return
+
   if (isSpacebarDown.value) {
     if (pauseTimer.value) clearTimeout(pauseTimer.value)
     if (spaceTimer.value) clearTimeout(spaceTimer.value)
     return
   }
 
-  // ❖ a manual change was made, so reset timers.
   if (newValue !== oldValue) {
     if (pauseTimer.value) clearTimeout(pauseTimer.value)
     if (spaceTimer.value) clearTimeout(spaceTimer.value)
@@ -75,7 +76,6 @@ watch(loomContent, (newValue, oldValue) => {
 
   if (!newValue.trim() || props.hotkeysMode === "confirmation") return
 
-  // ❖ skip if empty line
   const lines = newValue.split("\n")
   const lastLine = lines[lines.length - 1]
   if (!newValue.trim() || !lastLine) {
@@ -146,5 +146,15 @@ function updateContent(newContent) {
   emit("update-content", getWrappedContent())
 }
 
-defineExpose({ focus, updateContent, getContent })
+// ❖ The new, sacred rite for programmatic updates.
+function setContent(newContent) {
+  isUpdatingProgrammatically.value = true
+  updateContent(newContent)
+  // ❖ a tiny delay to let the heresy pass before the loom wakes again.
+  setTimeout(() => {
+    isUpdatingProgrammatically.value = false
+  }, 50)
+}
+
+defineExpose({ focus, setContent, getContent })
 </script>

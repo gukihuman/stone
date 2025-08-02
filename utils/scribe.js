@@ -85,19 +85,27 @@ export default function scribe(text) {
         codeBlockLang = trimmedLine.substring(3).trim()
         // start of vocal line
       } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.VOCAL)) {
-        const unglyphedLine = trimmedLine.substring(1).trim()
-        const parts = unglyphedLine.split("∫")
-        const voice = parts[0].trim()
-        const speechText = parts.slice(1).join("∫").trim()
-        const escapedText = escapeHtml(speechText)
-        const parsedText = escapedText
-          .replace(/\*\*/g, "")
-          .replace(/\*/g, "")
-          .replace(/`/g, "")
+        if (trimmedLine.includes("∫")) {
+          const unglyphedLine = trimmedLine.substring(1).trim()
+          const parts = unglyphedLine.split("∫")
+          const voice = parts[0].trim()
+          const speechText = parts.slice(1).join("∫").trim()
+          const escapedText = escapeHtml(speechText)
+          const parsedText = escapedText
+            .replace(/\*\*/g, "")
+            .replace(/\*/g, "")
+            .replace(/`/g, "")
 
-        htmlLines.push(
-          `<div class="scribe-vocal-block"><div class="scribe-voice">${voice}</div><div class="scribe-speech-text">${parsedText}</div></div>`
-        )
+          htmlLines.push(
+            `<div class="scribe-vocal-block"><div class="scribe-voice">${voice}</div><div class="scribe-speech-text">${parsedText}</div></div>`
+          )
+        } else {
+          // thats guki transcription
+          const unglyphedLine = trimmedLine.substring(1).trim()
+          htmlLines.push(
+            `<div class="scribe-vocal-block"><div class="scribe-speech-text">${unglyphedLine}</div></div>`
+          )
+        }
       } else {
         // normal line processing
         if (trimmedLine === "") {
