@@ -44,7 +44,11 @@ onMounted(() => {
 function onKeydown(e) {
   if (e.key === " ") {
     e.preventDefault()
-    isSpacebarDown.value = true
+    if (!isSpacebarDown.value) {
+      let trimmedLoomContent = loomContent.value?.trimEnd()
+      loomContent.value = trimmedLoomContent + " ⟿"
+      isSpacebarDown.value = true
+    }
   }
 }
 function onKeyup(e) {
@@ -83,7 +87,7 @@ watch(loomContent, (newValue, oldValue) => {
     if (currentContent && !currentContent.endsWith(" ")) {
       loomContent.value += " "
     }
-  }, 300)
+  }, 350)
 
   pauseTimer.value = setTimeout(() => {
     const baseContent = loomContent.value.trimEnd()

@@ -225,7 +225,7 @@ const shortcuts = {
       const currentContent = loomRef.value?.getContent()
       const words = currentContent.split(" ")
       words.pop()
-      const newLoomContent = words.join(" ")
+      const newLoomContent = words.join(" ") + " ⌧ "
       loomWrappedContentCache.value = newLoomContent
       loomRef.value?.updateContent(newLoomContent)
     },
