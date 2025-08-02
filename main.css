@@ -1,4 +1,5 @@
 /* main.css */
+@import url("https://fonts.googleapis.com/css2?family=Slackside+One&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Playwrite+HU:wght@100..400&display=swap");
@@ -122,9 +123,6 @@ html {
 .scribe-prompt {
   @apply px-8;
 }
-.scribe-vocal {
-  @apply px-8;
-}
 
 /* inline wrappers */
 .scribe-bold {
@@ -140,6 +138,17 @@ html {
 /* structural elements */
 .scribe-empty-line {
   @apply h-8;
+}
+
+/* vocal block */
+.scribe-vocal-block {
+  @apply px-8 font-slackside;
+}
+.scribe-voice {
+  @apply text-moss-250 px-8 text-4xl -mt-5;
+}
+.scribe-speech-text {
+  @apply text-moss-150 text-3xl;
 }
 
 /* code blocks */

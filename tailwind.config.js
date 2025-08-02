@@ -14,6 +14,7 @@ export default {
         playwrite: ['"Playwrite HU"', "cursive"],
         bebas: ['"Bebas Neue"', "sans-serif"],
         roboto: ['"Roboto"', "sans-serif"],
+        slackside: ['"Slackside One"', "cursive"],
       },
       colors: {
         coffee: {

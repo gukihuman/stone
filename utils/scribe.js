@@ -83,6 +83,21 @@ export default function scribe(text) {
         // start of code block
         isCodeBlock = true
         codeBlockLang = trimmedLine.substring(3).trim()
+        // start of vocal line
+      } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.VOCAL)) {
+        const unglyphedLine = trimmedLine.substring(1).trim()
+        const parts = unglyphedLine.split("∫")
+        const voice = parts[0].trim()
+        const speechText = parts.slice(1).join("∫").trim()
+        const escapedText = escapeHtml(speechText)
+        const parsedText = escapedText
+          .replace(/\*\*/g, "")
+          .replace(/\*/g, "")
+          .replace(/`/g, "")
+
+        htmlLines.push(
+          `<div class="scribe-vocal-block"><div class="scribe-voice">${voice}</div><div class="scribe-speech-text">${parsedText}</div></div>`
+        )
       } else {
         // normal line processing
         if (trimmedLine === "") {
@@ -103,8 +118,6 @@ export default function scribe(text) {
           glyphClass = "scribe-consultation"
         } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.IMAGE_PROMPT)) {
           glyphClass = "scribe-prompt"
-        } else if (trimmedLine.startsWith(SPECIAL_GLYPHS.VOCAL)) {
-          glyphClass = "scribe-vocal"
         } else {
           glyphClass = "flow-default"
         }
